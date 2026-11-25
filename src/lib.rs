@@ -10,6 +10,7 @@
 
 mod error;
 mod flowchart;
+mod sequence;
 mod source;
 
 pub use error::{Error, MAX_AREA, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
