@@ -3,6 +3,7 @@
 
 pub(crate) mod entity;
 mod prepare;
+pub(crate) mod unicode;
 pub(crate) mod yaml;
 
 pub(crate) use prepare::{is_word, last_line_break, prepare};

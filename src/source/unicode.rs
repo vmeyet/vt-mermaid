@@ -1,7 +1,7 @@
-//! The letters mermaid's flowchart lexer reads one at a time as `UNICODE_TEXT`, copied from its grammar.
+//! The letters mermaid's flowchart and class lexers read one at a time as `UNICODE_TEXT`, copied from their grammars.
 
 /// Whether `char` is one of the letters outside ASCII the grammar lists.
-pub(super) fn is_letter(char: char) -> bool {
+pub(crate) fn is_letter(char: char) -> bool {
     LETTERS
         .binary_search_by(|&(first, last)| {
             if last < char {

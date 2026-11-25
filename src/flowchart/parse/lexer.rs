@@ -3,7 +3,8 @@
 //!
 //! Jison appends `\b` to a rule ending in a word character, so `graph` is a keyword and `graphite` a node.
 
-use super::{Invalid, is_space, unicode};
+use super::{Invalid, is_space};
+use crate::source::unicode;
 
 /// A token kind, named after the grammar's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

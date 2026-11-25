@@ -9,7 +9,6 @@ mod lexer;
 mod link;
 mod prepare;
 mod shapes;
-mod unicode;
 
 use std::fmt;
 
