@@ -63,7 +63,7 @@ impl fmt::Display for Error {
         match self {
             Self::TooLong { bytes } => write!(f, "the diagram is {bytes} bytes, over the {MAX_SOURCE_BYTES} byte limit"),
             Self::Invalid { reason } => write!(f, "the diagram does not parse: {reason}"),
-            Self::Unsupported => write!(f, "only flowcharts are drawn as text"),
+            Self::Unsupported => write!(f, "this kind of diagram is not drawn as text yet"),
             Self::TooManyNodes { nodes } => write!(f, "the flowchart has {nodes} nodes, over the {MAX_NODES} limit"),
             Self::TooManyEdges { edges } => write!(f, "the flowchart has {edges} edges, over the {MAX_EDGES} limit"),
             Self::TooLarge { width, height } => write!(f, "a {width}x{height} drawing is over the {MAX_AREA} cell limit"),

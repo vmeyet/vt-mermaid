@@ -2,12 +2,13 @@
 
 use std::collections::{HashMap, HashSet};
 
-use super::entity;
 use super::link::Link;
 use super::prepare::Config;
-use super::shape_data::{self, Block, SHAPES, Value};
+use super::shapes::SHAPES;
 use super::{Direction, Invalid, Limits, is_space};
 use crate::error::Error;
+use crate::source::entity;
+use crate::source::yaml::{self, Block, Value};
 
 /// A flowchart as mermaid's db holds it once the source is read.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -156,7 +157,7 @@ impl Db {
         if id.trim_matches(is_space).is_empty() {
             return Ok(());
         }
-        let block = block.map(shape_data::read).transpose()?;
+        let block = block.map(|block| yaml::read(block).map_err(|_malformed| Invalid::ShapeData)).transpose()?;
         if (block.is_some() && self.subgraphs.iter().any(|subgraph| subgraph.id == id)) || self.edge_ids.contains(id) {
             return Ok(());
         }

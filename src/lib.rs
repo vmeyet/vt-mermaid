@@ -10,6 +10,7 @@
 
 mod error;
 mod flowchart;
+mod source;
 
 pub use error::{Error, MAX_AREA, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
 pub use vt_canvas::{Canvas, GlyphSet, Role, Run};
@@ -25,7 +26,10 @@ pub use flowchart::measure::{Measures, measure};
 #[doc(hidden)]
 pub use flowchart::{Counts, read as read_flowchart};
 
-/// Draws the flowchart in `source` no wider than `max_width` columns.
+/// Draws the diagram in `source` no wider than `max_width` columns.
 pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
-    flowchart::render(source, max_width).map(|drawing| drawing.canvas)
+    match source::Kind::of(source)? {
+        source::Kind::Flowchart => flowchart::render(source, max_width).map(|drawing| drawing.canvas),
+        source::Kind::Sequence => Err(Error::Unsupported),
+    }
 }

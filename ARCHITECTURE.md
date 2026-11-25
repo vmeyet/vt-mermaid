@@ -36,6 +36,11 @@ This page says how the code is laid out today; when a module or a boundary chang
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
 - The `fuzz` feature adds `read_flowchart(source)`, the parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
 
+## Every kind
+
+`source` holds what every diagram kind shares before its own parser: mermaid's preparation of the text, its entities, the YAML of `@{ … }` blocks, and the kind a source is, read from its first word once the front matter, directives and comment lines are left out.
+`render` checks the length, reads the kind and hands the source to that kind's module; a kind mermaid knows but not drawn here is `Error::Unsupported`.
+
 ## Flowcharts
 
 `render` runs seven steps, one module each under `src/flowchart/`.
@@ -52,7 +57,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 `label` cuts text into lines and `shape` sizes and draws a node.
 `parse` is mermaid's own flowchart parser rewritten by hand, so a flowchart means here what it means to mermaid, in four steps:
-`prepare` does to the text what mermaid does before its lexer (line ends, the front matter, `%%{…}%%` directives, comment lines, entities marked, the space after a `}`);
+`prepare` does to the text what mermaid does before its lexer: the steps every kind shares, from `source` (line ends, the front matter, `%%{…}%%` directives, comment lines, entities marked), then the space after a `}`;
 `lexer` applies the rules of `flow.jison` in their order, the first that matches winning, each start condition a state on a stack;
 `grammar` reads the tokens top-down, accepting what mermaid's LALR parser accepts and calling the db in the order its actions do;
 `db` does what `flowDb.ts` does with each statement: a node is created the first time it is named, `@{ … }` blocks (`shape_data`) set its shape and label, a link (`link`) becomes edges between every node on either side, a subgraph keeps only the nodes no earlier subgraph holds, a repeated id merges, an unknown shape or a `linkStyle` past the last edge is refused.

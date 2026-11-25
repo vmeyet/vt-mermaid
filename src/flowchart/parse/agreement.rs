@@ -9,9 +9,9 @@ use std::path::Path;
 use serde_json::Value;
 
 use super::db::TextKind;
-use super::entity;
 use super::{Flowchart, Limits, parse};
 use crate::error::Error;
+use crate::source::entity;
 
 /// Mermaid's own limit, `maxEdges`, and no other, so the corpus is read as mermaid reads it.
 const MERMAID: Limits = Limits { bytes: usize::MAX, nodes: usize::MAX, edges: 500 };

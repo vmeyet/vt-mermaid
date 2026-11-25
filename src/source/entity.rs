@@ -1,4 +1,4 @@
-//! Entities in labels: mermaid's own (`#quot;`, `#35;`, marked by [`prepare`](super::prepare)) and HTML's (`&amp;`),
+//! Entities in labels: mermaid's own (`#quot;`, `#35;`, marked by [`prepare`](super::prepare())) and HTML's (`&amp;`),
 //! both shown as the character they name, as a browser shows mermaid's labels.
 
 use super::prepare::{ENTITY_END, ENTITY_START};
@@ -44,7 +44,7 @@ const NAMED: [(&str, char); 36] = [
 ];
 
 /// `text` with mermaid's marks turned back into entities, then every entity it knows decoded.
-pub(super) fn decoded(text: &str) -> String {
+pub(crate) fn decoded(text: &str) -> String {
     let entities = text.replace(&format!("{ENTITY_START}°"), "&#").replace(ENTITY_START, "&").replace(ENTITY_END, ";");
     let mut out = String::with_capacity(entities.len());
     let mut rest = entities.as_str();

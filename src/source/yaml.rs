@@ -1,168 +1,13 @@
-//! A node's or an edge's `@{ … }` block: the YAML mermaid reads it as, flat `key: value` pairs, inline or one per line.
+//! An `@{ … }` block, a flowchart node's or a sequence participant's: the YAML mermaid reads it as, flat `key: value`
+//! pairs, inline or one per line.
 
 use std::mem;
 
-use super::{Invalid, is_space};
+use super::is_space;
 
-/// Every shape name mermaid 12.3.0 accepts in a block: lowercase, without `_`.
-pub(super) const SHAPES: [&str; 156] = [
-    "doublecircle",
-    "state",
-    "choice",
-    "note",
-    "composite",
-    "anchor",
-    "icon",
-    "bpmn-start",
-    "bpmn-intermediate",
-    "bpmn-boundary",
-    "bpmn-end",
-    "bpmn-gateway",
-    "bpmn-activity",
-    "bpmn-data",
-    "bpmn-data-store",
-    "bpmn-annotation",
-    "rect",
-    "proc",
-    "process",
-    "rectangle",
-    "rounded",
-    "event",
-    "stadium",
-    "terminal",
-    "pill",
-    "fr-rect",
-    "subprocess",
-    "subproc",
-    "framed-rectangle",
-    "subroutine",
-    "cyl",
-    "db",
-    "database",
-    "cylinder",
-    "datastore",
-    "data-store",
-    "folder",
-    "directory",
-    "bucket",
-    "console",
-    "browser",
-    "person",
-    "circle",
-    "circ",
-    "bang",
-    "cloud",
-    "diam",
-    "decision",
-    "diamond",
-    "question",
-    "hex",
-    "hexagon",
-    "prepare",
-    "lean-r",
-    "lean-right",
-    "in-out",
-    "lean-l",
-    "lean-left",
-    "out-in",
-    "trap-b",
-    "priority",
-    "trapezoid-bottom",
-    "trapezoid",
-    "trap-t",
-    "manual",
-    "trapezoid-top",
-    "inv-trapezoid",
-    "dbl-circ",
-    "double-circle",
-    "text",
-    "notch-rect",
-    "card",
-    "notched-rectangle",
-    "lin-rect",
-    "lined-rectangle",
-    "lined-process",
-    "lin-proc",
-    "shaded-process",
-    "sm-circ",
-    "start",
-    "small-circle",
-    "fr-circ",
-    "stop",
-    "framed-circle",
-    "fork",
-    "join",
-    "hourglass",
-    "collate",
-    "brace",
-    "comment",
-    "brace-l",
-    "brace-r",
-    "braces",
-    "bolt",
-    "com-link",
-    "lightning-bolt",
-    "doc",
-    "document",
-    "delay",
-    "half-rounded-rectangle",
-    "h-cyl",
-    "das",
-    "horizontal-cylinder",
-    "lin-cyl",
-    "disk",
-    "lined-cylinder",
-    "curv-trap",
-    "curved-trapezoid",
-    "display",
-    "div-rect",
-    "div-proc",
-    "divided-rectangle",
-    "divided-process",
-    "tri",
-    "extract",
-    "triangle",
-    "win-pane",
-    "internal-storage",
-    "window-pane",
-    "f-circ",
-    "junction",
-    "filled-circle",
-    "notch-pent",
-    "loop-limit",
-    "notched-pentagon",
-    "flip-tri",
-    "manual-file",
-    "flipped-triangle",
-    "sl-rect",
-    "manual-input",
-    "sloped-rectangle",
-    "docs",
-    "documents",
-    "st-doc",
-    "stacked-document",
-    "st-rect",
-    "procs",
-    "processes",
-    "stacked-rectangle",
-    "bow-rect",
-    "stored-data",
-    "bow-tie-rectangle",
-    "cross-circ",
-    "summary",
-    "crossed-circle",
-    "tag-doc",
-    "tagged-document",
-    "tag-rect",
-    "tagged-rectangle",
-    "tag-proc",
-    "tagged-process",
-    "flag",
-    "paper-tape",
-    "odd",
-    "lin-doc",
-    "lined-document",
-];
+/// A block YAML refuses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Malformed;
 
 /// How a block's pairs are written: inline between braces, where `,` and brackets end a plain value, or one per line.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -173,18 +18,18 @@ enum Mapping {
 
 /// A value as YAML's JSON schema resolves it.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) enum Value {
+pub(crate) enum Value {
     Text(String),
     Number(String),
     Bool(bool),
     Null,
-    /// A nested mapping or sequence, which no key mermaid reads for a flowchart holds.
+    /// A nested mapping or sequence, which no key mermaid reads holds.
     Nested,
 }
 
 impl Value {
     /// JavaScript's truthiness, which decides whether mermaid uses a key.
-    pub(super) fn is_truthy(&self) -> bool {
+    pub(crate) fn is_truthy(&self) -> bool {
         match self {
             Self::Text(text) => !text.is_empty(),
             Self::Number(number) => number.parse::<f64>().is_ok_and(|number| number != 0.0),
@@ -195,7 +40,7 @@ impl Value {
     }
 
     /// The value as a label shows it.
-    pub(super) fn text(&self) -> Option<String> {
+    pub(crate) fn text(&self) -> Option<String> {
         match self {
             Self::Text(text) | Self::Number(text) => Some(text.clone()),
             Self::Bool(value) => Some(value.to_string()),
@@ -206,26 +51,26 @@ impl Value {
 
 /// A block's keys and values, in order, each key once.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) struct Block {
+pub(crate) struct Block {
     pairs: Vec<(String, Value)>,
 }
 
 impl Block {
     /// The value of `key` when JavaScript counts it as given, as mermaid's `if (doc.key)` does.
-    pub(super) fn given(&self, key: &str) -> Option<&Value> {
+    pub(crate) fn given(&self, key: &str) -> Option<&Value> {
         self.pairs.iter().find(|(name, _)| name == key).map(|(_, value)| value).filter(|value| value.is_truthy())
     }
 }
 
 /// The pairs of a block, as mermaid hands it to YAML: one line is a flow mapping, several a block mapping.
-pub(super) fn read(block: &str) -> Result<Block, Invalid> {
+pub(crate) fn read(block: &str) -> Result<Block, Malformed> {
     let pairs = if block.contains('\n') { block_pairs(block)? } else { flow_pairs(block)? };
     let duplicate = pairs.iter().enumerate().any(|(index, (key, _))| pairs[..index].iter().any(|(earlier, _)| earlier == key));
-    if duplicate { Err(Invalid::ShapeData) } else { Ok(Block { pairs }) }
+    if duplicate { Err(Malformed) } else { Ok(Block { pairs }) }
 }
 
 /// `{ key: value, key: "value" }`.
-fn flow_pairs(block: &str) -> Result<Vec<(String, Value)>, Invalid> {
+fn flow_pairs(block: &str) -> Result<Vec<(String, Value)>, Malformed> {
     let mut pairs = Vec::new();
     let mut rest = block.trim_matches(is_space);
     while !rest.is_empty() {
@@ -240,14 +85,14 @@ fn flow_pairs(block: &str) -> Result<Vec<(String, Value)>, Invalid> {
         rest = match after_value.strip_prefix(',') {
             Some(after) => after.trim_start_matches(is_space),
             None if after_value.is_empty() => after_value,
-            None => return Err(Invalid::ShapeData),
+            None => return Err(Malformed),
         };
     }
     Ok(pairs)
 }
 
 /// One `key: value` per line, a more indented line without a key going on with the value before.
-fn block_pairs(block: &str) -> Result<Vec<(String, Value)>, Invalid> {
+fn block_pairs(block: &str) -> Result<Vec<(String, Value)>, Malformed> {
     let mut pairs: Vec<(String, Value)> = Vec::new();
     let mut indent = None;
     let mut lines = block.lines().peekable();
@@ -276,14 +121,14 @@ fn block_pairs(block: &str) -> Result<Vec<(String, Value)>, Invalid> {
             continue;
         }
         if indent.is_some_and(|indent| depth != indent) {
-            return Err(Invalid::ShapeData);
+            return Err(Malformed);
         }
         indent = Some(depth);
         let (key, after_key) = scalar(content, Mapping::Block)?;
-        let after_colon = after_key.trim_start_matches(is_space).strip_prefix(':').ok_or(Invalid::ShapeData)?;
+        let after_colon = after_key.trim_start_matches(is_space).strip_prefix(':').ok_or(Malformed)?;
         let (value, rest) = value(after_colon.trim_start_matches(is_space), Mapping::Block)?;
         if !rest.trim_matches(is_space).is_empty() {
-            return Err(Invalid::ShapeData);
+            return Err(Malformed);
         }
         pairs.push((key.text().unwrap_or_default(), value));
     }
@@ -330,7 +175,7 @@ fn without_comment(line: &str) -> &str {
     line
 }
 
-fn value(text: &str, mapping: Mapping) -> Result<(Value, &str), Invalid> {
+fn value(text: &str, mapping: Mapping) -> Result<(Value, &str), Malformed> {
     if let Some(open) = text.chars().next().filter(|char| matches!(char, '{' | '[')) {
         return nested(text, open).map(|rest| (Value::Nested, rest));
     }
@@ -338,7 +183,7 @@ fn value(text: &str, mapping: Mapping) -> Result<(Value, &str), Invalid> {
 }
 
 /// A quoted or plain scalar and the text after it; a plain one ends at `: `, and in a flow mapping at `,` or `}`.
-fn scalar(text: &str, mapping: Mapping) -> Result<(Value, &str), Invalid> {
+fn scalar(text: &str, mapping: Mapping) -> Result<(Value, &str), Malformed> {
     match text.chars().next() {
         Some('"') => double_quoted(&text[1..]).map(|(inside, rest)| (Value::Text(inside), rest)),
         Some('\'') => single_quoted(&text[1..]).map(|(inside, rest)| (Value::Text(inside), rest)),
@@ -384,34 +229,34 @@ fn is_number(text: &str) -> bool {
     !digits.is_empty() && (digits == "0" || !digits.starts_with('0')) && ends && exponent_ok
 }
 
-fn double_quoted(text: &str) -> Result<(String, &str), Invalid> {
+fn double_quoted(text: &str) -> Result<(String, &str), Malformed> {
     let mut inside = String::new();
     let mut chars = text.char_indices();
     while let Some((at, char)) = chars.next() {
         match char {
             '"' => return Ok((inside, &text[at + 1..])),
             '\\' => {
-                let (_, escaped) = chars.next().ok_or(Invalid::ShapeData)?;
+                let (_, escaped) = chars.next().ok_or(Malformed)?;
                 inside.push(match escaped {
                     'n' => '\n',
                     't' => '\t',
                     'r' => '\r',
                     '0' => '\0',
                     '"' | '\\' | '/' | ' ' => escaped,
-                    _ => return Err(Invalid::ShapeData),
+                    _ => return Err(Malformed),
                 });
             }
             _ => inside.push(char),
         }
     }
-    Err(Invalid::ShapeData)
+    Err(Malformed)
 }
 
-fn single_quoted(text: &str) -> Result<(String, &str), Invalid> {
+fn single_quoted(text: &str) -> Result<(String, &str), Malformed> {
     let mut inside = String::new();
     let mut rest = text;
     loop {
-        let quote = rest.find('\'').ok_or(Invalid::ShapeData)?;
+        let quote = rest.find('\'').ok_or(Malformed)?;
         inside.push_str(&rest[..quote]);
         rest = &rest[quote + 1..];
         match rest.strip_prefix('\'') {
@@ -425,7 +270,7 @@ fn single_quoted(text: &str) -> Result<(String, &str), Invalid> {
 }
 
 /// The text after the mapping or sequence `text` opens with, skipping quoted text.
-fn nested(text: &str, open: char) -> Result<&str, Invalid> {
+fn nested(text: &str, open: char) -> Result<&str, Malformed> {
     let close = if open == '{' { '}' } else { ']' };
     let mut depth = 0_usize;
     let mut quote = None;
@@ -443,7 +288,7 @@ fn nested(text: &str, open: char) -> Result<&str, Invalid> {
             _ => {}
         }
     }
-    Err(Invalid::ShapeData)
+    Err(Malformed)
 }
 
 #[cfg(test)]
@@ -512,14 +357,9 @@ mod tests {
     }
 
     #[test]
-    fn every_shape_name_is_lowercase_without_underscores_as_mermaid_demands() {
-        assert!(SHAPES.iter().all(|name| name.to_lowercase() == *name && !name.contains('_')));
-    }
-
-    #[test]
     fn broken_yaml_is_refused() {
-        assert_eq!(read(" label: \"open "), Err(Invalid::ShapeData));
-        assert_eq!(read(" a: 1, a: 2"), Err(Invalid::ShapeData));
-        assert_eq!(read("\n  a: 1\n b: 2"), Err(Invalid::ShapeData));
+        assert_eq!(read(" label: \"open "), Err(Malformed));
+        assert_eq!(read(" a: 1, a: 2"), Err(Malformed));
+        assert_eq!(read("\n  a: 1\n b: 2"), Err(Malformed));
     }
 }

@@ -4,55 +4,22 @@
 #[cfg(test)]
 mod agreement;
 mod db;
-mod entity;
 mod grammar;
 mod lexer;
 mod link;
 mod prepare;
-mod shape_data;
+mod shapes;
 mod unicode;
 
 use std::fmt;
+
+pub(super) use crate::source::is_space;
 
 pub(super) use db::{Edge, Flowchart, Subgraph};
 pub(super) use lexer::Direction;
 pub(super) use link::{Arrow, Stroke};
 
 use crate::error::{Error, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
-
-/// Headers of the diagram kinds mermaid knows besides flowcharts, each a prefix of the word a source starts with.
-const OTHER_KINDS: [&str; 30] = [
-    "sequenceDiagram",
-    "classDiagram",
-    "stateDiagram",
-    "erDiagram",
-    "journey",
-    "gantt",
-    "pie",
-    "quadrantChart",
-    "requirementDiagram",
-    "gitGraph",
-    "C4Context",
-    "C4Container",
-    "C4Component",
-    "C4Dynamic",
-    "C4Deployment",
-    "mindmap",
-    "timeline",
-    "zenuml",
-    "sankey",
-    "xychart",
-    "block",
-    "packet",
-    "kanban",
-    "architecture",
-    "radar",
-    "treemap",
-    "info",
-    "swimlane",
-    "venn",
-    "ishikawa",
-];
 
 /// Longest source, most nodes, subgraphs included, and most edges read before the flowchart is refused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -115,19 +82,10 @@ pub(super) fn parse(source: &str, limits: Limits) -> Result<Flowchart, Error> {
     let prepared = prepare::prepare(source);
     let text = prepared.text;
     if !text.starts_with("graph") && !text.starts_with("flowchart") {
-        return Err(if OTHER_KINDS.iter().any(|kind| text.starts_with(kind)) { Error::Unsupported } else { Invalid::NoDiagram.into() });
+        return Err(Invalid::NoDiagram.into());
     }
     let tokens = lexer::tokens(&text)?;
     grammar::parse(&text, &tokens, limits, prepared.config)
-}
-
-/// A character of a JavaScript regex `\s`, the space mermaid's patterns mean.
-fn is_space(char: char) -> bool {
-    matches!(
-        char,
-        '\t' | '\n' | '\u{b}' | '\u{c}' | '\r' | ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'
-            ..='\u{200a}' | '\u{2028}' | '\u{2029}' | '\u{202f}' | '\u{205f}' | '\u{3000}' | '\u{feff}'
-    )
 }
 
 #[cfg(test)]
@@ -185,8 +143,7 @@ mod tests {
     }
 
     #[test]
-    fn a_diagram_of_another_kind_is_unsupported_and_text_without_a_header_invalid() {
-        assert_eq!(parse("sequenceDiagram\n  A->>B: hi", Limits::DRAWN), Err(Error::Unsupported));
-        assert!(matches!(parse("not a diagram", Limits::DRAWN), Err(Error::Invalid { .. })));
+    fn a_source_without_a_flowchart_header_is_invalid() {
+        assert!(matches!(parse("sequenceDiagram\n  A->>B: hi", Limits::DRAWN), Err(Error::Invalid { .. })));
     }
 }

@@ -396,11 +396,6 @@ mod tests {
     }
 
     #[test]
-    fn a_diagram_of_another_kind_is_unsupported() {
-        assert!(matches!(Diagram::read("pie\n  \"a\" : 1"), Err(Error::Unsupported)));
-    }
-
-    #[test]
     fn text_without_a_diagram_header_is_invalid() {
         assert!(matches!(Diagram::read("not a diagram"), Err(Error::Invalid { .. })));
     }
