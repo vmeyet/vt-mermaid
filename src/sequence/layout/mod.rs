@@ -466,10 +466,6 @@ mod tests {
         place(&Diagram::read(&format!("sequenceDiagram\n{body}")).unwrap(), Fit { wrap: Wrap::wide(LongWords::Break), gap: LOOSE })
     }
 
-    fn lifeline_columns(placement: &Placement) -> Vec<i32> {
-        placement.lifelines.iter().map(|lifeline| lifeline.x).collect()
-    }
-
     #[test]
     fn a_frame_keeps_its_padding_from_the_participants_outside_it() {
         let placement = placed("participant A\nparticipant B\nparticipant C\nloop\nloop\nB->>C: hi\nend\nend\n");

@@ -1,0 +1,10 @@
+corpus/sequence/docs--intro-examples--L16.mmd
+corpus/sequence/docs--syntax-sequenceDiagram--L35.mmd
+corpus/sequence/docs--syntax-sequenceDiagram--L255.mmd
+corpus/sequence/docs--syntax-sequenceDiagram--L312.mmd
+corpus/sequence/docs--syntax-sequenceDiagram--L658.mmd
+corpus/sequence/e2e--diagrams-sequence-nightly-check-should-render-all-arrow-types-with-autonumbering.mmd
+corpus/sequence/e2e--diagrams-sequence-nightly-check-should-render-rect-around-and-inside-breaks.mmd
+corpus/sequence/e2e--diagrams-sequence-nightly-check-should-render-rect-around-and-inside-criticals.mmd
+corpus/sequence/e2e--diagrams-sequence-nightly-check-v2-complex-sequence-with-all-features.mmd
+tests/sequence/checkout.mmd

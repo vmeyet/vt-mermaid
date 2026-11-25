@@ -1,0 +1,22 @@
+sequenceDiagram
+    autonumber
+    actor Shopper
+    participant Web
+    participant API
+    participant DB@{ "type": "database" }
+    Shopper->>+Web: Open cart
+    Web->>+API: GET /cart
+    loop Every item
+        API->>DB: Price lookup
+        DB-->>API: Price
+    end
+    API-->>-Web: Cart total
+    alt Card accepted
+        Web->>API: Pay
+        Note over API,DB: Charge is idempotent
+        API--)Web: Receipt
+    else Card declined
+        Web-xShopper: Payment failed
+        Note right of Shopper: Try another card
+    end
+    Web-->>-Shopper: Done

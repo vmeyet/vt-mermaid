@@ -1,0 +1,36 @@
+---
+source: src/sequence/mod.rs
+expression: "rows(&render(&source, 100).unwrap(), GlyphSet::Unicode).join(\"\\n\")"
+---
+┌───────┐   ┌─────┐          ┌──────┐                         
+│ Alice │   │ Bob │          │ John │                         
+└───┬───┘   └──┬──┘          └──┬───┘                         
+    │          │                │                             
+    │ Hello John, how are you?  │                             
+    │──────────────────────────▸│                             
+    │          │                │                             
+    │          │              ┌─ loop [HealthCheck] ─────────┐
+    │          │              │ │                            │
+    │          │              │ │ Fight against hypochondria │
+    │          │              │ │──┐                         │
+    │          │              │ │◂─┘                         │
+    │          │              │ │                            │
+    │          │              └──────────────────────────────┘
+    │          │                │                             
+    │          │                │ ╭───────────────────╮       
+    │          │                │ │ Rational thoughts │       
+    │          │                │ │     prevail!      │       
+    │          │                │ ╰───────────────────╯       
+    │          │                │                             
+    │          │     Great!     │                             
+    │◂╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌│                             
+    │          │                │                             
+    │          │ How about you? │                             
+    │          │◂───────────────│                             
+    │          │                │                             
+    │          │  Jolly good!   │                             
+    │          │╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌▸│                             
+    │          │                │                             
+┌───┴───┐   ┌──┴──┐          ┌──┴───┐                         
+│ Alice │   │ Bob │          │ John │                         
+└───────┘   └─────┘          └──────┘

@@ -54,6 +54,6 @@ pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
 pub fn render_with(source: &str, settings: Settings) -> Result<Canvas, Error> {
     match source::Kind::of(source)? {
         source::Kind::Flowchart => flowchart::render_with(source, settings).map(|drawing| drawing.canvas),
-        source::Kind::Sequence => Err(Error::Unsupported),
+        source::Kind::Sequence => sequence::render_with(source, settings),
     }
 }

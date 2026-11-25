@@ -6,8 +6,9 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 ## Owns
 
-- Mermaid source to a text drawing, one diagram kind at a time; flowcharts today.
+- Mermaid source to a text drawing, one diagram kind at a time; flowcharts and sequence diagrams today.
 - Laying a flowchart out in layers on the grid, then routing its edges on the grid.
+- Laying a sequence diagram out: each participant's column, then each event on rows of its own.
 - Handing chart kinds (xychart, pie, sankey…) to vt-graph.
 
 ## Never
@@ -22,6 +23,8 @@ This page says how the code is laid out today; when a module or a boundary chang
   `render_with(source, settings)` does the same as `Settings` say: `max_width`, and `long_words`, `Break` unless set.
   A flowchart too wide, or with an edge left without a path, is laid out again until it fits: tight; tight with node labels wrapped at 20 then 14 columns; with the ranks going down folded to 8, 7, 6, 5 and 4 eighths of the width; folded again to 8 down to 2 eighths with labels wrapped at 14; then packed to 8, 6 and 4 eighths without room for the links passing a rank; each as written, then turned top-down when it or one of its groups flows sideways.
   That is at most thirty-eight placements, each routed only when its blocks fit; one still too wide is `Error::TooWide`, so the caller can fall back.
+  A sequence diagram too wide is laid out again: its labels as written, then wrapped at spaces to 60, 48, 40, 32, 26, 20, 16, 12, 10, 8 and 6 columns, a word up to 30 columns kept whole; the same with heads 1 space apart instead of 3; then with every word wider than the lines broken or cut as `long_words` says.
+  That is at most thirty-six placements, each a few passes over the events; one still too wide is `Error::TooWide`.
 - Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`); a sequence diagram has at most 50 participants (`MAX_PARTICIPANTS`) and 1000 messages (`MAX_MESSAGES`), notes, activations and the starts, sections and ends of blocks included.
   The parser counts nodes and edges as it reads them, an `&` group's edges before it makes them, and stops at the first over a limit.
 - Time, measured on an Apple M5 in a release build with `cargo bench --bench limits` and `cargo bench --bench corpus`, the fastest of a few runs on a shared machine:
@@ -107,6 +110,22 @@ the actor rule's lookahead (a name stops before anything that starts an arrow, `
 mermaid-rs-renderer's parser accepts and refuses 79% of them as mermaid does.
 Tried against mermaid itself on 50000 inputs mutated from the corpus, it differs only where mermaid's YAML reader does: front matters it refuses, which no parser here reads, and `@{ … }` blocks running over several lines.
 
+`render` then runs three steps, one module each:
+
+| Module | Step |
+|---|---|
+| `diagram` | Turns the db into what is drawn: participants by their place, with their figure (a box, a stick figure for `actor`, a cylinder for `database`), and events (messages, notes, activations, block borders and dividers); texts decoded, messages numbered as mermaid counts them, each creation and destruction tied to the message that carries it |
+| `layout` | Each participant's column (`layout::columns`), then each event on rows of its own, top to bottom |
+| `draw` | Lifelines, boxes of participants, block frames, heads, notes, then messages, on a `Canvas` |
+
+- Columns: heads 3 spaces apart, or 1 when tight, 5 more where a box of participants starts or ends; then each message needs its label's columns plus 3 between its two lifelines, a note beside a lifeline its width plus 3 to the next one, a message to itself its label plus 4 to the right, and a block 2 columns more on each side for each level of block it holds; a need spanning several gaps is shared among them, the narrowest spans first.
+- Rows: one empty row between two events; a message is its label's lines then its arrow's row, a message to itself its label then a loop of two rows, a note its box, a block's start, divider and end a row each; a participant created later has its head where the message creating it arrives, and one destroyed has its lifeline end on the message destroying it, with a cross and no foot.
+- A label goes centred in the gap next to the sender when it fits there, else centred over the whole span; a block's title widens its frame up to the width labels wrap to, and is cut with `⋯` past that.
+- Lifelines are light, heavy where the participant is active (`activate`, `+`), from the message that starts it to the one that ends it; they join their heads' borders.
+- A message, a block's border or divider and a note pass in front of a lifeline: the lifeline stops there instead of crossing.
+- Arrows: solid `─` or dotted `╌`; a filled, open or half arrow head draws `▸`, an open one (`->`) none, a cross (`-x`) `╳`, and a two-way message has a head at each end; a half arrow written head first (`/|-`) points back at the sender.
+- Boxes of participants frame their heads, with the box's name, and their feet; block frames are square, notes rounded, and `rect` dashed without a title.
+
 ## Dependency direction
 
 ```
@@ -121,6 +140,7 @@ vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its 
 - [`oracle/`](oracle/README.md): a Node script that records what the pinned `mermaid` accepts (level A) and its flowchart and sequence dbs (level B), committed as JSON.
 - `examples/agreement.rs`: compares mermaid-rs-renderer's parser with the oracle per kind; a dev-only program, so the library's API never sees the dependency.
   Flowcharts are compared with vt-mermaid's own parser by `parse::agreement` instead.
+- `tests/sequence/diagrams.txt`: sequence diagrams from the corpus and `tests/sequence/checkout.mmd`, each an insta snapshot at 100 columns; every corpus diagram but two with many participants is drawn within 80 columns.
 - `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks of `measure` (every node and label drawn whole, every edge joining both ends, nothing overlapping).
 - [`scoreboard/`](scoreboard/README.md): every corpus flowchart drawn by vt-mermaid and three other text renderers, measured the same way, results committed; a dev-only example, run by hand.
 - `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`, seeded from `corpus/flowchart`; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits; `cargo +nightly fuzz run parse` feeds it to the parser alone, through `read_flowchart` behind the `fuzz` feature, and checks it never panics and keeps the limits; `parse_sequence` does the same for the sequence parser through `read_sequence`.

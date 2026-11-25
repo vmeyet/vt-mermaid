@@ -1,0 +1,20 @@
+---
+source: src/sequence/mod.rs
+expression: "rows(&canvas, GlyphSet::Ascii).join(\"\\n\")"
+---
++---+   +---+
+| A |   | B |
++-+-+   +-+-+
+  |       |  
+  |  hi   |  
+  |------>|  
+  |       |  
+  |  yo   |  
+  |<......|  
+  |       |  
+  |  no   |  
+  |------x|  
+  |       |  
++-+-+   +-+-+
+| A |   | B |
++---+   +---+
