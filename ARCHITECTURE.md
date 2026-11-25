@@ -133,6 +133,7 @@ Tried against mermaid itself on 50000 inputs mutated from the corpus, it differs
 
 `parse` is mermaid's own state parser rewritten by hand, its lexer first: the rules of `stateDiagram.jison` in their order, case-insensitive, the first that matches winning, each start condition a state on a stack.
 The rules looking past the token at hand (a `direction` or a `<<fork>>` later on the line, a `{` after two words) read an index of the text built once, so a long line is never scanned again for each token on it; a note's text up to `end note` is one pass, each run of spaces before a line read once.
+`grammar` reads the tokens top-down, accepting what mermaid's LALR parser accepts and building the document its actions build; the composite states open at a point are a stack, so nesting never deepens the call stack, and each opening counts towards `MAX_NODES`.
 Drawing comes next: `render` refuses a state diagram mermaid reads as `Error::Unsupported`.
 
 ## Dependency direction

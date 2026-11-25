@@ -1,11 +1,13 @@
 //! State diagrams read as mermaid 12.3.0 reads them: its lexer, its grammar and its diagram db, rewritten by hand,
 //! so a state diagram means here what it means to mermaid.
 
+mod db;
+mod grammar;
 mod lexer;
 
 use std::fmt;
 
-use crate::error::{Error, MAX_SOURCE_BYTES};
+use crate::error::{Error, MAX_NODES, MAX_SOURCE_BYTES};
 use crate::source;
 
 /// Why mermaid would refuse a state diagram; lines are counted as mermaid counts them, once the front matter,
@@ -16,6 +18,8 @@ pub(super) enum Invalid {
     NoDiagram,
     /// No rule of the lexer reads the text at that line.
     Unrecognized { line: usize },
+    /// The grammar allows no such token there.
+    Unexpected { line: usize, found: String },
     /// `state` names a composite state with more than one word.
     StateName { name: String },
 }
@@ -25,6 +29,7 @@ impl fmt::Display for Invalid {
         match self {
             Self::NoDiagram => write!(f, "no diagram type matches the text"),
             Self::Unrecognized { line } => write!(f, "unrecognized text on line {line}"),
+            Self::Unexpected { line, found } => write!(f, "unexpected {found} on line {line}"),
             Self::StateName { name } => write!(f, "a state name must be a single word, found {name:?}"),
         }
     }
@@ -36,7 +41,8 @@ impl From<Invalid> for Error {
     }
 }
 
-/// Checks the state diagram in `source` reads as mermaid's lexer reads it.
+/// Checks the state diagram in `source` reads as mermaid's grammar reads it, with at most [`MAX_NODES`] composite
+/// states opened.
 pub(super) fn parse(source: &str) -> Result<(), Error> {
     if source.len() > MAX_SOURCE_BYTES {
         return Err(Error::TooLong { bytes: source.len() });
@@ -45,8 +51,8 @@ pub(super) fn parse(source: &str) -> Result<(), Error> {
     if !source::opens_with(&text, "stateDiagram") {
         return Err(Invalid::NoDiagram.into());
     }
-    lexer::tokens(&text)?;
-    Ok(())
+    let tokens = lexer::tokens(&text)?;
+    grammar::parse(&text, &tokens, MAX_NODES).map(|_| ())
 }
 
 #[cfg(test)]
