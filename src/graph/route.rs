@@ -196,14 +196,16 @@ impl Grid {
     /// Lays the cells of `route` it does not share on the grid so later routes only cross it at a right angle, away
     /// from its turns and ends; the cells it shares with its trunk are no place for a label any more, and no route
     /// crosses where it leaves or joins the trunk.
-    fn add(&mut self, route: &Route, own: &Range<usize>) {
+    fn add(&mut self, route: &Route, own: &Range<usize>, straight: Straight) {
         let last = route.cells.len() - 1;
+        let tip = |index: usize| index <= usize::from(straight.from) || index + usize::from(straight.to) > last;
         for (index, &cell) in route.cells.iter().enumerate().skip(1) {
             let horizontal = route.cells[index - 1].y == cell.y;
             let turns = index < last && (route.cells[index + 1].y == cell.y) != horizontal;
             let shared = !own.contains(&index);
             let at_the_trunk = index + 1 == own.start || index == own.end;
             let next = match self.get(cell) {
+                _ if tip(index) && index < last => Use::Blocked,
                 Use::Free | Use::Kept { .. } if !turns && index < last => Use::Line { horizontal },
                 Use::Line { horizontal } | Use::Trunk { horizontal } if shared && !at_the_trunk => Use::Trunk { horizontal },
                 _ => Use::Blocked,
@@ -352,10 +354,11 @@ fn laid(diagram: &Diagram, placement: &Placement, joins: &[Joins], empty: &Grid,
             joining: &trunks.ways_in(joins[index].entry.trunk),
             routes: &routes,
             turns: if joins[index].entry.trunk.is_some() && joins[index].exit.trunk.is_none() { Turns::Late } else { Turns::Early },
+            straight: Straight { from: edge.start.straight(), to: edge.end.straight() },
         };
         let shared = twin.and_then(|twin| routes[twin].clone()).map(|route| Found { route, own: 0..0, left: None, joined: None });
         let found = shared.or_else(|| search.run()).ok_or(index)?;
-        grid.add(&found.route, &found.own);
+        grid.add(&found.route, &found.own, Straight { from: edge.start.straight(), to: edge.end.straight() });
         trunks.add(index, &found, joins[index]);
         routes[index] = Some(found.route);
     }
@@ -443,6 +446,15 @@ struct Search<'a> {
     joining: &'a [Tap],
     routes: &'a [Option<Route>],
     turns: Turns,
+    straight: Straight,
+}
+
+/// The cells next to each end an edge runs straight through, without turning or crossing, so its tips stand on a
+/// straight line no other edge crosses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+struct Straight {
+    from: u16,
+    to: u16,
 }
 
 /// Where an edge turns when it may anywhere: right after its source, so edges leaving one block turn together and
@@ -533,8 +545,12 @@ impl Search<'_> {
         })
     }
 
-    /// What joining the trunk at `tap` costs, coming from `cell`, a free cell.
+    /// What joining the trunk at `tap` costs, coming from `cell`, a free cell; never among the cells kept straight for
+    /// its tips.
     fn joining_cost(&self, cell: Point, heading: Direction, direction: Direction, tap: Tap) -> Option<u32> {
+        if within(tap.cell, self.to, self.straight.to) {
+            return None;
+        }
         let turning = match (direction != heading, self.grid.get(cell)) {
             (false, Use::Free | Use::Kept { .. }) => 0,
             (true, Use::Free) => BEND + self.stray(cell),
@@ -553,6 +569,7 @@ impl Search<'_> {
         let inward = side(self.to, next) == Some(opposite(direction)) && self.joinable(next);
         let turn = match (direction == heading, direction) {
             (true, _) => Some(0),
+            (false, _) if self.straight.to > 0 => None,
             (false, Direction::Down | Direction::Up) => Some(BEND + TURN_AT_THE_ARROW),
             (false, _) => None,
         };
@@ -562,6 +579,11 @@ impl Search<'_> {
 
     /// What moving from `cell` to `next` costs, `None` where it may not go.
     fn step_cost(&self, cell: Point, heading: Direction, next: Point, direction: Direction) -> Option<u32> {
+        if (direction != heading && self.at_tips(cell))
+            || (self.at_tips(next) && !matches!(self.grid.get(next), Use::Free | Use::Kept { .. }))
+        {
+            return None;
+        }
         let turning = match (direction != heading, self.grid.get(cell)) {
             (false, _) => 0,
             (true, Use::Free) => BEND + self.stray(cell),
@@ -606,6 +628,12 @@ impl Search<'_> {
             Turns::Late => (self.to, 2),
         };
         (off(gap(cell.x, near.x, near.width), 2) + off(gap(cell.y, near.y, near.height), upright)).min(STRAY)
+    }
+
+    /// Whether `cell` is among those kept straight next to either end: a turn or a crossing there would break its
+    /// tips.
+    fn at_tips(&self, cell: Point) -> bool {
+        within(cell, self.from, self.straight.from) || within(cell, self.to, self.straight.to)
     }
 
     /// The border cells of `rect` an edge may still join, each with the direction leading out.
@@ -677,6 +705,13 @@ fn side(rect: Rect, cell: Point) -> Option<Direction> {
     } else {
         None
     }
+}
+
+/// Whether `cell` lies outside `rect`, `cells` or fewer away from it, diagonally included.
+fn within(cell: Point, rect: Rect, cells: u16) -> bool {
+    let gap = |value: u16, start: u16, length: u16| start.saturating_sub(value).max(value.saturating_sub(start + length - 1));
+    let away = gap(cell.x, rect.x, rect.width).max(gap(cell.y, rect.y, rect.height));
+    cells > 0 && (1..=cells).contains(&away)
 }
 
 /// Steps from `cell` to the nearest cell of `target`, never more than a path takes.
@@ -759,9 +794,13 @@ mod tests {
     }
 
     fn search(grid: &Grid, from: Rect, to: Rect) -> Option<Route> {
+        search_straight(grid, from, to, Straight::default())
+    }
+
+    fn search_straight(grid: &Grid, from: Rect, to: Rect, straight: Straight) -> Option<Route> {
         let exit = Join { heading: Direction::Down, cell: Point::new(from.x + from.width / 2, from.y + from.height - 1), trunk: None };
         let entry = Join { heading: Direction::Down, cell: Point::new(to.x + to.width / 2, to.y), trunk: None };
-        Search { grid, edge: 0, from, to, exit, entry, leaving: &[], joining: &[], routes: &[], turns: Turns::Early }
+        Search { grid, edge: 0, from, to, exit, entry, leaving: &[], joining: &[], routes: &[], turns: Turns::Early, straight }
             .run()
             .map(|found| found.route)
     }
@@ -772,6 +811,20 @@ mod tests {
 
         assert_eq!(route.corners(), [Point::new(5, 2), Point::new(5, 7)]);
         assert_eq!((route.departure(), route.arrival(), route.end), (Direction::Down, Direction::Down, Point::new(5, 8)));
+    }
+
+    #[test]
+    fn an_edge_with_tips_runs_straight_through_the_cells_next_to_both_ends() {
+        let (from, to) = (Rect::new(0, 0, 5, 3), Rect::new(10, 8, 5, 3));
+
+        let bent = search(&grid(&[from, to]), from, to).unwrap();
+        let straight = search_straight(&grid(&[from, to]), from, to, Straight { from: 2, to: 2 }).unwrap();
+
+        let column = |route: &Route, cells: Range<usize>| route.cells[cells].iter().map(|cell| cell.x).collect::<Vec<_>>();
+        let last = straight.cells.len();
+        assert_ne!(column(&bent, 0..3), [2, 2, 2], "{:?}", bent.cells);
+        assert_eq!((column(&straight, 0..3), column(&straight, last - 2..last)), (vec![2, 2, 2], vec![12, 12]), "{:?}", straight.cells);
+        assert_eq!(straight.arrival(), Direction::Down);
     }
 
     #[test]
@@ -811,7 +864,7 @@ mod tests {
         let mut grid = grid(&[TOP, BOTTOM]);
         let route = Route { cells: vec![Point::new(5, 2), Point::new(5, 3), Point::new(6, 3), Point::new(7, 3)], end: Point::new(8, 3) };
 
-        grid.add(&route, &(0..4));
+        grid.add(&route, &(0..4), Straight::default());
 
         let uses = [(5, 2), (5, 3), (6, 3), (7, 3), (8, 3)].map(|(x, y)| grid.get(Point::new(x, y)));
         assert_eq!(uses, [Use::Blocked, Use::Blocked, Use::Line { horizontal: true }, Use::Blocked, Use::Blocked]);

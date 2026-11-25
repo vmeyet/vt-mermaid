@@ -70,6 +70,17 @@ pub(crate) enum Head {
     Tips(&'static [Tip]),
 }
 
+impl Head {
+    /// Cells next to the node the edge runs straight through, so its tips stand on a straight line: none for an
+    /// arrow, which may stand where the line turns.
+    pub(crate) const fn straight(self) -> u16 {
+        match self {
+            Self::Tips(tips) => tips.len() as u16,
+            Self::None | Self::Arrow => 0,
+        }
+    }
+}
+
 /// An invisible link between two nodes or groups.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Invisible {

@@ -136,7 +136,7 @@ fn arrange(diagram: &Diagram, container: Option<usize>, fit: Fit) -> Arrangement
         Fit::Packed { columns } if vertical => Some(Fold { columns, links_take_room: false }),
         _ => None,
     };
-    let placed = layered::placed(&spans, &joined, gaps(vertical, fit), fold);
+    let placed = layered::placed(&spans, &joined, gaps(vertical, fit, tips(diagram)), fold);
     let length = placed.blocks.iter().zip(&spans).map(|(position, span)| position.along + span.length).max().unwrap_or(0);
     let corner = |position: Position, span: Span| {
         let along = if matches!(flow, Direction::Up | Direction::Left) { length - position.along - span.length } else { position.along };
@@ -205,12 +205,19 @@ fn span(width: i32, height: i32, vertical: bool) -> Span {
 
 /// Room for a bend and an arrow between ranks, and a cell for a bend each side of a label; going down a loose fit
 /// keeps blocks four columns apart and links two, a tight one two and one.
-fn gaps(vertical: bool, fit: Fit) -> Gaps {
-    match (vertical, fit) {
+/// Ranks keep room for the tips of an edge at both ends and a cell between them.
+fn gaps(vertical: bool, fit: Fit, tips: i32) -> Gaps {
+    let gaps = match (vertical, fit) {
         (true, Fit::Loose) => Gaps { rank: 3, around_label: 1, apart: Apart { blocks: 4, links: 2 } },
         (true, _) => Gaps { rank: 3, around_label: 1, apart: Apart { blocks: 2, links: 1 } },
         (false, _) => Gaps { rank: 6, around_label: 2, apart: Apart { blocks: 1, links: 1 } },
-    }
+    };
+    Gaps { rank: gaps.rank.max(tips + 1), ..gaps }
+}
+
+/// The most cells the tips of an edge take at its two ends together.
+fn tips(diagram: &Diagram) -> i32 {
+    diagram.edges.iter().map(|edge| i32::from(edge.start.straight() + edge.end.straight())).max().unwrap_or(0)
 }
 
 /// The room a label takes between two ranks: a row going down; going sideways its columns and one more, so a

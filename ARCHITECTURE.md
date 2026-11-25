@@ -98,6 +98,7 @@ mermaid-rs-renderer's parser, which it replaces, accepts and refuses 908 of them
   An edge left without a path goes first on another try, three times at most.
   Lines cross only at a right angle, never where one turns or ends, and never run on a node's border or along another line they do not share a trunk with; they keep a cell off a node they pass wherever going round costs less.
   The arrow sits on the cell before the target; a line may turn there into `▾` or `▴`, never into `▸` or `◂`.
+  An edge ending on tips (a class relation's head, a crow's foot) runs straight through as many cells next to that end as it has tips, never turning or crossing there, and no later edge crosses them; ranks stand apart by the tips of an edge at both ends and one cell more.
 - Edge labels go across the straight run through the room the layout kept, else the longest that has room, centred, or slid sideways on a vertical run as long as they still cover the line; else beside the run; else the same anywhere along a run, the nearest to its middle first; else nowhere.
   A label slid along a horizontal run keeps a line cell on each side, so it never touches a crossing.
 - Two lines crossing draw `┼` (vt-canvas).
