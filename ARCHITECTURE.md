@@ -151,7 +151,7 @@ vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its 
 ## Test corpus
 
 - [`corpus/`](corpus/README.md): Mermaid inputs harvested from the mermaid repo at a pinned release, one file per case, grouped by diagram kind.
-- [`oracle/`](oracle/README.md): a Node script that records what the pinned `mermaid` accepts (level A) and its flowchart, sequence and state dbs (level B), committed as JSON.
+- [`oracle/`](oracle/README.md): a Node script that records what the pinned `mermaid` accepts (level A) and its flowchart, sequence, state, class and ER dbs (level B), committed as JSON.
 - `examples/agreement.rs`: compares mermaid-rs-renderer's parser with the oracle per kind; a dev-only program, so the library's API never sees the dependency.
   Flowcharts are compared with vt-mermaid's own parser by `parse::agreement` instead.
 - `tests/sequence/diagrams.txt`: sequence diagrams from the corpus and `tests/sequence/checkout.mmd`, each an insta snapshot at 100 columns; every corpus diagram mermaid accepts is drawn within 80 columns but two with eight and ten participants side by side.

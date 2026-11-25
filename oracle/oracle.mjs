@@ -1,5 +1,5 @@
-// Parses every corpus input with mermaid and writes what it accepts (level A) and, for flowchart, sequence and state,
-// the diagram db (level B) to oracle/results/. It only parses: nothing is rendered, fetched or written elsewhere.
+// Parses every corpus input with mermaid and writes what it accepts (level A) and, for flowchart, sequence, state,
+// class and er, the diagram db (level B) to oracle/results/. It only parses: nothing is rendered, fetched or written elsewhere.
 // Usage: node oracle/oracle.mjs <corpus-dir> <results-dir>
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,7 +13,13 @@ if (!corpus || !results) {
   process.exit(2);
 }
 
-const MEANINGS = { flowchart: flowchartMeaning, sequence: sequenceMeaning, state: stateMeaning };
+const MEANINGS = {
+  flowchart: flowchartMeaning,
+  sequence: sequenceMeaning,
+  state: stateMeaning,
+  class: classMeaning,
+  er: erMeaning,
+};
 const parse = {};
 const meanings = Object.fromEntries(Object.keys(MEANINGS).map((kind) => [kind, {}]));
 for (const path of corpusFiles()) {
@@ -97,6 +103,68 @@ function stateMeaning(db) {
       position: position ?? null,
     })),
     edges: edges.map(({ start, end, label, arrowhead }) => ({ start: stable(start), end: stable(end), label: label ?? '', arrowhead })),
+  };
+}
+
+function classMeaning(db) {
+  const member = ({ visibility, id, classifier, parameters, returnType }) => ({
+    visibility,
+    id,
+    classifier,
+    parameters: parameters ?? null,
+    returnType: returnType ?? null,
+  });
+  return {
+    direction: db.getDirection(),
+    classes: [...db.getClasses().values()].map(({ id, type, label, annotations, members, methods, parent }) => ({
+      id,
+      type,
+      label,
+      annotations,
+      members: members.map(member),
+      methods: methods.map(member),
+      parent: parent ?? null,
+    })),
+    namespaces: [...db.getNamespaces().values()].map(({ id, label, parent, classes, notes }) => ({
+      id,
+      label,
+      parent: parent ?? null,
+      classes: [...classes.keys()],
+      notes: [...notes.keys()],
+    })),
+    relations: db.getRelations().map(({ id1, id2, relation, relationTitle1, relationTitle2, title }) => ({
+      id1,
+      id2,
+      type1: relation.type1,
+      type2: relation.type2,
+      lineType: relation.lineType,
+      title1: relationTitle1,
+      title2: relationTitle2,
+      title: title ?? null,
+    })),
+    notes: [...db.getNotes().values()].map(({ id, class: target, text, parent }) => ({ id, class: target ?? null, text, parent: parent ?? null })),
+  };
+}
+
+function erMeaning(db) {
+  return {
+    direction: db.getDirection(),
+    entities: [...db.getEntities().entries()].map(([name, { id, label, alias, attributes }]) => ({
+      name,
+      id,
+      label,
+      alias,
+      attributes: attributes.map(({ type, name, keys, comment }) => ({ type, name, keys, comment })),
+    })),
+    relationships: db.getRelationships().map(({ entityA, roleA, entityB, relSpec }) => ({
+      entityA,
+      roleA,
+      entityB,
+      cardA: relSpec.cardA,
+      cardB: relSpec.cardB,
+      relType: relSpec.relType,
+    })),
+    subgraphs: db.getSubGraphs().map(({ id, title, nodes, dir }) => ({ id, title, nodes, dir: dir ?? null })),
   };
 }
 
