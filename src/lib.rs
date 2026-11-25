@@ -9,6 +9,7 @@
 //! ```
 
 mod class;
+mod er;
 mod error;
 mod flowchart;
 mod graph;
