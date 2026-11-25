@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use mermaid_rs_renderer::{self as mmdr, DiagramKind, EdgeStyle, Graph, LayoutConfig, NodeShape, Theme};
 use vt_canvas::{Direction, LineKind, Shape};
 
+use super::attributes;
 use super::invisible::{self, Link};
 use super::label::Label;
 use super::shape;
@@ -62,11 +63,13 @@ pub(super) struct Edge {
     pub(super) arrow_end: bool,
 }
 
-/// mmdr's graph, and the invisible links it cannot read: they shape the layout and are never drawn.
+/// mmdr's graph, the invisible links it cannot read, which shape the layout and are never drawn, and the shapes
+/// attribute blocks name, which it cannot read either.
 #[derive(Debug, Clone)]
 struct Parsed {
     graph: Graph,
     invisible: Vec<Invisible>,
+    shapes: HashMap<String, Shape>,
 }
 
 #[derive(Debug, Clone)]
@@ -94,8 +97,9 @@ impl Diagram {
 
     fn new(parsed: &Parsed) -> Self {
         let graph = &parsed.graph;
+        let shape = |id: &str, node: &mmdr::Node| parsed.shapes.get(id).copied().unwrap_or_else(|| shape_of(node.shape));
         let labels: HashMap<&str, (Label, Shape)> =
-            graph.nodes.iter().map(|(id, node)| (id.as_str(), (Label::wrapped(&node.label), shape_of(node.shape)))).collect();
+            graph.nodes.iter().map(|(id, node)| (id.as_str(), (Label::wrapped(&node.label), shape(id, node)))).collect();
         let positions = layout(parsed, &labels);
         let nodes = nodes(graph, &labels, &positions);
         let groups = groups(graph, &nodes);
@@ -121,9 +125,10 @@ impl Diagram {
     }
 }
 
-/// Cuts the invisible links out before mmdr reads the source, then finds the nodes each one joins.
+/// Rewrites what mmdr misreads before it reads the source, then finds the nodes each invisible link joins.
 fn parse(source: &str) -> Result<Parsed, Error> {
-    let split = invisible::split(source);
+    let rewritten = attributes::rewrite(source);
+    let split = invisible::split(&rewritten.source);
     let graph = mmdr::parse_mermaid(&split.source).map_err(|error| Error::Invalid { reason: error.to_string() })?.graph;
     check_bounds(&graph, split.links.len())?;
     let invisible = split
@@ -132,7 +137,7 @@ fn parse(source: &str) -> Result<Parsed, Error> {
         .filter_map(ends)
         .filter(|link| graph.nodes.contains_key(&link.from) && graph.nodes.contains_key(&link.to))
         .collect();
-    Ok(Parsed { graph, invisible })
+    Ok(Parsed { graph, invisible, shapes: rewritten.shapes })
 }
 
 /// The last node of the statement before the link and the first node of the one after, as mmdr reads each alone.
@@ -489,6 +494,18 @@ mod tests {
         let source = format!("flowchart LR\n  A --> B\n{}", "  A ~~~ B\n".repeat(MAX_EDGES));
 
         assert!(matches!(parse(&source), Err(Error::TooManyEdges { edges }) if edges == MAX_EDGES + 1));
+    }
+
+    #[test]
+    fn an_attribute_block_gives_its_node_a_shape_and_a_label() {
+        let diagram = Diagram::read("flowchart LR\n  A@{ shape: lean-r, label: \"In\" } --> B@{ shape: dbl-circ }").unwrap();
+
+        assert_eq!(ids(&diagram), ["A", "B"]);
+        assert_eq!(
+            (node(&diagram, "A").shape, node(&diagram, "A").label.lines.as_slice()),
+            (Shape::LeanRight, ["In".to_owned()].as_slice())
+        );
+        assert_eq!(node(&diagram, "B").shape, Shape::DoubleCircle);
     }
 
     #[test]

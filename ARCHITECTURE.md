@@ -40,12 +40,15 @@ This page says how the code is laid out today; when a module or a boundary chang
 | `draw` | Cuts the grid to what was drawn and draws it on a `Canvas` |
 
 `label` cuts text into lines and `shape` sizes and draws a node.
-`invisible` cuts invisible links (`A ~~~ B`) out of the source before mmdr reads it: mmdr 0.3.1 keeps `A` and drops the rest of the statement.
+Two modules rewrite what mmdr 0.3.1 misreads before it reads the source, with `source` reading its syntax outside quotes, brackets and the front matter:
+`attributes` turns a node's block (`A@{ shape: hex, label: "Text" }`), which mmdr reads as a node named `A@`, into its label in brackets and keeps the shape it names, and leaves out an edge's or a group's block with its id;
+`invisible` cuts invisible links (`A ~~~ B`) out, as mmdr keeps `A` and drops the rest of the statement.
 `measure`, built for tests and the `measure` feature only, counts what a drawing does and checks the level C invariants.
 
 - Text: a node's label breaks at `<br>` and wraps at spaces past 30 columns, a longer word is cut with `⋯`; an edge label or a group title is one line of at most 60 columns; quotes around a label are left out.
 - Invisible links: `diagram` finds the nodes each one joins and adds it to mmdr's stand-in graph, so it shapes the layout; it is never routed or drawn.
 - Shapes: vt-canvas draws each outline (`Canvas::shape`), so every glyph follows the glyph set; mmdr's shape maps to the vt-canvas one of the same name, mindmap and text nodes to a rectangle.
+  A shape an attribute block names maps to the closest one, `doc`, `flag` or any name without a close match to a rectangle.
   mmdr reads both `((text))` and `(((text)))` as a double circle; it is drawn as a circle, the one people write.
   A node is its label plus a space and the shape's inset on each side.
 - Snap: one column is 8.192 layout pixels and one row 24, the size of the stand-in `n` and its line; a rank keeps the layout's start along the flow and centres its nodes across it.

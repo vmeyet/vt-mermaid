@@ -1,5 +1,6 @@
 //! Flowcharts: mmdr's layout snapped to the grid, edges routed on it, then drawn.
 
+mod attributes;
 mod diagram;
 mod draw;
 mod edge_label;
@@ -10,6 +11,7 @@ pub(crate) mod measure;
 mod route;
 mod shape;
 mod snap;
+mod source;
 
 use vt_canvas::{Canvas, Rect};
 

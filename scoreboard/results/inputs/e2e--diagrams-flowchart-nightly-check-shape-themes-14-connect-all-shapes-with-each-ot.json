@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 125 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":37,"rows":78,"area":2886,"fits":true,"node_labels":6,"edge_labels":0,"arrows":15,"crossings":11,"bends":24},"score":86,"exact":{"crossings":11,"bends":24,"edge_cells":250,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":37,"rows":78,"area":2886,"fits":true,"node_labels":6,"edge_labels":0,"arrows":15,"crossings":11,"bends":24},"score":86,"exact":{"crossings":11,"bends":24,"edge_cells":250,"violations":[]}}
+      "80": {"status":"refused","reason":"no path joins n11 to n55","score":0},
+      "100": {"status":"refused","reason":"no path joins n11 to n55","score":0}
     }
   }
 }
