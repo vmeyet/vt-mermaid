@@ -1,0 +1,7 @@
+corpus/class/docs--syntax-classDiagram--L16.mmd
+corpus/class/docs--syntax-classDiagram--L55.mmd
+corpus/class/docs--syntax-classDiagram--L226.mmd
+corpus/class/docs--syntax-classDiagram--L295.mmd
+corpus/class/docs--syntax-classDiagram--L421.mmd
+corpus/class/docs--syntax-classDiagram--L596.mmd
+tests/class/library.mmd

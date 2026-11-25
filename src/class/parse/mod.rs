@@ -10,7 +10,9 @@ mod member;
 
 use std::fmt;
 
-pub(super) use db::ClassDiagram;
+pub(super) use db::{Class, ClassDiagram, Relation};
+pub(super) use lexer::{Direction, End};
+pub(super) use member::Member;
 
 use crate::error::{Error, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
 use crate::source;

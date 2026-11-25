@@ -1,0 +1,37 @@
+classDiagram
+  direction TB
+  namespace Catalogue {
+    class Item {
+      <<abstract>>
+      #String title
+      +int year
+      +loanPeriod()* Duration
+    }
+    class Book {
+      +String isbn
+    }
+    class Disc {
+      +int minutes
+    }
+  }
+  class Member {
+    +String name
+    -List~Loan~ loans
+    +borrow(Item item) Loan
+  }
+  class Loan {
+    +Date due
+    +isLate() bool
+  }
+  class Notifier {
+    <<interface>>
+    +notify(Member member)
+  }
+  class Mailer
+  Item <|-- Book
+  Item <|-- Disc
+  Member "1" *-- "0..*" Loan : holds
+  Loan "*" o-- "1" Item : lends
+  Notifier <|.. Mailer
+  Loan ..> Notifier : reminds through
+  note for Loan "due in three weeks"

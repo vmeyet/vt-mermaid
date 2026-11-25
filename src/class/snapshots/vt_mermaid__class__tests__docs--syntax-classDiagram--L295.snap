@@ -1,0 +1,13 @@
+---
+source: src/class/mod.rs
+expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
+---
+ ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐ 
+ │ classA │  │ classC │  │ classE │  │ classG │  │ classI │  │ classK │  │ classM │  │ classO │ 
+ └───┬────┘  └───┬────┘  └───┬────┘  └───┬────┘  └───┬────┘  └───┬────┘  └───┬────┘  └───┬────┘ 
+     │           │           │           │           │           ╎           ╎           ╎      
+Inheritance Composition Aggregation Association Link(Solid) Dependency  Realization Link(Dashed)
+     ▿           ⬥           ⬦           ▾           │           ▾           ▿           ╎      
+ ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌───┴────┐  ┌────────┐  ┌────────┐  ┌───┴────┐ 
+ │ classB │  │ classD │  │ classF │  │ classH │  │ classJ │  │ classL │  │ classN │  │ classP │ 
+ └────────┘  └────────┘  └────────┘  └────────┘  └────────┘  └────────┘  └────────┘  └────────┘

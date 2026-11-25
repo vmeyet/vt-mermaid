@@ -1,0 +1,17 @@
+---
+source: src/class/mod.rs
+expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
+---
+┌────────────────────────────────────────┐
+│             Square<Shape>              │
+├────────────────────────────────────────┤
+│ int id                                 │
+│ List<int> position                     │
+│ -List<string> messages                 │
+├────────────────────────────────────────┤
+│ setPoints(List<int> points)            │
+│ getPoints() : List<int>                │
+│ +setMessages(List<string> messages)    │
+│ +getMessages() : List<string>          │
+│ +getDistanceMatrix() : List<List<int>> │
+└────────────────────────────────────────┘

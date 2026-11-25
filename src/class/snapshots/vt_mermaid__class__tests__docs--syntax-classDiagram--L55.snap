@@ -1,0 +1,30 @@
+---
+source: src/class/mod.rs
+expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
+---
+            ┌───────────────┐               
+            │   Customer    │               
+            ├───────────────┤               
+            │ +String name  │               
+            │ +String email │               
+            └───────┬───────┘               
+                    │ 1                     
+                 places                     
+                    ▾ *                     
+           ┌──────────────────┐             
+           │      Order       │             
+           ├──────────────────┤             
+           │ +String id       │             
+           │ +Date placedAt   │             
+           ├──────────────────┤             
+           │ +total() : Money │             
+           └─────────────────┬┘             
+            ⬥ 1              │              
+        contains        settled by          
+            │ *              ▾              
+┌───────────┴───┐    ┌─────────────────────┐
+│   LineItem    │    │     «interface»     │
+├───────────────┤    │       Payment       │
+│ +int quantity │    ├─────────────────────┤
+└───────────────┘    │ +authorise() : bool │
+                     └─────────────────────┘

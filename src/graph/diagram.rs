@@ -102,7 +102,6 @@ pub(crate) enum Head {
     /// An arrow on the cell next to the node, a flowchart's `-->`.
     Arrow,
     /// Tips on the cells next to the node, the nearest first: a class relation's head, a crow's foot.
-    #[cfg_attr(not(test), expect(dead_code, reason = "class diagrams draw tips once drawn"))]
     Tips(&'static [Tip]),
 }
 

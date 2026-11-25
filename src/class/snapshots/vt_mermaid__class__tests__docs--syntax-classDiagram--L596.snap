@@ -1,0 +1,17 @@
+---
+source: src/class/mod.rs
+expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
+---
+┌────────────────┐                                
+│     IdCard     │                                
+├────────────────┤                                
+│ -id : int      │ 1        1 ┌──────────────────┐
+│ -name : string │⬦──carries──┤     Student      │
+└────────────────┘          1 ├──────────────────┤
+                            ┌─┤ -idCard : IdCard │
+┌────────────────┐          │ └──────────────────┘
+│      Bike      │ 1        │                     
+├────────────────┤⬦──rides──┘                     
+│ -id : int      │                                
+│ -name : string │                                
+└────────────────┘

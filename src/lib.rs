@@ -59,6 +59,7 @@ pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
     match source::Kind::of(source)? {
         source::Kind::Flowchart => flowchart::measure(source, max_width),
         source::Kind::State => state::measure(source, max_width),
+        source::Kind::Class => class::measure(source, max_width),
         source::Kind::Sequence => Err(Error::Unsupported),
     }
 }
@@ -83,5 +84,6 @@ pub fn render_with(source: &str, settings: Settings) -> Result<Canvas, Error> {
         source::Kind::Flowchart => flowchart::render_with(source, settings).map(|drawing| drawing.canvas),
         source::Kind::Sequence => sequence::render_with(source, settings),
         source::Kind::State => state::render_with(source, settings),
+        source::Kind::Class => class::render_with(source, settings).map(|drawing| drawing.canvas),
     }
 }
