@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-wrapped-long-messages-from-control.mmd",
+  "expected": {"node_labels":2,"edge_labels":2,"arrows":2},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":149,"rows":13,"area":1937,"fits":false,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":80},
+      "100": {"status":"rendered","drawn":{"width":149,"rows":13,"area":1937,"fits":false,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":80}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"Alice@{ \\\\\\\"type\\\\\\\" : \\\\\\\"control","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"Alice@{ \\\\\\\"type\\\\\\\" : \\\\\\\"control","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 224 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 224 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":71,"rows":15,"area":1065,"fits":true,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":71,"rows":15,"area":1065,"fits":true,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "input": "sequence/docs--config-math--L28.mmd",
+  "expected": {"node_labels":2,"edge_labels":3,"arrows":2},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":65,"rows":17,"area":1105,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":65,"rows":17,"area":1105,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":56,"rows":14,"area":784,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":56,"rows":14,"area":784,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 82 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"rendered","drawn":{"width":82,"rows":15,"area":1230,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":100}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":64,"rows":17,"area":1088,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":64,"rows":17,"area":1088,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

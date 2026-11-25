@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-pr-check-should-render-mixed-central-connections-with-autonumb.mmd",
+  "expected": {"node_labels":4,"edge_labels":19,"arrows":16},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 15: invalid syntax: \\\"Bob/|-()Alice: Reverse with CENTRAL_CONNEC","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 15: invalid syntax: \\\"Bob/|-()Alice: Reverse with CENTRAL_CONNEC","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Bob/|-()Alice: Reverse with CENTRAL_CONNECTION LTR\"","score":0},
+      "100": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Bob/|-()Alice: Reverse with CENTRAL_CONNECTION LTR\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":77,"rows":71,"area":5467,"fits":true,"node_labels":4,"edge_labels":19,"arrows":16,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":84,"rows":67,"area":5628,"fits":true,"node_labels":4,"edge_labels":19,"arrows":16,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

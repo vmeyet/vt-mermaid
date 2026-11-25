@@ -1,0 +1,22 @@
+{
+  "input": "sequence/docs--syntax-sequenceDiagram--L130.mmd",
+  "expected": {"node_labels":2,"edge_labels":2,"arrows":2},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":31,"rows":13,"area":403,"fits":true,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":31,"rows":13,"area":403,"fits":true,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"Alice@{ \\\\\\\"type\\\\\\\" : \\\\\\\"control","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"Alice@{ \\\\\\\"type\\\\\\\" : \\\\\\\"control","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":74,"rows":11,"area":814,"fits":true,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":74,"rows":11,"area":814,"fits":true,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":27,"rows":13,"area":351,"fits":true,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":27,"rows":13,"area":351,"fits":true,"node_labels":2,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

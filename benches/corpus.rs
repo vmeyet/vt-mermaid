@@ -1,6 +1,7 @@
-//! Times `render` on every flowchart of the corpus and prints the spread: `cargo bench --bench corpus`.
+//! Times `render` on every flowchart and every sequence diagram of the corpus and prints the spread of each kind:
+//! `cargo bench --bench corpus`.
 //!
-//! divan times one input at a time; this sweep answers how long a flowchart takes across real inputs, and which one
+//! divan times one input at a time; this sweep answers how long a diagram takes across real inputs, and which one
 //! takes longest.
 
 use std::fs;
@@ -18,15 +19,17 @@ fn main() -> std::io::Result<()> {
     if !std::env::args().any(|arg| arg == "--bench") {
         return Ok(());
     }
-    let mut timings: Vec<(Duration, PathBuf, &'static str)> =
-        flowcharts()?.into_iter().map(|(path, source)| timed(&source, path)).collect();
-    timings.sort_by_key(|&(elapsed, ..)| elapsed);
-    print_spread(&timings);
+    for (kind, plural) in [("flowchart", "flowcharts"), ("sequence", "sequence diagrams")] {
+        let mut timings: Vec<(Duration, PathBuf, &'static str)> =
+            diagrams(kind)?.into_iter().map(|(path, source)| timed(&source, path)).collect();
+        timings.sort_by_key(|&(elapsed, ..)| elapsed);
+        print_spread(&timings, plural);
+    }
     Ok(())
 }
 
-fn flowcharts() -> std::io::Result<Vec<(PathBuf, String)>> {
-    let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("corpus/flowchart");
+fn diagrams(kind: &str) -> std::io::Result<Vec<(PathBuf, String)>> {
+    let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("corpus").join(kind);
     let mut paths: Vec<PathBuf> = fs::read_dir(folder)?.map(|entry| entry.map(|entry| entry.path())).collect::<Result<_, _>>()?;
     paths.sort();
     paths.into_iter().map(|path| fs::read_to_string(&path).map(|source| (path, source))).collect()
@@ -46,15 +49,20 @@ fn once(source: &str) -> (Duration, &'static str) {
         Ok(_) => "drawn",
         Err(vt_mermaid::Error::TooWide { .. }) => "too wide",
         Err(vt_mermaid::Error::TooLong { .. } | vt_mermaid::Error::TooLarge { .. }) => "over a size limit",
-        Err(vt_mermaid::Error::TooManyNodes { .. } | vt_mermaid::Error::TooManyEdges { .. }) => "over a count limit",
+        Err(
+            vt_mermaid::Error::TooManyNodes { .. }
+            | vt_mermaid::Error::TooManyEdges { .. }
+            | vt_mermaid::Error::TooManyParticipants { .. }
+            | vt_mermaid::Error::TooManyMessages { .. },
+        ) => "over a count limit",
         Err(_) => "refused",
     };
     (elapsed, outcome)
 }
 
-fn print_spread(timings: &[(Duration, PathBuf, &str)]) {
+fn print_spread(timings: &[(Duration, PathBuf, &str)], plural: &str) {
     let at = |percent: usize| timings[(timings.len() - 1) * percent / 100].0;
-    println!("{} flowcharts at {WIDTH} columns", timings.len());
+    println!("{} {plural} at {WIDTH} columns", timings.len());
     println!("median {:?}, p95 {:?}, p99 {:?}", at(50), at(95), at(99));
     println!("slowest:");
     for (elapsed, path, outcome) in timings.iter().rev().take(5) {

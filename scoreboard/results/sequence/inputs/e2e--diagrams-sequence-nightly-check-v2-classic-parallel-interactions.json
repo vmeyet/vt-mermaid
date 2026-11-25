@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-v2-classic-parallel-interactions.mmd",
+  "expected": {"node_labels":4,"edge_labels":2,"arrows":2},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":28,"rows":16,"area":448,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":0},"score":76},
+      "100": {"status":"rendered","drawn":{"width":28,"rows":16,"area":448,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":0},"score":76}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"participant0@{ \\\\\\\"type\\\\\\\" : \\\\\\\"","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"participant0@{ \\\\\\\"type\\\\\\\" : \\\\\\\"","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 243 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 243 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":56,"rows":23,"area":1288,"fits":true,"node_labels":4,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":56,"rows":23,"area":1288,"fits":true,"node_labels":4,"edge_labels":2,"arrows":2,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

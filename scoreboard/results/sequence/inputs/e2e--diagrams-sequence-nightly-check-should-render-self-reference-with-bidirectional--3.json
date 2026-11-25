@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-self-reference-with-bidirectional--3.mmd",
+  "expected": {"node_labels":3,"edge_labels":4,"arrows":8},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":60,"rows":24,"area":1440,"fits":true,"node_labels":3,"edge_labels":4,"arrows":4,"crossings":0,"bends":8},"score":93},
+      "100": {"status":"rendered","drawn":{"width":60,"rows":24,"area":1440,"fits":true,"node_labels":3,"edge_labels":4,"arrows":4,"crossings":0,"bends":8},"score":93}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 129 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 129 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":76,"rows":27,"area":2052,"fits":true,"node_labels":3,"edge_labels":4,"arrows":8,"crossings":0,"bends":8},"score":100},
+      "100": {"status":"rendered","drawn":{"width":89,"rows":25,"area":2225,"fits":true,"node_labels":3,"edge_labels":4,"arrows":8,"crossings":0,"bends":8},"score":100}
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-central-connection-reverse-reverse-2.mmd",
+  "expected": {"node_labels":3,"edge_labels":8,"arrows":8},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 6: invalid syntax: \\\"Alice()/|-Bob: Circle at source with solid ","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 6: invalid syntax: \\\"Alice()/|-Bob: Circle at source with solid ","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Alice()/|-Bob: Circle at source with solid top reverse (RTL)\"","score":0},
+      "100": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Alice()/|-Bob: Circle at source with solid top reverse (RTL)\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":73,"rows":37,"area":2701,"fits":true,"node_labels":3,"edge_labels":8,"arrows":8,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":83,"rows":31,"area":2573,"fits":true,"node_labels":3,"edge_labels":8,"arrows":8,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

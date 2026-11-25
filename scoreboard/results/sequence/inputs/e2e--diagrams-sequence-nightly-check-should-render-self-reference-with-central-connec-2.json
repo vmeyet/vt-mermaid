@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-self-reference-with-central-connec-2.mmd",
+  "expected": {"node_labels":3,"edge_labels":5,"arrows":3},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":69,"rows":29,"area":2001,"fits":true,"node_labels":3,"edge_labels":5,"arrows":2,"crossings":0,"bends":10},"score":95},
+      "100": {"status":"rendered","drawn":{"width":69,"rows":29,"area":2001,"fits":true,"node_labels":3,"edge_labels":5,"arrows":2,"crossings":0,"bends":10},"score":95}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Alice()--x()Alice: Circles at both ends with cross arrow\"","score":0},
+      "100": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Alice()--x()Alice: Circles at both ends with cross arrow\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":74,"rows":32,"area":2368,"fits":true,"node_labels":3,"edge_labels":5,"arrows":3,"crossings":0,"bends":10},"score":100},
+      "100": {"status":"rendered","drawn":{"width":89,"rows":32,"area":2848,"fits":true,"node_labels":3,"edge_labels":5,"arrows":3,"crossings":0,"bends":10},"score":100}
+    }
+  }
+}

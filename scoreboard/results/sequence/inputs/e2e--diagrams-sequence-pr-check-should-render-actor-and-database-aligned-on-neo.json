@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-pr-check-should-render-actor-and-database-aligned-on-neo.mmd",
+  "expected": {"node_labels":3,"edge_labels":6,"arrows":4},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":34,"rows":31,"area":1054,"fits":true,"node_labels":2,"edge_labels":5,"arrows":4,"crossings":0,"bends":0},"score":89},
+      "100": {"status":"rendered","drawn":{"width":34,"rows":31,"area":1054,"fits":true,"node_labels":2,"edge_labels":5,"arrows":4,"crossings":0,"bends":0},"score":89}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 4: invalid participant name \\\"DB@{ \\\\\\\"type\\\\\\\" : \\\\\\\"database\\\\","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 4: invalid participant name \\\"DB@{ \\\\\\\"type\\\\\\\" : \\\\\\\"database\\\\","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":60,"rows":31,"area":1860,"fits":true,"node_labels":3,"edge_labels":6,"arrows":4,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":60,"rows":31,"area":1860,"fits":true,"node_labels":3,"edge_labels":6,"arrows":4,"crossings":0,"bends":0},"score":100}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":43,"rows":37,"area":1591,"fits":true,"node_labels":3,"edge_labels":6,"arrows":4,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":43,"rows":37,"area":1591,"fits":true,"node_labels":3,"edge_labels":6,"arrows":4,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

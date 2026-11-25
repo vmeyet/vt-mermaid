@@ -1,4 +1,4 @@
-//! What each flowchart means, from the oracle's level B results: the labels a drawing must show and its arrowheads.
+//! What each diagram means, from the oracle's level B results: the labels a drawing must show and its arrowheads.
 
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -7,7 +7,46 @@ use std::path::Path;
 
 use serde::Deserialize;
 
+/// The diagram kinds on the board.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Kind {
+    Flowchart,
+    Sequence,
+}
+
+impl Kind {
+    /// Its folder under `corpus/` and its oracle file's name.
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Self::Flowchart => "flowchart",
+            Self::Sequence => "sequence",
+        }
+    }
+
+    /// What one input is called on the board.
+    pub(crate) fn noun(self) -> &'static str {
+        match self {
+            Self::Flowchart => "flowchart",
+            Self::Sequence => "sequence diagram",
+        }
+    }
+
+    pub(crate) fn named(name: &str) -> Option<Self> {
+        [Self::Flowchart, Self::Sequence].into_iter().find(|kind| kind.name() == name)
+    }
+
+    /// Its folder under `scoreboard/results/`: flowcharts were there first, at the top.
+    pub(crate) fn results(self) -> &'static str {
+        match self {
+            Self::Flowchart => "",
+            Self::Sequence => "sequence",
+        }
+    }
+}
+
 /// The labels a drawing of one input must show, each as the words it is made of, and how many arrowheads it has.
+///
+/// A sequence diagram's participants count as nodes, its messages and notes as edges.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Expected {
     pub(crate) node_labels: Vec<Vec<String>>,
@@ -16,8 +55,8 @@ pub(crate) struct Expected {
 }
 
 #[derive(Debug, Deserialize)]
-struct Results {
-    cases: BTreeMap<String, Case>,
+struct Results<C> {
+    cases: BTreeMap<String, C>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -38,13 +77,51 @@ struct Edge {
     kind: String,
 }
 
-/// Every flowchart the oracle accepted, by its path under `corpus/`.
-pub(crate) fn read(results: &Path) -> Result<BTreeMap<String, Expected>, Box<dyn Error>> {
-    let results: Results = serde_json::from_str(&fs::read_to_string(results)?)?;
-    Ok(results.cases.into_iter().map(|(path, case)| (path, Expected::of(&case))).collect())
+#[derive(Debug, Deserialize)]
+struct Sequence {
+    actors: Vec<Actor>,
+    messages: Vec<Message>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Actor {
+    description: String,
+}
+
+/// An entry of mermaid's `messages`: a message, a note, a block's start or end, an activation…
+#[derive(Debug, Deserialize)]
+struct Message {
+    message: serde_json::Value,
+    #[serde(rename = "type")]
+    kind: String,
+}
+
+/// Every diagram of `kind` the oracle accepted, by its path under `corpus/`.
+pub(crate) fn read(results: &Path, kind: Kind) -> Result<BTreeMap<String, Expected>, Box<dyn Error>> {
+    let json = fs::read_to_string(results)?;
+    Ok(match kind {
+        Kind::Flowchart => {
+            serde_json::from_str::<Results<Case>>(&json)?.cases.into_iter().map(|(path, case)| (path, Expected::of(&case))).collect()
+        }
+        Kind::Sequence => serde_json::from_str::<Results<Sequence>>(&json)?
+            .cases
+            .into_iter()
+            .map(|(path, case)| (path, Expected::of_sequence(&case)))
+            .collect(),
+    })
 }
 
 impl Expected {
+    /// Messages and notes are what happens: a block's text is left out, as tools draw blocks their own way.
+    fn of_sequence(case: &Sequence) -> Self {
+        let said = case.messages.iter().filter(|message| message.kind == "NOTE" || sequence_arrowheads(&message.kind).is_some());
+        Self {
+            node_labels: case.actors.iter().map(|actor| words(&actor.description)).filter(|words| !words.is_empty()).collect(),
+            edge_labels: said.filter_map(|message| message.message.as_str()).map(words).filter(|words| !words.is_empty()).collect(),
+            arrows: case.messages.iter().filter_map(|message| sequence_arrowheads(&message.kind)).sum(),
+        }
+    }
+
     fn of(case: &Case) -> Self {
         Self {
             node_labels: case.nodes.iter().map(|node| words(&node.text)).filter(|words| !words.is_empty()).collect(),
@@ -59,6 +136,17 @@ fn arrowheads(kind: &str) -> usize {
         "arrow_point" => 1,
         "double_arrow_point" => 2,
         _ => 0,
+    }
+}
+
+/// The arrowheads a message draws, none for an entry that is not a message: an open (`->`) or a crossed (`-x`) end
+/// has none, a two-way message two.
+fn sequence_arrowheads(kind: &str) -> Option<usize> {
+    match kind {
+        "SOLID_OPEN" | "DOTTED_OPEN" | "SOLID_CROSS" | "DOTTED_CROSS" => Some(0),
+        "BIDIRECTIONAL_SOLID" | "BIDIRECTIONAL_DOTTED" => Some(2),
+        _ if kind.starts_with("SOLID") || kind.starts_with("DOTTED") || kind.starts_with("STICK") => Some(1),
+        _ => None,
     }
 }
 
@@ -119,6 +207,17 @@ mod tests {
     #[test]
     fn an_angle_bracket_opening_no_tag_is_text() {
         assert_eq!(without_markup("5 > 3 && 2 < 4"), "5 > 3 && 2 < 4");
+    }
+
+    #[test]
+    fn a_two_way_message_has_two_heads_an_open_or_crossed_one_none_and_a_block_is_no_message() {
+        let heads: Vec<Option<usize>> =
+            ["BIDIRECTIONAL_DOTTED", "SOLID", "STICK_ARROW_TOP_REVERSE", "DOTTED_OPEN", "SOLID_CROSS", "LOOP_START", "NOTE"]
+                .iter()
+                .map(|kind| sequence_arrowheads(kind))
+                .collect();
+
+        assert_eq!(heads, [Some(2), Some(1), Some(1), Some(0), Some(0), None, None]);
     }
 
     #[test]

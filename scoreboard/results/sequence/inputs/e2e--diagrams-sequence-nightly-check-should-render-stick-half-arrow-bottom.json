@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-stick-half-arrow-bottom.mmd",
+  "expected": {"node_labels":2,"edge_labels":3,"arrows":3},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"","score":0},
+      "100": {"status":"refused","reason":"","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid syntax: \\\"Alice-//John: Hello John, how are you?\\\"\"","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid syntax: \\\"Alice-//John: Hello John, how are you?\\\"\"","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Alice-//John: Hello John, how are you?\"","score":0},
+      "100": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Alice-//John: Hello John, how are you?\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":37,"rows":16,"area":592,"fits":true,"node_labels":2,"edge_labels":3,"arrows":3,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":37,"rows":16,"area":592,"fits":true,"node_labels":2,"edge_labels":3,"arrows":3,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

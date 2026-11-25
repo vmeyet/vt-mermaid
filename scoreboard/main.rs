@@ -1,7 +1,8 @@
-//! vt-mermaid's flowcharts measured against other text renderers: `cargo run --release --example scoreboard`.
+//! vt-mermaid's drawings measured against other text renderers: `cargo run --release --example scoreboard`.
 //!
-//! Options: `--sample <n>` runs one input in n, `--tools <a,b>` runs only those tools and keeps the others' last results,
-//! `--gallery <file.html>` writes the gallery there instead of `target/scoreboard/gallery.html`.
+//! Options: `--kind sequence` measures sequence diagrams instead of flowcharts, `--sample <n>` runs one input in n,
+//! `--tools <a,b>` runs only those tools and keeps the others' last results, `--gallery <file.html>` writes the gallery
+//! there instead of `target/scoreboard/gallery.html` (`gallery-sequence.html` for sequence diagrams).
 //! [`README.md`](README.md) defines the metrics; `install.sh` installs the competitors.
 
 mod expected;
@@ -19,7 +20,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 
-use expected::Expected;
+use expected::{Expected, Kind};
 use metrics::{Exact, Metrics};
 use results::{Counts, InputResult, Times};
 use tool::{Run, Status, Tool};
@@ -28,9 +29,10 @@ const WIDTHS: [u16; 2] = [80, 100];
 
 #[derive(Debug)]
 struct Options {
+    kind: Kind,
     sample: Option<usize>,
     tools: Vec<Tool>,
-    gallery: PathBuf,
+    gallery: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -65,11 +67,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn scoreboard(options: &Options) -> Result<(), Box<dyn Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let inputs = inputs(&root.join("corpus/flowchart"), options.sample)?;
-    let expected = expected::read(&root.join("oracle/results/flowchart.json"))?;
+    let kind = options.kind;
+    let inputs = inputs(&root.join("corpus").join(kind.name()), kind, options.sample)?;
+    let expected = expected::read(&root.join(format!("oracle/results/{}.json", kind.name())), kind)?;
     let tools = installed(&options.tools);
-    let done = run_all(&inputs, &tools)?;
-    let folder = root.join("scoreboard/results/inputs");
+    let done = run_all(&inputs, &tools, kind)?;
+    let results_folder = root.join("scoreboard/results").join(kind.results());
+    let folder = results_folder.join("inputs");
     fs::create_dir_all(&folder)?;
     let results = inputs
         .iter()
@@ -82,16 +86,17 @@ fn scoreboard(options: &Options) -> Result<(), Box<dyn Error>> {
     for result in &results {
         result.write(&folder)?;
     }
-    let summary = results::summary(&results, &WIDTHS, &times(&done), options.sample);
-    fs::write(root.join("scoreboard/results/summary.md"), &summary)?;
-    write_gallery(&options.gallery, &inputs, &results, &done)?;
-    println!("{summary}\ngallery: {}", options.gallery.display());
+    let summary = results::summary(&results, &WIDTHS, &times(&done), kind, options.sample);
+    fs::write(results_folder.join("summary.md"), &summary)?;
+    let gallery = options.gallery.clone().unwrap_or_else(|| default_gallery(kind));
+    write_gallery(&gallery, &inputs, &results, &done)?;
+    println!("{summary}\ngallery: {}", gallery.display());
     Ok(())
 }
 
 impl Options {
     fn parse(args: &[String]) -> Result<Self, Box<dyn Error>> {
-        let mut options = Self { sample: None, tools: Tool::ALL.to_vec(), gallery: default_gallery() };
+        let mut options = Self { kind: Kind::Flowchart, sample: None, tools: Tool::ALL.to_vec(), gallery: None };
         let mut args = args.iter();
         while let Some(flag) = args.next() {
             let value = args.next().ok_or_else(|| format!("{flag} needs a value"))?;
@@ -103,7 +108,8 @@ impl Options {
                         .map(|name| Tool::named(name).ok_or_else(|| format!("no tool named {name}")))
                         .collect::<Result<_, _>>()?;
                 }
-                "--gallery" => options.gallery = PathBuf::from(value),
+                "--gallery" => options.gallery = Some(PathBuf::from(value)),
+                "--kind" => options.kind = Kind::named(value).ok_or_else(|| format!("no diagram kind named {value}"))?,
                 _ => return Err(format!("unknown option {flag}").into()),
             }
         }
@@ -111,13 +117,17 @@ impl Options {
     }
 }
 
-fn default_gallery() -> PathBuf {
+fn default_gallery(kind: Kind) -> PathBuf {
     let target = std::env::var_os("CARGO_TARGET_DIR").map_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("target"), PathBuf::from);
-    target.join("scoreboard/gallery.html")
+    let name = match kind {
+        Kind::Flowchart => "gallery.html".to_owned(),
+        Kind::Sequence => format!("gallery-{}.html", kind.name()),
+    };
+    target.join("scoreboard").join(name)
 }
 
-/// The flowcharts of the corpus in name order, or one in `sample` of them.
-fn inputs(folder: &Path, sample: Option<usize>) -> io::Result<Vec<Input>> {
+/// The diagrams of one kind in the corpus in name order, or one in `sample` of them.
+fn inputs(folder: &Path, kind: Kind, sample: Option<usize>) -> io::Result<Vec<Input>> {
     let mut paths: Vec<PathBuf> = fs::read_dir(folder)?.map(|entry| entry.map(|entry| entry.path())).collect::<io::Result<_>>()?;
     paths.sort();
     paths
@@ -125,7 +135,7 @@ fn inputs(folder: &Path, sample: Option<usize>) -> io::Result<Vec<Input>> {
         .step_by(sample.unwrap_or(1))
         .map(|path| {
             let name = path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
-            Ok(Input { source: fs::read_to_string(&path)?, path: format!("flowchart/{name}") })
+            Ok(Input { source: fs::read_to_string(&path)?, path: format!("{}/{name}", kind.name()) })
         })
         .collect()
 }
@@ -139,7 +149,7 @@ fn installed(tools: &[Tool]) -> Vec<Tool> {
 }
 
 /// Runs every job on all cores; each worker takes the next job until none is left.
-fn run_all(inputs: &[Input], tools: &[Tool]) -> io::Result<Vec<Done>> {
+fn run_all(inputs: &[Input], tools: &[Tool], kind: Kind) -> io::Result<Vec<Done>> {
     let jobs: Vec<Job> = (0..inputs.len())
         .flat_map(|input| WIDTHS.into_iter().flat_map(move |width| tools.iter().map(move |&tool| Job { input, tool, width })))
         .collect();
@@ -148,7 +158,7 @@ fn run_all(inputs: &[Input], tools: &[Tool]) -> io::Result<Vec<Done>> {
     let worker = || -> io::Result<Vec<Done>> {
         let mut done = Vec::new();
         while let Some(&job) = jobs.get(next.fetch_add(1, Ordering::Relaxed)) {
-            done.push(run(job, &inputs[job.input])?);
+            done.push(run(job, &inputs[job.input], kind)?);
             if done.len() % 200 == 0 {
                 eprintln!("{} of {} runs started", next.load(Ordering::Relaxed).min(jobs.len()), jobs.len());
             }
@@ -165,9 +175,11 @@ fn run_all(inputs: &[Input], tools: &[Tool]) -> io::Result<Vec<Done>> {
     .map(|done| done.into_iter().flatten().collect())
 }
 
-fn run(job: Job, input: &Input) -> io::Result<Done> {
+/// vt-mermaid measures its flowcharts exactly; a sequence diagram has only the counts read from its text.
+fn run(job: Job, input: &Input, kind: Kind) -> io::Result<Done> {
     let run = job.tool.run(&input.source, job.width)?;
-    let exact = if job.tool == Tool::VtMermaid && run.status == Status::Rendered { exact(&input.source, job.width)? } else { None };
+    let measured = job.tool == Tool::VtMermaid && kind == Kind::Flowchart && run.status == Status::Rendered;
+    let exact = if measured { exact(&input.source, job.width)? } else { None };
     Ok(Done { job, run, exact })
 }
 

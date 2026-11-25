@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-mixed-participants-and-actors-with.mmd",
+  "expected": {"node_labels":6,"edge_labels":10,"arrows":10},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":103,"rows":37,"area":3811,"fits":false,"node_labels":0,"edge_labels":10,"arrows":10,"crossings":0,"bends":0},"score":61},
+      "100": {"status":"rendered","drawn":{"width":103,"rows":37,"area":3811,"fits":false,"node_labels":0,"edge_labels":10,"arrows":10,"crossings":0,"bends":0},"score":61}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"Client@{ \\\\\\\"type\\\\\\\" : \\\\\\\"actor\\","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"Client@{ \\\\\\\"type\\\\\\\" : \\\\\\\"actor\\","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 260 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 260 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":78,"rows":52,"area":4056,"fits":true,"node_labels":6,"edge_labels":10,"arrows":10,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":85,"rows":48,"area":4080,"fits":true,"node_labels":6,"edge_labels":10,"arrows":10,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

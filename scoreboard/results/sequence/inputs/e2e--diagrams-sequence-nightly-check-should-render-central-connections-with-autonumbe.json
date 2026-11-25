@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-central-connections-with-autonumbe.mmd",
+  "expected": {"node_labels":3,"edge_labels":6,"arrows":7},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":48,"rows":22,"area":1056,"fits":true,"node_labels":3,"edge_labels":6,"arrows":7,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":48,"rows":22,"area":1056,"fits":true,"node_labels":3,"edge_labels":6,"arrows":7,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 196 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 196 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":74,"rows":26,"area":1924,"fits":true,"node_labels":3,"edge_labels":6,"arrows":7,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":81,"rows":25,"area":2025,"fits":true,"node_labels":3,"edge_labels":6,"arrows":7,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

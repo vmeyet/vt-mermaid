@@ -1,6 +1,6 @@
 # Scoreboard
 
-vt-mermaid's flowcharts measured against the other text renderers of Mermaid, on every flowchart of the [corpus](../corpus/README.md).
+vt-mermaid's flowcharts and sequence diagrams measured against the other text renderers of Mermaid, on every diagram of those kinds in the [corpus](../corpus/README.md).
 A PR that changes the drawing reruns it and commits the results, so the diff says whether it got better or worse, and against whom.
 
 ## Run
@@ -9,7 +9,10 @@ A PR that changes the drawing reruns it and commits the results, so the diff say
 scoreboard/install.sh                                     # once: the competitors, outside the repo
 cargo run --release --example scoreboard                  # every flowchart, every tool, about 4 minutes
 cargo run --release --example scoreboard -- --tools vt-mermaid --gallery /tmp/gallery.html
+cargo run --release --example scoreboard -- --kind sequence  # every sequence diagram, about 20 seconds
 ```
+
+- `--kind sequence` measures sequence diagrams; their results go to `results/sequence/`, the gallery to `target/scoreboard/gallery-sequence.html`.
 
 - `--tools <a,b>` runs only those tools; the others keep their last results, read back from `results/inputs/`.
 - `--sample <n>` runs one flowchart in n, for a quick look; the summary says it is a sample.
@@ -37,6 +40,8 @@ cargo run --release --example scoreboard -- --tools vt-mermaid --gallery /tmp/ga
 
 Every metric but the exact ones is read from the tool's text output, the same way for every tool, at 80 and 100 columns.
 Meaning comes from the oracle's level B results ([`oracle/results/flowchart.json`](../oracle/results/flowchart.json)); 925 of the 946 flowcharts have one, the others mermaid itself rejects.
+For a sequence diagram ([`oracle/results/sequence.json`](../oracle/results/sequence.json), 386 of 394), the participants are the node labels, the messages and notes the edge labels, and the arrowheads one per message, two for a two-way one, none for an open (`->`) or crossed (`-x`) end; a block's text is left out, as each tool draws blocks its own way.
+vt-mermaid has no exact measures of a sequence diagram: its rows are read from the text like every other tool's.
 
 | Metric | Definition | Proxy? |
 |---|---|---|
@@ -84,7 +89,7 @@ Set beside the glyph counts in the same table, they also show how far the proxie
 
 ## Results
 
-- [`results/summary.md`](results/summary.md): the tables.
+- [`results/summary.md`](results/summary.md): the tables; [`results/sequence/summary.md`](results/sequence/summary.md) for sequence diagrams.
 - `results/inputs/<input>.json`: per input, the oracle's counts and each tool's metrics per width, one line each; times are left out, so a rerun on the same code changes nothing but mermaid-text's unstable inputs.
 - The gallery is not committed: about 15 MB, past what belongs in git.
   It shows per input the source, then each tool's drawing side by side with its metrics, sortable by how far vt-mermaid's score is below the best competitor's.

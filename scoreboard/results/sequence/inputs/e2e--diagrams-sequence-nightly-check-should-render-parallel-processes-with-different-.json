@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-parallel-processes-with-different-.mmd",
+  "expected": {"node_labels":7,"edge_labels":10,"arrows":10},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":133,"rows":43,"area":5719,"fits":false,"node_labels":7,"edge_labels":10,"arrows":10,"crossings":0,"bends":0},"score":80},
+      "100": {"status":"rendered","drawn":{"width":133,"rows":43,"area":5719,"fits":false,"node_labels":7,"edge_labels":10,"arrows":10,"crossings":0,"bends":0},"score":80}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"Customer@{ \\\\\\\"type\\\\\\\": \\\\\\\"actor","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"Customer@{ \\\\\\\"type\\\\\\\": \\\\\\\"actor","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 469 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 469 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":77,"rows":63,"area":4851,"fits":true,"node_labels":1,"edge_labels":5,"arrows":10,"crossings":0,"bends":0},"score":68},
+      "100": {"status":"rendered","drawn":{"width":98,"rows":56,"area":5488,"fits":true,"node_labels":4,"edge_labels":8,"arrows":10,"crossings":0,"bends":0},"score":85}
+    }
+  }
+}

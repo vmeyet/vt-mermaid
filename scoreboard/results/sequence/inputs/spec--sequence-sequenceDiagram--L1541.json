@@ -1,0 +1,22 @@
+{
+  "input": "sequence/spec--sequence-sequenceDiagram--L1541.mmd",
+  "expected": {"node_labels":2,"edge_labels":3,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":39,"rows":19,"area":741,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":85},
+      "100": {"status":"rendered","drawn":{"width":39,"rows":19,"area":741,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":85}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":43,"rows":14,"area":602,"fits":true,"node_labels":2,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":43,"rows":14,"area":602,"fits":true,"node_labels":2,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: `else` continuation keyword outside any block","score":0},
+      "100": {"status":"refused","reason":"parse error: `else` continuation keyword outside any block","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":34,"rows":22,"area":748,"fits":true,"node_labels":2,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":34,"rows":22,"area":748,"fits":true,"node_labels":2,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

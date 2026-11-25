@@ -1,0 +1,21 @@
+{
+  "input": "sequence/spec--sequence-sequenceDiagram--L2632.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":16,"rows":11,"area":176,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":2}},
+      "100": {"status":"rendered","drawn":{"width":16,"rows":11,"area":176,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":2}}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"E@{ \\\\\\\"type\\\\\\\": \\\\\\\"entity\\\\\\\"\\\""},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"E@{ \\\\\\\"type\\\\\\\": \\\\\\\"entity\\\\\\\"\\\""}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":44,"rows":11,"area":484,"fits":true,"node_labels":0,"edge_labels":0,"arrows":2,"crossings":0,"bends":2}},
+      "100": {"status":"rendered","drawn":{"width":44,"rows":11,"area":484,"fits":true,"node_labels":0,"edge_labels":0,"arrows":2,"crossings":0,"bends":2}}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram does not parse: unexpected end of text on line 5"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unexpected end of text on line 5"}
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "input": "sequence/spec--utils--L264.mmd",
+  "expected": {"node_labels":2,"edge_labels":1,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"init: {\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"init: {\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'init: {'. Supported types: 'graph' or 'flowchart","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'init: {'. Supported types: 'graph' or 'flowchart","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"unsupported diagram type: 'init:'","score":0},
+      "100": {"status":"refused","reason":"unsupported diagram type: 'init:'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":19,"rows":10,"area":190,"fits":true,"node_labels":2,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":19,"rows":10,"area":190,"fits":true,"node_labels":2,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

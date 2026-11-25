@@ -1,0 +1,22 @@
+{
+  "input": "sequence/spec--sequence-sequenceDiagram--L2192.mmd",
+  "expected": {"node_labels":2,"edge_labels":3,"arrows":2},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":145,"rows":14,"area":2030,"fits":false,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":80},
+      "100": {"status":"rendered","drawn":{"width":145,"rows":14,"area":2030,"fits":false,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":80}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 150 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 150 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":70,"rows":19,"area":1330,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":81,"rows":19,"area":1539,"fits":true,"node_labels":2,"edge_labels":3,"arrows":2,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

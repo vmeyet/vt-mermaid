@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--platform-dev-diagrams-diagrams-sequence-fixes-04-rect-section-background.mmd",
+  "expected": {"node_labels":3,"edge_labels":6,"arrows":6},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":94,"rows":41,"area":3854,"fits":false,"node_labels":2,"edge_labels":6,"arrows":6,"crossings":0,"bends":2},"score":74},
+      "100": {"status":"rendered","drawn":{"width":94,"rows":41,"area":3854,"fits":true,"node_labels":2,"edge_labels":6,"arrows":6,"crossings":0,"bends":2},"score":94}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 4: invalid participant name \\\"DB@{ \\\\\\\"type\\\\\\\" : \\\\\\\"database\\\\","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 4: invalid participant name \\\"DB@{ \\\\\\\"type\\\\\\\" : \\\\\\\"database\\\\","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 120 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 120 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":73,"rows":46,"area":3358,"fits":true,"node_labels":3,"edge_labels":6,"arrows":6,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":88,"rows":43,"area":3784,"fits":true,"node_labels":3,"edge_labels":6,"arrows":6,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-central-connections-mixed-with-nor.mmd",
+  "expected": {"node_labels":3,"edge_labels":5,"arrows":5},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":57,"rows":16,"area":912,"fits":true,"node_labels":3,"edge_labels":3,"arrows":3,"crossings":0,"bends":0},"score":82},
+      "100": {"status":"rendered","drawn":{"width":57,"rows":16,"area":912,"fits":true,"node_labels":3,"edge_labels":3,"arrows":3,"crossings":0,"bends":0},"score":82}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":39,"rows":19,"area":741,"fits":true,"node_labels":3,"edge_labels":5,"arrows":5,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":39,"rows":19,"area":741,"fits":true,"node_labels":3,"edge_labels":5,"arrows":5,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Bob -x Charlie: Normal cross message\"","score":0},
+      "100": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"Bob -x Charlie: Normal cross message\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":59,"rows":22,"area":1298,"fits":true,"node_labels":3,"edge_labels":5,"arrows":5,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":59,"rows":22,"area":1298,"fits":true,"node_labels":3,"edge_labels":5,"arrows":5,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

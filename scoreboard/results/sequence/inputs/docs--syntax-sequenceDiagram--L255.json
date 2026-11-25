@@ -1,0 +1,22 @@
+{
+  "input": "sequence/docs--syntax-sequenceDiagram--L255.mmd",
+  "expected": {"node_labels":4,"edge_labels":6,"arrows":5},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":61,"rows":25,"area":1525,"fits":true,"node_labels":3,"edge_labels":6,"arrows":6,"crossings":0,"bends":0},"score":92},
+      "100": {"status":"rendered","drawn":{"width":61,"rows":25,"area":1525,"fits":true,"node_labels":3,"edge_labels":6,"arrows":6,"crossings":0,"bends":0},"score":92}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":49,"rows":22,"area":1078,"fits":true,"node_labels":4,"edge_labels":6,"arrows":5,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":49,"rows":22,"area":1078,"fits":true,"node_labels":4,"edge_labels":6,"arrows":5,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"create participant Carl\"","score":0},
+      "100": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"create participant Carl\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":56,"rows":31,"area":1736,"fits":true,"node_labels":4,"edge_labels":6,"arrows":5,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":56,"rows":31,"area":1736,"fits":true,"node_labels":4,"edge_labels":6,"arrows":5,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

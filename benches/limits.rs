@@ -1,7 +1,8 @@
-//! How long `render` takes on a typical flowchart and on inputs built at each limit: `cargo bench --bench limits`.
+//! How long `render` takes on a typical flowchart and sequence diagram and on inputs built at each limit:
+//! `cargo bench --bench limits`.
 
 use divan::black_box;
-use vt_mermaid::{Canvas, Error, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
+use vt_mermaid::{Canvas, Error, MAX_EDGES, MAX_MESSAGES, MAX_NODES, MAX_PARTICIPANTS, MAX_SOURCE_BYTES};
 
 /// The widest canvas vt-canvas draws, so no input here is refused for its width.
 const WIDTH: u16 = 1_000;
@@ -62,6 +63,44 @@ fn long_links_at_the_limit() -> Result<Canvas, Error> {
     let chain: String = (1..100).map(|index| format!("  n{} --> n{index}\n", index - 1)).collect();
     let long: String = "  n0 --> n99\n".repeat(MAX_EDGES - 99);
     render(&format!("flowchart TD\n{chain}{long}"))
+}
+
+#[divan::bench]
+fn checkout() -> Result<Canvas, Error> {
+    render(include_str!("../tests/sequence/checkout.mmd"))
+}
+
+/// Both sequence limits: every participant, and every message going from the first to the last, labelled.
+#[divan::bench(sample_count = 3, sample_size = 1)]
+fn sequence_at_the_limits() -> Result<Canvas, Error> {
+    render(&across(MAX_MESSAGES))
+}
+
+/// The same at 80 columns: no placement fits, so every one of them is tried before the drawing is refused.
+#[divan::bench(sample_count = 3, sample_size = 1)]
+fn sequence_too_wide_at_the_limits() -> Result<Canvas, Error> {
+    vt_mermaid::render(black_box(&across(MAX_MESSAGES)), 80)
+}
+
+/// Blocks nested as deep as the message limit allows, around one message.
+#[divan::bench(sample_count = 3, sample_size = 1)]
+fn sequence_nested_at_the_limit() -> Result<Canvas, Error> {
+    let depth = (MAX_MESSAGES - 1) / 2;
+    render(&format!("sequenceDiagram\n{}  A->>B: deep\n{}", "  loop again\n".repeat(depth), "  end\n".repeat(depth)))
+}
+
+/// 64 KiB of messages: the parser reads it all, then the db refuses it at the message limit.
+#[divan::bench(sample_count = 10)]
+fn sequence_source_at_the_limit() -> Result<Canvas, Error> {
+    let source = format!("sequenceDiagram\n{}", "  Alice->>Bob: hello there\n".repeat(3_000));
+    render(&source.chars().take(MAX_SOURCE_BYTES).collect::<String>())
+}
+
+fn across(messages: usize) -> String {
+    let participants: String = (0..MAX_PARTICIPANTS).map(|index| format!("  participant p{index} as Participant {index}\n")).collect();
+    let last = MAX_PARTICIPANTS - 1;
+    let body: String = (0..messages).map(|index| format!("  p0->>p{last}: message {index} crossing every lifeline\n")).collect();
+    format!("sequenceDiagram\n{participants}{body}")
 }
 
 fn at_the_length_limit(body: &str) -> String {

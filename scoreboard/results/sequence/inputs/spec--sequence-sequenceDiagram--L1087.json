@@ -1,0 +1,22 @@
+{
+  "input": "sequence/spec--sequence-sequenceDiagram--L1087.mmd",
+  "expected": {"node_labels":4,"edge_labels":8,"arrows":4},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":85,"rows":39,"area":3315,"fits":false,"node_labels":4,"edge_labels":8,"arrows":4,"crossings":0,"bends":0},"score":80},
+      "100": {"status":"rendered","drawn":{"width":85,"rows":39,"area":3315,"fits":true,"node_labels":4,"edge_labels":8,"arrows":4,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":52,"rows":32,"area":1664,"fits":true,"node_labels":4,"edge_labels":8,"arrows":4,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":52,"rows":32,"area":1664,"fits":true,"node_labels":4,"edge_labels":8,"arrows":4,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 104 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 104 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":69,"rows":43,"area":2967,"fits":true,"node_labels":4,"edge_labels":8,"arrows":4,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":82,"rows":39,"area":3198,"fits":true,"node_labels":4,"edge_labels":8,"arrows":4,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

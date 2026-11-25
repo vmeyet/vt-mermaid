@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-pr-check-should-render-stereotypes-with-aliases-in-boxes.mmd",
+  "expected": {"node_labels":6,"edge_labels":11,"arrows":11},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":85,"rows":52,"area":4420,"fits":false,"node_labels":0,"edge_labels":11,"arrows":11,"crossings":0,"bends":4},"score":62},
+      "100": {"status":"rendered","drawn":{"width":85,"rows":52,"area":4420,"fits":true,"node_labels":0,"edge_labels":11,"arrows":11,"crossings":0,"bends":4},"score":82}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 3: invalid participant name \\\"User@{ \\\\\\\"type\\\\\\\" : \\\\\\\"actor\\\\\\","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 3: invalid participant name \\\"User@{ \\\\\\\"type\\\\\\\" : \\\\\\\"actor\\\\\\","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 223 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 223 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":76,"rows":54,"area":4104,"fits":true,"node_labels":6,"edge_labels":11,"arrows":11,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":97,"rows":50,"area":4850,"fits":true,"node_labels":6,"edge_labels":11,"arrows":11,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

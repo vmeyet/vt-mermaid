@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-handle-different-line-breaks.mmd",
+  "expected": {"node_labels":4,"edge_labels":8,"arrows":4},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":106,"rows":45,"area":4770,"fits":false,"node_labels":0,"edge_labels":0,"arrows":4,"crossings":0,"bends":0},"score":30},
+      "100": {"status":"rendered","drawn":{"width":106,"rows":45,"area":4770,"fits":false,"node_labels":0,"edge_labels":0,"arrows":4,"crossings":0,"bends":0},"score":30}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":172,"rows":32,"area":5504,"fits":false,"node_labels":0,"edge_labels":0,"arrows":4,"crossings":0,"bends":8},"score":30},
+      "100": {"status":"rendered","drawn":{"width":172,"rows":32,"area":5504,"fits":false,"node_labels":0,"edge_labels":0,"arrows":4,"crossings":0,"bends":8},"score":30}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 239 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 239 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":69,"rows":45,"area":3105,"fits":true,"node_labels":0,"edge_labels":0,"arrows":4,"crossings":0,"bends":0},"score":50},
+      "100": {"status":"rendered","drawn":{"width":69,"rows":45,"area":3105,"fits":true,"node_labels":0,"edge_labels":0,"arrows":4,"crossings":0,"bends":0},"score":50}
+    }
+  }
+}

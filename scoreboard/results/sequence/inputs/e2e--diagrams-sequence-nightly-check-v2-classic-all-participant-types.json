@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-v2-classic-all-participant-types.mmd",
+  "expected": {"node_labels":8,"edge_labels":7,"arrows":7},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":102,"rows":25,"area":2550,"fits":false,"node_labels":7,"edge_labels":6,"arrows":6,"crossings":0,"bends":0},"score":71},
+      "100": {"status":"rendered","drawn":{"width":102,"rows":25,"area":2550,"fits":false,"node_labels":7,"edge_labels":6,"arrows":6,"crossings":0,"bends":0},"score":71}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"participant0@{ \\\\\\\"type\\\\\\\" : \\\\\\\"","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid participant name \\\"participant0@{ \\\\\\\"type\\\\\\\" : \\\\\\\"","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 506 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 506 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the drawing needs 83 columns, more than the 80 allowed","score":0},
+      "100": {"status":"rendered","drawn":{"width":94,"rows":39,"area":3666,"fits":true,"node_labels":4,"edge_labels":7,"arrows":7,"crossings":0,"bends":0},"score":87}
+    }
+  }
+}

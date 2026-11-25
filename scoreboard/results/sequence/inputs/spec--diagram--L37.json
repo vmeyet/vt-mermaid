@@ -1,0 +1,22 @@
+{
+  "input": "sequence/spec--diagram--L37.mmd",
+  "expected": {"node_labels":2,"edge_labels":1,"arrows":1},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram; Alice->>+John: Hello John, how are you?\". Expected \"graph TD\", \"flowchart LR\",","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"sequenceDiagram; Alice->>+John: Hello John, how are you?\". Expected \"graph TD\", \"flowchart LR\",","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'sequenceDiagram; Alice->>+John: Hello John, how ","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'sequenceDiagram; Alice->>+John: Hello John, how ","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"unsupported diagram type: 'sequencediagram;'","score":0},
+      "100": {"status":"refused","reason":"unsupported diagram type: 'sequencediagram;'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":36,"rows":10,"area":360,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":36,"rows":10,"area":360,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "input": "sequence/e2e--diagrams-sequence-nightly-check-should-render-a-sequence-diagram-with-actor-crea.mmd",
+  "expected": {"node_labels":4,"edge_labels":17,"arrows":7},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":113,"rows":89,"area":10057,"fits":false,"node_labels":3,"edge_labels":17,"arrows":13,"crossings":0,"bends":6},"score":65},
+      "100": {"status":"rendered","drawn":{"width":113,"rows":89,"area":10057,"fits":false,"node_labels":3,"edge_labels":17,"arrows":13,"crossings":0,"bends":6},"score":65}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid syntax: \\\"accTitle: test the accTitle\\\"\"","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse sequence diagram: line 2: invalid syntax: \\\"accTitle: test the accTitle\\\"\"","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"accTitle: test the accTitle\"","score":0},
+      "100": {"status":"refused","reason":"parse error: unrecognised sequence diagram line: \"accTitle: test the accTitle\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":71,"rows":117,"area":8307,"fits":true,"node_labels":4,"edge_labels":17,"arrows":7,"crossings":2,"bends":8},"score":90},
+      "100": {"status":"rendered","drawn":{"width":99,"rows":100,"area":9900,"fits":true,"node_labels":4,"edge_labels":17,"arrows":7,"crossings":2,"bends":8},"score":90}
+    }
+  }
+}
