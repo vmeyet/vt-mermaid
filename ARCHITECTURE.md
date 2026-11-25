@@ -55,7 +55,7 @@ Two modules rewrite what mmdr 0.3.1 misreads before it reads the source, with `s
 `invisible` cuts invisible links (`A ~~~ B`) out, as mmdr keeps `A` and drops the rest of the statement.
 `measure`, built for tests and the `measure` feature only, counts what a drawing does and checks the level C invariants.
 
-- Text: a node's label breaks at `<br>` and wraps at spaces past 30 columns, a longer word is cut after the last of `. / - _ : , = &` in the second half of a line, else at 30 columns; an edge label or a group title is one line of at most 60 columns, cut with `⋯`; quotes around a label are left out.
+- Text: a node's label breaks at `<br>` and wraps at spaces past 30 columns, a longer word is cut after the last of `. / - _ : , = &` in the second half of a line, else at 30 columns; an edge label or a group title is one line of at most 60 columns, cut with `⋯`; quotes around a label are left out, then the backticks of a Markdown string, whose markup is drawn as written.
 - Invisible links: `diagram` finds the nodes each one joins and adds it to mmdr's stand-in graph, so it shapes the layout; it is never routed or drawn.
 - Shapes: vt-canvas draws each outline (`Canvas::shape`), so every glyph follows the glyph set; mmdr's shape maps to the vt-canvas one of the same name, mindmap and text nodes to a rectangle.
   A shape an attribute block names maps to the closest one, `doc`, `flag` or any name without a close match to a rectangle.

@@ -39,10 +39,11 @@ impl Label {
     }
 }
 
-/// The source's lines, quotes around the whole text left out, spaces collapsed.
+/// The source's lines, quotes then a Markdown string's backticks around the whole text left out, spaces collapsed.
 fn explicit_lines(text: &str) -> Vec<String> {
     let text = text.trim();
     let text = text.strip_prefix('"').and_then(|rest| rest.strip_suffix('"')).unwrap_or(text);
+    let text = text.strip_prefix('`').and_then(|rest| rest.strip_suffix('`')).unwrap_or(text);
     let unified = BREAKS.iter().fold(text.to_owned(), |text, line_break| text.replace(line_break, "\n"));
     let lines: Vec<String> = unified.lines().map(|line| line.split_whitespace().collect::<Vec<_>>().join(" ")).collect();
     if lines.is_empty() { vec![String::new()] } else { lines }
@@ -136,6 +137,12 @@ mod tests {
     #[test]
     fn quotes_around_a_label_are_left_out() {
         assert_eq!(Label::single_line("\"PR → develop\"").lines, ["PR → develop"]);
+    }
+
+    #[test]
+    fn the_backticks_around_a_markdown_string_are_left_out() {
+        assert_eq!(Label::wrapped("\"`The dog in **the** hog`\"").lines, ["The dog in **the** hog"]);
+        assert_eq!(Label::single_line("`The dog`").lines, ["The dog"]);
     }
 
     #[test]
