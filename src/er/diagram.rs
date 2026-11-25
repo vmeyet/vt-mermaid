@@ -18,8 +18,7 @@ pub(super) fn read(source: &str) -> Result<Diagram, Error> {
 }
 
 /// An entity named like a subgraph is that subgraph, as mermaid draws it; a subgraph or an entity belongs to the
-/// first subgraph listing it, and of subgraphs holding each other, as a repeated id makes them, the first is held by
-/// none.
+/// first subgraph listing it.
 fn graph(diagram: &ErDiagram) -> Diagram {
     let flow = direction(diagram.direction);
     let group_index: HashMap<&str, usize> =
@@ -31,16 +30,33 @@ fn graph(diagram: &ErDiagram) -> Diagram {
         .rev()
         .flat_map(|(index, subgraph)| subgraph.nodes.iter().map(move |node| (node.as_str(), index)))
         .collect();
-    let parents = without_cycles(
-        diagram
-            .subgraphs
-            .iter()
-            .enumerate()
-            .map(|(index, subgraph)| holder.get(subgraph.id.as_str()).copied().filter(|&parent| parent != index))
-            .collect(),
-    );
+    let groups = groups(diagram, &holder, flow);
+    let nodes: Vec<Node> = diagram
+        .entities
+        .iter()
+        .filter(|entity| !group_index.contains_key(entity.name.as_str()))
+        .enumerate()
+        .map(|(order, entity)| Node { order, ..table(entity, holder.get(entity.name.as_str()).copied()) })
+        .collect();
+    let by_name: HashMap<&str, usize> = nodes.iter().enumerate().map(|(index, node)| (node.id.as_str(), index)).collect();
+    let by_id: HashMap<&str, usize> =
+        diagram.entities.iter().filter_map(|entity| Some((entity.id.as_str(), *by_name.get(entity.name.as_str())?))).collect();
+    let end = |id: &str| by_id.get(id).map(|&node| End::Node(node)).or_else(|| group_index.get(id).map(|&group| End::Group(group)));
+    let edges = diagram
+        .relationships
+        .iter()
+        .filter_map(|relationship| Some(edge(relationship, end(&relationship.from)?, end(&relationship.to)?)))
+        .collect();
+    Diagram { nodes, groups, edges, invisible: Vec::new(), flow, wrap: Wrap::wide(LongWords::Break) }
+}
+
+/// Each subgraph framed with its title, held by the first subgraph listing it; of subgraphs holding each other, as
+/// a repeated id makes them, the first is held by none.
+fn groups(diagram: &ErDiagram, holder: &HashMap<&str, usize>, flow: Direction) -> Vec<Group> {
+    let held_by = |(index, id): (usize, &str)| holder.get(id).copied().filter(|&parent| parent != index);
+    let parents = without_cycles(diagram.subgraphs.iter().enumerate().map(|(index, subgraph)| held_by((index, &subgraph.id))).collect());
     let flows = flows(diagram, &parents, flow);
-    let groups = diagram
+    diagram
         .subgraphs
         .iter()
         .zip(parents.iter().zip(&flows))
@@ -51,26 +67,7 @@ fn graph(diagram: &ErDiagram) -> Diagram {
             flow,
             kind: GroupKind::Framed,
         })
-        .collect();
-    let nodes: Vec<Node> = diagram
-        .entities
-        .iter()
-        .filter(|entity| !group_index.contains_key(entity.name.as_str()))
-        .enumerate()
-        .map(|(order, entity)| Node { order, ..table(entity, holder.get(entity.name.as_str()).copied()) })
-        .collect();
-    let node_index: HashMap<&str, usize> = diagram
-        .entities
-        .iter()
-        .filter_map(|entity| Some((entity.id.as_str(), nodes.iter().position(|node| node.id == entity.name)?)))
-        .collect();
-    let end = |id: &str| node_index.get(id).map(|&node| End::Node(node)).or_else(|| group_index.get(id).map(|&group| End::Group(group)));
-    let edges = diagram
-        .relationships
-        .iter()
-        .filter_map(|relationship| Some(edge(relationship, end(&relationship.from)?, end(&relationship.to)?)))
-        .collect();
-    Diagram { nodes, groups, edges, invisible: Vec::new(), flow, wrap: Wrap::wide(LongWords::Break) }
+        .collect()
 }
 
 /// A subgraph flows its own way, else its parent's.
