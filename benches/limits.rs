@@ -158,6 +158,13 @@ fn er_at_the_limits() -> Result<Canvas, Error> {
     render(&format!("erDiagram\n{entities}{relationships}"))
 }
 
+/// The slowest input fuzzing found among ER diagrams: subgraphs named alike around relationships repeated between
+/// two entities, refused as unroutable once every placement is tried.
+#[divan::bench(sample_count = 1, sample_size = 1)]
+fn er_found_by_fuzzing() -> Result<Canvas, Error> {
+    render(include_str!("inputs/fuzzed-er.mmd"))
+}
+
 /// 64 KiB of attributes in one entity: one table nearly 3000 rows tall.
 #[divan::bench(sample_count = 10)]
 fn er_source_at_the_limit() -> Result<Canvas, Error> {
