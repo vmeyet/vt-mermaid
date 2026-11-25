@@ -5,6 +5,7 @@ mod entity;
 mod lexer;
 mod link;
 mod prepare;
+mod shape_data;
 mod unicode;
 
 use std::fmt;
@@ -15,12 +16,15 @@ use std::fmt;
 pub(super) enum Invalid {
     /// No rule of the lexer reads the text at that line.
     Unrecognized { line: usize },
+    /// A block is not the YAML mermaid reads.
+    ShapeData,
 }
 
 impl fmt::Display for Invalid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Unrecognized { line } => write!(f, "unrecognized text on line {line}"),
+            Self::ShapeData => write!(f, "a node's @{{ }} block is not valid YAML"),
         }
     }
 }
