@@ -1,6 +1,6 @@
 //! vt-mermaid's drawings measured against other text renderers: `cargo run --release --example scoreboard`.
 //!
-//! Options: `--kind sequence` measures sequence diagrams instead of flowcharts, `--sample <n>` runs one input in n,
+//! Options: `--kind sequence` or `--kind state` measures sequence or state diagrams instead of flowcharts, `--sample <n>` runs one input in n,
 //! `--tools <a,b>` runs only those tools and keeps the others' last results, `--gallery <file.html>` writes the gallery
 //! there instead of `target/scoreboard/gallery.html` (`gallery-sequence.html` for sequence diagrams).
 //! [`README.md`](README.md) defines the metrics; `install.sh` installs the competitors.
@@ -121,7 +121,7 @@ fn default_gallery(kind: Kind) -> PathBuf {
     let target = std::env::var_os("CARGO_TARGET_DIR").map_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("target"), PathBuf::from);
     let name = match kind {
         Kind::Flowchart => "gallery.html".to_owned(),
-        Kind::Sequence => format!("gallery-{}.html", kind.name()),
+        Kind::Sequence | Kind::State => format!("gallery-{}.html", kind.name()),
     };
     target.join("scoreboard").join(name)
 }
@@ -175,10 +175,11 @@ fn run_all(inputs: &[Input], tools: &[Tool], kind: Kind) -> io::Result<Vec<Done>
     .map(|done| done.into_iter().flatten().collect())
 }
 
-/// vt-mermaid measures its flowcharts exactly; a sequence diagram has only the counts read from its text.
+/// vt-mermaid measures its flowcharts and state diagrams exactly; a sequence diagram has only the counts read from its
+/// text.
 fn run(job: Job, input: &Input, kind: Kind) -> io::Result<Done> {
     let run = job.tool.run(&input.source, job.width)?;
-    let measured = job.tool == Tool::VtMermaid && kind == Kind::Flowchart && run.status == Status::Rendered;
+    let measured = job.tool == Tool::VtMermaid && kind.measured() && run.status == Status::Rendered;
     let exact = if measured { exact(&input.source, job.width)? } else { None };
     Ok(Done { job, run, exact })
 }

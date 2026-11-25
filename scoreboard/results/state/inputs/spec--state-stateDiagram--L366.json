@@ -1,0 +1,22 @@
+{
+  "input": "state/spec--state-stateDiagram--L366.mmd",
+  "expected": {"node_labels":4,"edge_labels":2,"arrows":4},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":57,"rows":21,"area":1197,"fits":true,"node_labels":3,"edge_labels":2,"arrows":3,"crossings":0,"bends":1},"score":88},
+      "100": {"status":"rendered","drawn":{"width":57,"rows":21,"area":1197,"fits":true,"node_labels":3,"edge_labels":2,"arrows":3,"crossings":0,"bends":1},"score":88}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 93 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 103 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":65,"rows":21,"area":1365,"fits":true,"node_labels":4,"edge_labels":2,"arrows":4,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":23,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":65,"rows":21,"area":1365,"fits":true,"node_labels":4,"edge_labels":2,"arrows":4,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":23,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

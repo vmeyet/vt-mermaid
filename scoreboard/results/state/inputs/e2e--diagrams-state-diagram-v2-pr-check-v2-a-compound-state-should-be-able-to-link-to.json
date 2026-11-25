@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-v2-pr-check-v2-a-compound-state-should-be-able-to-link-to.mmd",
+  "expected": {"node_labels":3,"edge_labels":2,"arrows":2},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":12,"rows":15,"area":180,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":73},
+      "100": {"status":"rendered","drawn":{"width":12,"rows":15,"area":180,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":73}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: line 3: unrecognised statement: 'Idle'","score":0},
+      "100": {"status":"refused","reason":"parse error: line 3: unrecognised statement: 'Idle'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":12,"rows":15,"area":180,"fits":true,"node_labels":3,"edge_labels":2,"arrows":2,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":11,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":12,"rows":15,"area":180,"fits":true,"node_labels":3,"edge_labels":2,"arrows":2,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":11,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

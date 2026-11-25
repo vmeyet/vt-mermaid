@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-v2-nightly-check-concurrent-states-neo-look-redux-dark-th.mmd",
+  "expected": {"node_labels":5,"edge_labels":0,"arrows":7},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":48,"rows":29,"area":1392,"fits":true,"node_labels":5,"edge_labels":0,"arrows":5,"crossings":1,"bends":2},"score":88},
+      "100": {"status":"rendered","drawn":{"width":48,"rows":29,"area":1392,"fits":true,"node_labels":5,"edge_labels":0,"arrows":5,"crossings":1,"bends":2},"score":88}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: line 7: unrecognised statement: '--'","score":0},
+      "100": {"status":"refused","reason":"parse error: line 7: unrecognised statement: '--'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":19,"rows":37,"area":703,"fits":true,"node_labels":5,"edge_labels":0,"arrows":7,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":28,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":19,"rows":37,"area":703,"fits":true,"node_labels":5,"edge_labels":0,"arrows":7,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":28,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

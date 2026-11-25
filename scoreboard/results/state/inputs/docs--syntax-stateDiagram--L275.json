@@ -1,0 +1,22 @@
+{
+  "input": "state/docs--syntax-stateDiagram--L275.mmd",
+  "expected": {"node_labels":7,"edge_labels":6,"arrows":10},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":88,"rows":29,"area":2552,"fits":false,"node_labels":7,"edge_labels":6,"arrows":9,"crossings":0,"bends":7},"score":79},
+      "100": {"status":"rendered","drawn":{"width":88,"rows":29,"area":2552,"fits":true,"node_labels":7,"edge_labels":6,"arrows":9,"crossings":0,"bends":7},"score":99}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: line 8: unrecognised statement: '--'","score":0},
+      "100": {"status":"refused","reason":"parse error: line 8: unrecognised statement: '--'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":44,"rows":53,"area":2332,"fits":true,"node_labels":7,"edge_labels":6,"arrows":10,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":3,"edge_cells":49,"beside_nodes":0,"violations":["edge 3 NumLockOn → NumLockOff label found no room","edge 6 CapsLockOn → CapsLockOff label found no room","edge 9 ScrollLockOn → ScrollLockOff label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":44,"rows":53,"area":2332,"fits":true,"node_labels":7,"edge_labels":6,"arrows":10,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":3,"edge_cells":49,"beside_nodes":0,"violations":["edge 3 NumLockOn → NumLockOff label found no room","edge 6 CapsLockOn → CapsLockOff label found no room","edge 9 ScrollLockOn → ScrollLockOff label found no room"]}}
+    }
+  }
+}

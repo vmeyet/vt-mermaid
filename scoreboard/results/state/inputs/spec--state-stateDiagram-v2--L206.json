@@ -1,0 +1,22 @@
+{
+  "input": "state/spec--state-stateDiagram-v2--L206.mmd",
+  "expected": {"node_labels":7,"edge_labels":5,"arrows":9},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":70,"rows":27,"area":1890,"fits":true,"node_labels":6,"edge_labels":0,"arrows":3,"crossings":2,"bends":7},"score":55},
+      "100": {"status":"rendered","drawn":{"width":70,"rows":27,"area":1890,"fits":true,"node_labels":6,"edge_labels":0,"arrows":3,"crossings":2,"bends":7},"score":55}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 99 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 102 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":62,"rows":45,"area":2790,"fits":true,"node_labels":7,"edge_labels":4,"arrows":9,"crossings":0,"bends":5},"score":96,"exact":{"crossings":0,"bends":5,"edge_cells":77,"beside_nodes":0,"violations":["edge 6 NewValuePreview → NewValueSelection label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":62,"rows":45,"area":2790,"fits":true,"node_labels":7,"edge_labels":4,"arrows":9,"crossings":0,"bends":5},"score":96,"exact":{"crossings":0,"bends":5,"edge_cells":77,"beside_nodes":0,"violations":["edge 6 NewValuePreview → NewValueSelection label found no room"]}}
+    }
+  }
+}

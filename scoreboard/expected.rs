@@ -12,6 +12,7 @@ use serde::Deserialize;
 pub(crate) enum Kind {
     Flowchart,
     Sequence,
+    State,
 }
 
 impl Kind {
@@ -20,6 +21,7 @@ impl Kind {
         match self {
             Self::Flowchart => "flowchart",
             Self::Sequence => "sequence",
+            Self::State => "state",
         }
     }
 
@@ -28,11 +30,12 @@ impl Kind {
         match self {
             Self::Flowchart => "flowchart",
             Self::Sequence => "sequence diagram",
+            Self::State => "state diagram",
         }
     }
 
     pub(crate) fn named(name: &str) -> Option<Self> {
-        [Self::Flowchart, Self::Sequence].into_iter().find(|kind| kind.name() == name)
+        [Self::Flowchart, Self::Sequence, Self::State].into_iter().find(|kind| kind.name() == name)
     }
 
     /// Its folder under `scoreboard/results/`: flowcharts were there first, at the top.
@@ -40,7 +43,13 @@ impl Kind {
         match self {
             Self::Flowchart => "",
             Self::Sequence => "sequence",
+            Self::State => "state",
         }
+    }
+
+    /// Whether vt-mermaid measures its drawings of this kind exactly, from their geometry.
+    pub(crate) fn measured(self) -> bool {
+        matches!(self, Self::Flowchart | Self::State)
     }
 }
 
@@ -96,6 +105,28 @@ struct Message {
     kind: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct State {
+    nodes: Vec<StateNode>,
+    edges: Vec<StateEdge>,
+}
+
+#[derive(Debug, Deserialize)]
+struct StateNode {
+    shape: Option<String>,
+    label: Option<String>,
+    description: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct StateEdge {
+    label: String,
+    arrowhead: String,
+}
+
+/// The shapes of a state diagram that show their label: a dot, a bar, a choice, a region and a note's group do not.
+const LABELLED_SHAPES: [&str; 5] = ["rect", "rectWithTitle", "roundedWithTitle", "note", "-"];
+
 /// Every diagram of `kind` the oracle accepted, by its path under `corpus/`.
 pub(crate) fn read(results: &Path, kind: Kind) -> Result<BTreeMap<String, Expected>, Box<dyn Error>> {
     let json = fs::read_to_string(results)?;
@@ -108,6 +139,9 @@ pub(crate) fn read(results: &Path, kind: Kind) -> Result<BTreeMap<String, Expect
             .into_iter()
             .map(|(path, case)| (path, Expected::of_sequence(&case)))
             .collect(),
+        Kind::State => {
+            serde_json::from_str::<Results<State>>(&json)?.cases.into_iter().map(|(path, case)| (path, Expected::of_state(&case))).collect()
+        }
     })
 }
 
@@ -119,6 +153,18 @@ impl Expected {
             node_labels: case.actors.iter().map(|actor| words(&actor.description)).filter(|words| !words.is_empty()).collect(),
             edge_labels: said.filter_map(|message| message.message.as_str()).map(words).filter(|words| !words.is_empty()).collect(),
             arrows: case.messages.iter().filter_map(|message| sequence_arrowheads(&message.kind)).sum(),
+        }
+    }
+
+    /// A state's label and descriptions, a composite state's title and a note's text are node labels; each transition
+    /// has an arrowhead, a note's link none.
+    fn of_state(case: &State) -> Self {
+        let labelled = case.nodes.iter().filter(|node| LABELLED_SHAPES.contains(&node.shape.as_deref().unwrap_or("-")));
+        let texts = labelled.flat_map(|node| node.label.iter().chain(&node.description));
+        Self {
+            node_labels: texts.map(|text| words(text)).filter(|words| !words.is_empty()).collect(),
+            edge_labels: case.edges.iter().map(|edge| words(&edge.label)).filter(|words| !words.is_empty()).collect(),
+            arrows: case.edges.iter().filter(|edge| edge.arrowhead == "normal").count(),
         }
     }
 
@@ -218,6 +264,20 @@ mod tests {
                 .collect();
 
         assert_eq!(heads, [Some(2), Some(1), Some(1), Some(0), Some(0), None, None]);
+    }
+
+    #[test]
+    fn a_state_shows_its_label_and_descriptions_and_a_start_dot_shows_nothing() {
+        let json = r#"{"nodes": [
+            {"shape": "stateStart", "label": "root_start", "description": []},
+            {"shape": "rectWithTitle", "label": "Idle", "description": ["waits"]},
+            {"shape": "note", "label": "a note", "description": []}
+        ], "edges": [{"label": "go", "arrowhead": "normal"}, {"label": "", "arrowhead": "none"}]}"#;
+
+        let expected = Expected::of_state(&serde_json::from_str(json).unwrap());
+
+        assert_eq!(expected.node_labels, [vec!["Idle"], vec!["waits"], vec!["a", "note"]]);
+        assert_eq!((expected.edge_labels.len(), expected.arrows), (1, 1));
     }
 
     #[test]

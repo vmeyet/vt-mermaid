@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-v2-nightly-check-neutral-theme.mmd",
+  "expected": {"node_labels":12,"edge_labels":6,"arrows":13},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":141,"rows":31,"area":4371,"fits":false,"node_labels":11,"edge_labels":6,"arrows":11,"crossings":4,"bends":7},"score":63},
+      "100": {"status":"rendered","drawn":{"width":141,"rows":31,"area":4371,"fits":false,"node_labels":11,"edge_labels":6,"arrows":11,"crossings":4,"bends":7},"score":63}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: line 12: unrecognised statement: '--'","score":0},
+      "100": {"status":"refused","reason":"parse error: line 12: unrecognised statement: '--'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":69,"rows":71,"area":4899,"fits":true,"node_labels":12,"edge_labels":6,"arrows":13,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":3,"edge_cells":79,"beside_nodes":0,"violations":["edge 3 NumLockOn → NumLockOff label found no room","edge 6 CapsLockOn → CapsLockOff label found no room","edge 9 ScrollLockOn → ScrollLockOff label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":69,"rows":71,"area":4899,"fits":true,"node_labels":12,"edge_labels":6,"arrows":13,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":3,"edge_cells":79,"beside_nodes":0,"violations":["edge 3 NumLockOn → NumLockOff label found no room","edge 6 CapsLockOn → CapsLockOff label found no room","edge 9 ScrollLockOn → ScrollLockOff label found no room"]}}
+    }
+  }
+}

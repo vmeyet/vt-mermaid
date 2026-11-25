@@ -1,4 +1,4 @@
-//! How long `render` takes on a typical flowchart and sequence diagram and on inputs built at each limit:
+//! How long `render` takes on a typical flowchart, sequence diagram and state diagram and on inputs built at each limit:
 //! `cargo bench --bench limits`.
 
 use divan::black_box;
@@ -94,6 +94,34 @@ fn sequence_nested_at_the_limit() -> Result<Canvas, Error> {
 fn sequence_source_at_the_limit() -> Result<Canvas, Error> {
     let source = format!("sequenceDiagram\n{}", "  Alice->>Bob: hello there\n".repeat(3_000));
     render(&source.chars().take(MAX_SOURCE_BYTES).collect::<String>())
+}
+
+#[divan::bench]
+fn player() -> Result<Canvas, Error> {
+    render(include_str!("../tests/state/player.mmd"))
+}
+
+/// Both limits on a state diagram: every node a state, every edge a labelled transition down a tree of them.
+#[divan::bench(sample_count = 3, sample_size = 1)]
+fn state_at_the_limits() -> Result<Canvas, Error> {
+    let states: String = (0..MAX_NODES).map(|index| format!("  s{index} : State {index}\n")).collect();
+    let transitions: String = (1..=MAX_EDGES).map(|index| format!("  s{} --> s{index} : go {index}\n", (index - 1) / 2)).collect();
+    render(&format!("stateDiagram-v2\n{states}{transitions}"))
+}
+
+/// Composite states nested as deep as the node limit allows, around one state: refused as too large to route.
+#[divan::bench(sample_count = 3, sample_size = 1)]
+fn state_nested_at_the_limit() -> Result<Canvas, Error> {
+    let opened: String = (0..MAX_NODES - 1).map(|index| format!("  state c{index} {{\n")).collect();
+    render(&format!("stateDiagram-v2\n{opened}  deep\n{}", "  }\n".repeat(MAX_NODES - 1)))
+}
+
+/// 64 KiB of transitions, whole lines only: the parser reads it all, then the db refuses it at the edge limit.
+#[divan::bench(sample_count = 10)]
+fn state_source_at_the_limit() -> Result<Canvas, Error> {
+    let line = "  Idle --> Busy : start work\n";
+    let header = "stateDiagram-v2\n";
+    render(&format!("{header}{}", line.repeat((MAX_SOURCE_BYTES - header.len()) / line.len())))
 }
 
 fn across(messages: usize) -> String {

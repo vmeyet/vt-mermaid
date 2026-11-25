@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-v2-pr-check-v2-handle-transition-from-one-state-in-a-comp.mmd",
+  "expected": {"node_labels":5,"edge_labels":0,"arrows":3},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":23,"rows":21,"area":483,"fits":true,"node_labels":4,"edge_labels":0,"arrows":2,"crossings":1,"bends":1},"score":78},
+      "100": {"status":"rendered","drawn":{"width":23,"rows":21,"area":483,"fits":true,"node_labels":4,"edge_labels":0,"arrows":2,"crossings":1,"bends":1},"score":78}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: line 7: unrecognised statement: 'sub4'","score":0},
+      "100": {"status":"refused","reason":"parse error: line 7: unrecognised statement: 'sub4'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":13,"rows":23,"area":299,"fits":true,"node_labels":5,"edge_labels":0,"arrows":3,"crossings":2,"bends":4},"score":90,"exact":{"crossings":0,"bends":4,"edge_cells":32,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":13,"rows":23,"area":299,"fits":true,"node_labels":5,"edge_labels":0,"arrows":3,"crossings":2,"bends":4},"score":90,"exact":{"crossings":0,"bends":4,"edge_cells":32,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

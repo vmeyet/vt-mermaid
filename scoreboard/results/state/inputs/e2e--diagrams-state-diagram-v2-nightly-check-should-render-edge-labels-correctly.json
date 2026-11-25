@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-v2-nightly-check-should-render-edge-labels-correctly.mmd",
+  "expected": {"node_labels":16,"edge_labels":14,"arrows":16},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":109,"rows":53,"area":5777,"fits":false,"node_labels":8,"edge_labels":14,"arrows":15,"crossings":1,"bends":12},"score":58},
+      "100": {"status":"rendered","drawn":{"width":109,"rows":53,"area":5777,"fits":false,"node_labels":8,"edge_labels":14,"arrows":15,"crossings":1,"bends":12},"score":58}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: line 4: unrecognised statement: '{'","score":0},
+      "100": {"status":"refused","reason":"parse error: line 4: unrecognised statement: '{'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":79,"rows":61,"area":4819,"fits":true,"node_labels":16,"edge_labels":10,"arrows":14,"crossings":5,"bends":9},"score":79,"exact":{"crossings":4,"bends":14,"edge_cells":246,"beside_nodes":0,"violations":["edge 5 State4_____________ → State2_____________ label found no room","edge 7 State5_____________ → State6_____________ label found no room","edge 8 State6_____________ → State4_____________ label found no room","edge 10 State4_____________ → State7_____________ label found no room","edge 11 State5_____________ → State7_____________ label found no room","edge 12 State6_____________ → State7_____________ label found no room","edge 14 State5_____________ → State8_____________ label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":79,"rows":61,"area":4819,"fits":true,"node_labels":16,"edge_labels":10,"arrows":14,"crossings":5,"bends":9},"score":79,"exact":{"crossings":4,"bends":14,"edge_cells":246,"beside_nodes":0,"violations":["edge 5 State4_____________ → State2_____________ label found no room","edge 7 State5_____________ → State6_____________ label found no room","edge 8 State6_____________ → State4_____________ label found no room","edge 10 State4_____________ → State7_____________ label found no room","edge 11 State5_____________ → State7_____________ label found no room","edge 12 State6_____________ → State7_____________ label found no room","edge 14 State5_____________ → State8_____________ label found no room"]}}
+    }
+  }
+}

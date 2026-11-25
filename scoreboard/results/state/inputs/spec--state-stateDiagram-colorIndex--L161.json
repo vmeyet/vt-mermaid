@@ -1,0 +1,22 @@
+{
+  "input": "state/spec--state-stateDiagram-colorIndex--L161.mmd",
+  "expected": {"node_labels":6,"edge_labels":0,"arrows":4},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":39,"rows":19,"area":741,"fits":true,"node_labels":6,"edge_labels":0,"arrows":4,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":39,"rows":19,"area":741,"fits":true,"node_labels":6,"edge_labels":0,"arrows":4,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: line 4: unrecognised statement: '--'","score":0},
+      "100": {"status":"refused","reason":"parse error: line 4: unrecognised statement: '--'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":27,"rows":21,"area":567,"fits":true,"node_labels":6,"edge_labels":0,"arrows":4,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":16,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":27,"rows":21,"area":567,"fits":true,"node_labels":6,"edge_labels":0,"arrows":4,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":16,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

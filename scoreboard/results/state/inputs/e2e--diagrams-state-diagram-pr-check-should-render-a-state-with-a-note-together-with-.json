@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-pr-check-should-render-a-state-with-a-note-together-with-.mmd",
+  "expected": {"node_labels":4,"edge_labels":1,"arrows":1},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":29,"rows":15,"area":435,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":80},
+      "100": {"status":"rendered","drawn":{"width":29,"rows":15,"area":435,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":80}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":79,"rows":10,"area":790,"fits":true,"node_labels":4,"edge_labels":1,"arrows":2,"crossings":0,"bends":4},"score":85},
+      "100": {"status":"rendered","drawn":{"width":81,"rows":10,"area":810,"fits":true,"node_labels":4,"edge_labels":1,"arrows":2,"crossings":0,"bends":4},"score":85}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":36,"rows":23,"area":828,"fits":true,"node_labels":4,"edge_labels":1,"arrows":1,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":3,"edge_cells":48,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":89,"rows":11,"area":979,"fits":true,"node_labels":4,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":19,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

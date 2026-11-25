@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-v2-pr-check-composite-with-a-loop-starts-on-its-start-sta.mmd",
+  "expected": {"node_labels":4,"edge_labels":0,"arrows":6},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":28,"rows":47,"area":1316,"fits":true,"node_labels":4,"edge_labels":0,"arrows":5,"crossings":1,"bends":4},"score":90},
+      "100": {"status":"rendered","drawn":{"width":28,"rows":47,"area":1316,"fits":true,"node_labels":4,"edge_labels":0,"arrows":5,"crossings":1,"bends":4},"score":90}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":69,"rows":11,"area":759,"fits":true,"node_labels":4,"edge_labels":0,"arrows":6,"crossings":2,"bends":11},"score":90},
+      "100": {"status":"rendered","drawn":{"width":69,"rows":11,"area":759,"fits":true,"node_labels":4,"edge_labels":0,"arrows":6,"crossings":2,"bends":11},"score":90}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":17,"rows":27,"area":459,"fits":true,"node_labels":4,"edge_labels":0,"arrows":6,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":4,"edge_cells":44,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":17,"rows":27,"area":459,"fits":true,"node_labels":4,"edge_labels":0,"arrows":6,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":4,"edge_cells":44,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

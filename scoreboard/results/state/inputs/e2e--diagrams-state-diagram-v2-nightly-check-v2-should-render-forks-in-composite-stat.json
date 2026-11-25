@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-v2-nightly-check-v2-should-render-forks-in-composite-stat.mmd",
+  "expected": {"node_labels":4,"edge_labels":0,"arrows":8},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":33,"rows":57,"area":1881,"fits":true,"node_labels":4,"edge_labels":0,"arrows":7,"crossings":0,"bends":3},"score":98},
+      "100": {"status":"rendered","drawn":{"width":33,"rows":57,"area":1881,"fits":true,"node_labels":4,"edge_labels":0,"arrows":7,"crossings":0,"bends":3},"score":98}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":72,"rows":13,"area":936,"fits":true,"node_labels":4,"edge_labels":0,"arrows":8,"crossings":1,"bends":12},"score":93},
+      "100": {"status":"rendered","drawn":{"width":84,"rows":13,"area":1092,"fits":true,"node_labels":4,"edge_labels":0,"arrows":8,"crossings":1,"bends":12},"score":93}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":28,"rows":33,"area":924,"fits":true,"node_labels":4,"edge_labels":0,"arrows":8,"crossings":0,"bends":8},"score":100,"exact":{"crossings":0,"bends":8,"edge_cells":56,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":28,"rows":33,"area":924,"fits":true,"node_labels":4,"edge_labels":0,"arrows":8,"crossings":0,"bends":8},"score":100,"exact":{"crossings":0,"bends":8,"edge_cells":56,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

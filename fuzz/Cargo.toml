@@ -45,6 +45,13 @@ test = false
 doc = false
 bench = false
 
+[[bin]]
+name = "parse_state"
+path = "fuzz_targets/parse_state.rs"
+test = false
+doc = false
+bench = false
+
 # Overflow and debug checks on vt-mermaid's code.
 [profile.release]
 debug-assertions = true

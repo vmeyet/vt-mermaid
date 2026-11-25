@@ -22,6 +22,23 @@ pub(crate) fn measure(source: &str, max_width: u16) -> Result<graph::measure::Me
     Ok(graph::measure::measures(&written.wrapped(drawing.wrap), &drawing))
 }
 
+/// How much a state diagram holds once read.
+#[cfg(feature = "fuzz")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Counts {
+    /// Nodes mermaid's renderer is handed: states, dots, notes and their groups, regions.
+    pub nodes: usize,
+    /// Transitions and links between a note and its state.
+    pub edges: usize,
+}
+
+/// Reads `source` within the limits `render` draws.
+#[cfg(feature = "fuzz")]
+pub fn read(source: &str) -> Result<Counts, Error> {
+    let state = parse::parse(source, parse::Limits::DRAWN)?;
+    Ok(Counts { nodes: state.nodes.len(), edges: state.edges.len() })
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;

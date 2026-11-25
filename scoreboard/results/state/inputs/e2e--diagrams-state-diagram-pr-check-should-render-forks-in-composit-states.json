@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-pr-check-should-render-forks-in-composit-states.mmd",
+  "expected": {"node_labels":6,"edge_labels":0,"arrows":8},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":33,"rows":57,"area":1881,"fits":true,"node_labels":6,"edge_labels":0,"arrows":7,"crossings":0,"bends":3},"score":98},
+      "100": {"status":"rendered","drawn":{"width":33,"rows":57,"area":1881,"fits":true,"node_labels":6,"edge_labels":0,"arrows":7,"crossings":0,"bends":3},"score":98}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 86 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"rendered","drawn":{"width":94,"rows":13,"area":1222,"fits":true,"node_labels":6,"edge_labels":0,"arrows":8,"crossings":1,"bends":12},"score":93}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":28,"rows":37,"area":1036,"fits":true,"node_labels":6,"edge_labels":0,"arrows":8,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":32,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":28,"rows":37,"area":1036,"fits":true,"node_labels":6,"edge_labels":0,"arrows":8,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":32,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

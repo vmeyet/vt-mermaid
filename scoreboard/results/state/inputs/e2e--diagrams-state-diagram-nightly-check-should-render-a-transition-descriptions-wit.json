@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-nightly-check-should-render-a-transition-descriptions-wit.mmd",
+  "expected": {"node_labels":4,"edge_labels":3,"arrows":4},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":78,"rows":23,"area":1794,"fits":true,"node_labels":4,"edge_labels":2,"arrows":4,"crossings":1,"bends":3},"score":85},
+      "100": {"status":"rendered","drawn":{"width":78,"rows":23,"area":1794,"fits":true,"node_labels":4,"edge_labels":2,"arrows":4,"crossings":1,"bends":3},"score":85}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram'. Supported types: 'graph' or 'flow","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":58,"rows":15,"area":870,"fits":true,"node_labels":4,"edge_labels":3,"arrows":4,"crossings":0,"bends":6},"score":100},
+      "100": {"status":"rendered","drawn":{"width":58,"rows":15,"area":870,"fits":true,"node_labels":4,"edge_labels":3,"arrows":4,"crossings":0,"bends":6},"score":100}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":42,"rows":25,"area":1050,"fits":true,"node_labels":4,"edge_labels":3,"arrows":4,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":5,"edge_cells":43,"beside_nodes":0,"violations":["edge 1 S1 → S2 label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":87,"rows":13,"area":1131,"fits":true,"node_labels":4,"edge_labels":3,"arrows":4,"crossings":0,"bends":4},"score":100,"exact":{"crossings":0,"bends":4,"edge_cells":73,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "input": "state/e2e--diagrams-state-diagram-v2-nightly-check-redux-dark-color-theme.mmd",
+  "expected": {"node_labels":5,"edge_labels":5,"arrows":9},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":53,"rows":39,"area":2067,"fits":true,"node_labels":5,"edge_labels":2,"arrows":5,"crossings":2,"bends":3},"score":68},
+      "100": {"status":"rendered","drawn":{"width":53,"rows":39,"area":2067,"fits":true,"node_labels":5,"edge_labels":2,"arrows":5,"crossings":2,"bends":3},"score":68}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 106 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 108 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":18,"rows":41,"area":738,"fits":true,"node_labels":5,"edge_labels":5,"arrows":9,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":3,"edge_cells":71,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":18,"rows":41,"area":738,"fits":true,"node_labels":5,"edge_labels":5,"arrows":9,"crossings":0,"bends":3},"score":100,"exact":{"crossings":0,"bends":3,"edge_cells":71,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}
