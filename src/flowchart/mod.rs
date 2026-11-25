@@ -133,14 +133,20 @@ mod tests {
     /// Found by fuzzing: each one failed an assertion mmdr only checks in debug builds.
     #[test]
     fn layouts_mmdr_grades_as_flawed_are_still_drawn() {
-        let sources = [
-            "graph T\nsubgraph \"1.fir\na\n end\nsubgraph 2. second\nd",
-            "h-/\nA B;subgraph ol styl a brokken;cc",
-        ];
+        let sources = ["graph T\nsubgraph \"1.fir\na\n end\nsubgraph 2. second\nd", "h-/\nA B;subgraph ol styl a brokken;cc"];
 
         for source in sources {
             assert!(render(source, WIDTH).is_ok(), "{source:?}");
         }
+    }
+
+    /// Found by fuzzing: each subgraph holds the other, so neither was placed.
+    #[test]
+    fn subgraphs_sharing_a_name_are_both_drawn() {
+        let drawing = render("flowchart\nsubgraph Si\nsubgraph Si\nSi", WIDTH).unwrap();
+
+        assert_eq!(drawing.groups.len(), 2);
+        assert!(drawing.groups.iter().all(|group| group.width > 0 && group.height > 0), "{:?}", drawing.groups);
     }
 
     #[test]

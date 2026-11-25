@@ -305,9 +305,11 @@ fn groups(graph: &Graph, nodes: &[Node]) -> Vec<Group> {
             && members[inner].is_subset(&members[outer])
             && (members[inner].len() < members[outer].len() || graph.subgraphs[outer].nodes.contains(&ids[inner]))
     };
-    let parents: Vec<Option<usize>> = (0..graph.subgraphs.len())
-        .map(|inner| (0..graph.subgraphs.len()).filter(|&outer| holds(outer, inner)).min_by_key(|&outer| (members[outer].len(), outer)))
-        .collect();
+    let parents = without_cycles(
+        (0..graph.subgraphs.len())
+            .map(|inner| (0..graph.subgraphs.len()).filter(|&outer| holds(outer, inner)).min_by_key(|&outer| (members[outer].len(), outer)))
+            .collect(),
+    );
     let flows = flows(graph, &parents);
     graph
         .subgraphs
@@ -316,6 +318,19 @@ fn groups(graph: &Graph, nodes: &[Node]) -> Vec<Group> {
         .enumerate()
         .map(|(index, (subgraph, id))| Group { id, title: Label::single_line(&subgraph.label), parent: parents[index], flow: flows[index] })
         .collect()
+}
+
+/// Two subgraphs sharing a name can each hold the other; a group in a cycle would never be placed, so the first of
+/// each cycle loses its parent.
+fn without_cycles(parents: Vec<Option<usize>>) -> Vec<Option<usize>> {
+    let mut parents = parents;
+    for start in 0..parents.len() {
+        let in_cycle = std::iter::successors(parents[start], |&index| parents[index]).take(parents.len()).any(|index| index == start);
+        if in_cycle {
+            parents[start] = None;
+        }
+    }
+    parents
 }
 
 fn flows(graph: &Graph, parents: &[Option<usize>]) -> Vec<Direction> {
