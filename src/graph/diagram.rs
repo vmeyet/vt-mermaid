@@ -183,3 +183,15 @@ impl Node {
         if self.figure.shows_label() { Label::wrapped_as(&self.text, wrap) } else { Label::default() }
     }
 }
+
+/// Each group's parent, none for a group whose parents lead back to it, as repeated ids can make them.
+pub(crate) fn without_cycles(parents: Vec<Option<usize>>) -> Vec<Option<usize>> {
+    let mut parents = parents;
+    for start in 0..parents.len() {
+        let in_cycle = std::iter::successors(parents[start], |&index| parents[index]).take(parents.len()).any(|index| index == start);
+        if in_cycle {
+            parents[start] = None;
+        }
+    }
+    parents
+}

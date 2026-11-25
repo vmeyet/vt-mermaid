@@ -8,7 +8,7 @@ use vt_canvas::{Direction, LineKind, Marker, Shape};
 
 use super::parse::{self, Limits, Shape as Kind};
 use crate::error::Error;
-use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Invisible, Node};
+use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Invisible, Node, without_cycles};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
 use crate::source::entity;
@@ -51,7 +51,7 @@ fn graph(state: &parse::Diagram) -> Diagram {
     }
     let index: HashMap<&str, Becomes> = state.nodes.iter().map(|node| node.id.as_str()).zip(becomes.iter().copied()).collect();
     let mut bare: HashMap<&str, usize> = HashMap::new();
-    for &id in notes.keys() {
+    for id in state.nodes.iter().map(|node| node.id.as_str()).filter(|id| notes.contains_key(id)) {
         bare.insert(id, groups.len());
         groups.push(Group {
             id: format!("{id} notes"),
@@ -83,6 +83,8 @@ fn graph(state: &parse::Diagram) -> Diagram {
             groups[held].parent = parent;
         }
     }
+    let parents = without_cycles(groups.iter().map(|group| group.parent).collect());
+    let groups: Vec<Group> = groups.into_iter().zip(parents).map(|(group, parent)| Group { parent, ..group }).collect();
     let end = |id: &str| match index.get(id)? {
         Becomes::Node(node) => Some(End::Node(*node)),
         Becomes::Group(group) => Some(End::Group(*group)),
@@ -233,6 +235,16 @@ mod tests {
             diagram.invisible,
             [Invisible { from: End::Group(1), to: End::Group(2) }, Invisible { from: End::Group(2), to: End::Group(3) }]
         );
+    }
+
+    /// Found by trying: a composite state named again inside itself was its own parent, and never placed.
+    #[test]
+    fn a_composite_state_holding_itself_is_drawn() {
+        for source in
+            ["stateDiagram-v2\nstate A {\n  state A {\n    B\n  }\n}\n", "stateDiagram-v2\nstate A {\n  B\n}\nstate B {\n  A\n}\n"]
+        {
+            assert!(crate::render(source, 80).is_ok(), "{source:?}");
+        }
     }
 
     #[test]

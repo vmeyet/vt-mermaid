@@ -7,7 +7,7 @@ use vt_canvas::{Direction, LineKind};
 use super::parse::{self, Arrow, Flowchart, Limits, Stroke};
 use super::shape;
 use crate::error::Error;
-use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Invisible, Node};
+use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Invisible, Node, without_cycles};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
 
@@ -72,17 +72,6 @@ fn groups(subgraphs: &[&parse::Subgraph], flow: Direction) -> Vec<Group> {
             kind: GroupKind::Framed,
         })
         .collect()
-}
-
-fn without_cycles(parents: Vec<Option<usize>>) -> Vec<Option<usize>> {
-    let mut parents = parents;
-    for start in 0..parents.len() {
-        let in_cycle = std::iter::successors(parents[start], |&index| parents[index]).take(parents.len()).any(|index| index == start);
-        if in_cycle {
-            parents[start] = None;
-        }
-    }
-    parents
 }
 
 /// The deepest group listing the node: mermaid lists a node in one subgraph, but a repeated id can list it twice.
