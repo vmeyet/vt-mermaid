@@ -1,3 +1,5 @@
+//! Text cut into the lines it is drawn on: where the source breaks it, then wrapped at spaces.
+
 use vt_canvas::width;
 
 /// Widest line of a wrapped label: longer text wraps at spaces, a longer word goes on as many lines as it takes.
@@ -10,26 +12,32 @@ const BREAKS: [&str; 4] = ["<br>", "<br/>", "<br />", "\n"];
 
 /// Text drawn in a node or on an edge, already cut into the lines it is drawn on.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) struct Label {
-    pub(super) lines: Vec<String>,
+pub(crate) struct Label {
+    pub(crate) lines: Vec<String>,
     /// Columns of the widest line, at most the label kind's limit.
-    pub(super) width: u16,
+    pub(crate) width: u16,
 }
 
 impl Label {
     /// Lines break where the source asks (`<br>`), wrap at spaces past [`MAX_WRAPPED_COLUMNS`] and inside a word
     /// longer than that.
-    pub(super) fn wrapped(text: &str) -> Self {
-        let lines: Vec<String> = explicit_lines(text).iter().flat_map(|line| wrap(line, MAX_WRAPPED_COLUMNS)).collect();
-        Self::new(lines, MAX_WRAPPED_COLUMNS)
+    pub(crate) fn wrapped(text: &str) -> Self {
+        Self::wrapped_to(text, MAX_WRAPPED_COLUMNS)
+    }
+
+    /// Lines break where the source asks, wrap at spaces past `max_width` columns and inside a word longer than that.
+    pub(crate) fn wrapped_to(text: &str, max_width: usize) -> Self {
+        let max_width = max_width.max(1);
+        let lines: Vec<String> = explicit_lines(text).iter().flat_map(|line| wrap(line, max_width)).collect();
+        Self::new(lines, max_width)
     }
 
     /// One line: the source's line breaks become spaces.
-    pub(super) fn single_line(text: &str) -> Self {
+    pub(crate) fn single_line(text: &str) -> Self {
         Self::new(vec![explicit_lines(text).join(" ")], MAX_LINE_COLUMNS)
     }
 
-    pub(super) fn height(&self) -> u16 {
+    pub(crate) fn height(&self) -> u16 {
         u16::try_from(self.lines.len()).unwrap_or(u16::MAX)
     }
 
@@ -117,6 +125,11 @@ mod tests {
         let word = format!("a.{}", "n".repeat(40));
 
         assert_eq!(Label::wrapped(&word).lines, [format!("a.{}", "n".repeat(28)), "n".repeat(12)]);
+    }
+
+    #[test]
+    fn a_label_wraps_to_the_width_asked() {
+        assert_eq!(Label::wrapped_to("one two three", 7).lines, ["one two", "three"]);
     }
 
     #[test]

@@ -1,6 +1,6 @@
 use vt_canvas::{Canvas, Point, Rect, Role, Shape};
 
-use super::label::Label;
+use crate::label::Label;
 
 /// Mermaid's shape names, from brackets or a block, each drawn as the closest vt-canvas shape; any other name is a
 /// rectangle.

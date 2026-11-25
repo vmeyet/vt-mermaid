@@ -4,10 +4,10 @@ use std::collections::HashSet;
 
 use vt_canvas::{Direction, LineKind, Shape};
 
-use super::label::Label;
 use super::parse::{self, Arrow, Flowchart, Limits, Stroke};
 use super::shape;
 use crate::error::Error;
+use crate::label::Label;
 
 /// A flowchart as the parser reads it, its text already cut into lines.
 #[derive(Debug, Clone)]

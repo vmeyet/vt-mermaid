@@ -10,6 +10,7 @@
 
 mod error;
 mod flowchart;
+mod label;
 mod sequence;
 mod source;
 

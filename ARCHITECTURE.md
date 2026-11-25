@@ -55,12 +55,12 @@ This page says how the code is laid out today; when a module or a boundary chang
 | `edge_label` | Where each edge's label goes |
 | `draw` | Cuts the grid to what was drawn and draws it on a `Canvas` |
 
-`label` cuts text into lines and `shape` sizes and draws a node.
+`shape` sizes and draws a node; the crate's `label`, shared with sequence diagrams, cuts text into lines.
 `parse` is mermaid's own flowchart parser rewritten by hand, so a flowchart means here what it means to mermaid, in four steps:
 `prepare` does to the text what mermaid does before its lexer: the steps every kind shares, from `source` (line ends, the front matter, `%%{…}%%` directives, comment lines, entities marked), then the space after a `}`;
 `lexer` applies the rules of `flow.jison` in their order, the first that matches winning, each start condition a state on a stack;
 `grammar` reads the tokens top-down, accepting what mermaid's LALR parser accepts and calling the db in the order its actions do;
-`db` does what `flowDb.ts` does with each statement: a node is created the first time it is named, `@{ … }` blocks (`shape_data`) set its shape and label, a link (`link`) becomes edges between every node on either side, a subgraph keeps only the nodes no earlier subgraph holds, a repeated id merges, an unknown shape or a `linkStyle` past the last edge is refused.
+`db` does what `flowDb.ts` does with each statement: a node is created the first time it is named, `@{ … }` blocks set its shape and label, a link (`link`) becomes edges between every node on either side, a subgraph keeps only the nodes no earlier subgraph holds, a repeated id merges, an unknown shape or a `linkStyle` past the last edge is refused.
 Every pattern runs in one pass over the text: no regex, no backtracking on the source.
 `parse::agreement`, a test, compares it with the oracle on every corpus flowchart: it accepts and refuses the 946 as mermaid does (level A), and reads the 925 mermaid accepts into the same nodes, edges, labels and subgraphs (level B).
 mermaid-rs-renderer's parser, which it replaces, accepts and refuses 908 of them as mermaid does, and reads the same nodes, edges and labels in 814 even through the pre-parse shim it needed.
