@@ -31,8 +31,10 @@ This page says how the code is laid out today; when a module or a boundary chang
 - The limits bound the layout before it runs: at most 200 blocks on 200 ranks, a layer for each rank and one for the labels after it, and a place on each layer for each of 150 links, so 60000 places at most; ordering sweeps them 24 times at most and placing 16.
   The library has no clock, so a deadline belongs to the caller; none of the inputs above needs one.
 - No font is ever loaded: a node is as wide as its label's columns, so the drawing is the same on every machine.
+- Ten minutes of fuzzing the parser alone, 1.8 million inputs, found no panic and no input that took a second.
 - The `measure` feature adds `measure(source, max_width)`: crossings, bends, edge cells and level C violations, read from where each part went.
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
+- The `fuzz` feature adds `read_flowchart(source)`, the parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
 
 ## Flowcharts
 
@@ -101,6 +103,7 @@ vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its 
   Flowcharts are compared with vt-mermaid's own parser by `parse::agreement` instead.
 - `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks of `measure` (every node and label drawn whole, every edge joining both ends, nothing overlapping).
 - [`scoreboard/`](scoreboard/README.md): every corpus flowchart drawn by vt-mermaid and three other text renderers, measured the same way, results committed; a dev-only example, run by hand.
-- `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits, seeded from `corpus/flowchart`.
+- `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`, seeded from `corpus/flowchart`; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits; `cargo +nightly fuzz run parse` feeds it to the parser alone, through `read_flowchart` behind the `fuzz` feature, and checks it never panics and keeps the limits.
+  On stable, build a target with `cargo build --release --target <host>` and the sanitizer-coverage `RUSTFLAGS` cargo-fuzz passes, then run the binary.
 - `benches/`: `limits` times a typical flowchart and inputs built at each limit with divan, `corpus` times every corpus flowchart and prints the spread; both run with `cargo bench` only.
 - `examples/compare.rs`: prints each spike flowchart drawn by mermaid-text, then by vt-mermaid; mermaid-text is a dev-dependency only.

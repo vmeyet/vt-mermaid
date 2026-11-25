@@ -19,6 +19,12 @@ pub use vt_canvas::{Canvas, GlyphSet, Role, Run};
 #[doc(hidden)]
 pub use flowchart::measure::{Measures, measure};
 
+/// Reads a flowchart as `render` does, without laying it out, for the fuzzer: not part of the API, behind the `fuzz`
+/// feature.
+#[cfg(feature = "fuzz")]
+#[doc(hidden)]
+pub use flowchart::{Counts, read as read_flowchart};
+
 /// Draws the flowchart in `source` no wider than `max_width` columns.
 pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
     flowchart::render(source, max_width).map(|drawing| drawing.canvas)

@@ -30,6 +30,8 @@ vt-canvas = { path = "../vt-canvas" }
 [features]
 # Exact measures of a drawing for scoreboard/, read from its geometry; not part of the API.
 measure = []
+# The parser alone, for fuzz/; not part of the API.
+fuzz = []
 
 # serde_json reads the oracle's results for examples/agreement.rs and scoreboard/, serde reads them into structs and writes the scoreboard's;
 # mermaid-text is what examples/compare.rs and scoreboard/ measure against, pinned so the scoreboard compares one version; divan runs benches/limits.rs;
@@ -41,8 +43,8 @@ mermaid-rs-renderer = { version = "0.3.1", default-features = false }
 mermaid-text = "=0.58.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
-# Turns the `measure` feature on for the scoreboard example, so `cargo clippy --all-targets` checks it.
-vt-mermaid = { path = ".", features = ["measure"] }
+# Turns the `measure` and `fuzz` features on for the scoreboard example and fuzz/, so `cargo clippy --all-targets` checks them.
+vt-mermaid = { path = ".", features = ["measure", "fuzz"] }
 
 [lints.rust]
 unsafe_code = "forbid"

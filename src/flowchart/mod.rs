@@ -55,6 +55,23 @@ pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
     drawing
 }
 
+/// How much a flowchart holds once read.
+#[cfg(feature = "fuzz")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Counts {
+    /// Nodes and subgraphs.
+    pub nodes: usize,
+    /// Edges, invisible ones included.
+    pub edges: usize,
+}
+
+/// Reads `source` within the limits `render` draws.
+#[cfg(feature = "fuzz")]
+pub fn read(source: &str) -> Result<Counts, Error> {
+    let flowchart = parse::parse(source, parse::Limits::DRAWN)?;
+    Ok(Counts { nodes: flowchart.nodes.len() + flowchart.subgraphs.len(), edges: flowchart.edges.len() })
+}
+
 /// A drawing too wide, or one whose blocks leave an edge no path, may come out with the blocks placed another way.
 fn may_fit_tighter(drawing: &Result<Drawing, Error>) -> bool {
     matches!(drawing, Err(Error::TooWide { .. } | Error::Unroutable { .. }))
