@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn a_label_line_wider_than_the_label_is_cut() {
-        let label = Label::wrapped("state-diagram-new-arrow-florbs-and-more");
+        let label = Label { lines: vec!["state-diagram-new-arrow-florbs-and-more".to_owned()], width: 30 };
 
         assert_eq!(drawn(Shape::Rectangle, &label)[1], "│ state-diagram-new-arrow-florb⋯ │");
     }

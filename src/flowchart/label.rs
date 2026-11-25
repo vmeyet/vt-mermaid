@@ -1,9 +1,11 @@
 use vt_canvas::width;
 
-/// Widest line of a wrapped label: longer text wraps at spaces, a longer word is cut.
+/// Widest line of a wrapped label: longer text wraps at spaces, a longer word goes on as many lines as it takes.
 const MAX_WRAPPED_COLUMNS: usize = 30;
 /// Widest one-line label: an edge's or a group's.
 const MAX_LINE_COLUMNS: usize = 60;
+/// Characters a long word is best cut after.
+const SEPARATORS: [char; 8] = ['.', '/', '-', '_', ':', ',', '=', '&'];
 const BREAKS: [&str; 4] = ["<br>", "<br/>", "<br />", "\n"];
 
 /// Text drawn in a node or on an edge, already cut into the lines it is drawn on.
@@ -15,7 +17,8 @@ pub(super) struct Label {
 }
 
 impl Label {
-    /// Lines break where the source asks (`<br>`) and wrap at spaces past [`MAX_WRAPPED_COLUMNS`].
+    /// Lines break where the source asks (`<br>`), wrap at spaces past [`MAX_WRAPPED_COLUMNS`] and inside a word
+    /// longer than that.
     pub(super) fn wrapped(text: &str) -> Self {
         let lines: Vec<String> = explicit_lines(text).iter().flat_map(|line| wrap(line, MAX_WRAPPED_COLUMNS)).collect();
         Self::new(lines, MAX_WRAPPED_COLUMNS)
@@ -47,16 +50,40 @@ fn explicit_lines(text: &str) -> Vec<String> {
 
 fn wrap(line: &str, max_width: usize) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
-    for word in line.split(' ') {
+    for piece in line.split(' ').flat_map(|word| pieces(word, max_width)) {
         match lines.last_mut() {
-            Some(last) if width(last) + 1 + width(word) <= max_width => {
+            Some(last) if width(last) + 1 + width(&piece) <= max_width => {
                 last.push(' ');
-                last.push_str(word);
+                last.push_str(&piece);
             }
-            _ => lines.push(word.to_owned()),
+            _ => lines.push(piece),
         }
     }
     lines
+}
+
+/// `word` whole, or cut into pieces of at most `max_width` columns when it is longer than a line.
+fn pieces(word: &str, max_width: usize) -> Vec<String> {
+    let mut pieces = Vec::new();
+    let mut rest = word;
+    while let Some(end) = cut(rest, max_width) {
+        let (piece, after) = rest.split_at(end);
+        pieces.push(piece.to_owned());
+        rest = after;
+    }
+    pieces.push(rest.to_owned());
+    pieces
+}
+
+/// Where a word too long for a line is cut, `None` for a word that fits: after the last separator in the second half
+/// of the line, so a path or a dotted name breaks between its parts, else at the last character that fits.
+fn cut(word: &str, max_width: usize) -> Option<usize> {
+    let ends = word.char_indices().map(|(start, character)| (start + character.len_utf8(), character));
+    let fitting: Vec<(usize, char)> = ends.take_while(|&(end, _)| width(&word[..end]) <= max_width).collect();
+    let &(last, _) = fitting.last().filter(|&&(end, _)| end < word.len())?;
+    let after_separator =
+        fitting.iter().rev().find(|&&(end, character)| SEPARATORS.contains(&character) && 2 * width(&word[..end]) > max_width);
+    Some(after_separator.map_or(last, |&(end, _)| end))
 }
 
 #[cfg(test)]
@@ -77,11 +104,28 @@ mod tests {
     }
 
     #[test]
-    fn a_word_longer_than_the_limit_keeps_its_line_and_caps_the_width() {
-        let label = Label::wrapped("state-diagram-new-arrow-florbs-and-more");
+    fn a_word_longer_than_the_limit_goes_on_as_many_lines_as_it_takes() {
+        let label = Label::wrapped("see state-diagram-new-arrow-florbs-and-more now");
 
-        assert_eq!(label.lines, ["state-diagram-new-arrow-florbs-and-more"]);
-        assert_eq!(label.width, 30);
+        assert_eq!(label.lines, ["see state-diagram-new-arrow-", "florbs-and-more now"]);
+        assert_eq!(label.width, 28);
+    }
+
+    #[test]
+    fn a_long_word_without_a_separator_in_the_second_half_of_the_line_is_cut_at_the_limit() {
+        let word = format!("a.{}", "n".repeat(40));
+
+        assert_eq!(Label::wrapped(&word).lines, [format!("a.{}", "n".repeat(28)), "n".repeat(12)]);
+    }
+
+    #[test]
+    fn a_word_as_long_as_the_limit_keeps_its_line() {
+        assert_eq!(Label::wrapped(&"n".repeat(30)).lines, ["n".repeat(30)]);
+    }
+
+    #[test]
+    fn a_long_word_of_wide_characters_is_cut_by_columns() {
+        assert_eq!(Label::wrapped(&"漢".repeat(16)).lines, ["漢".repeat(15), "漢".to_owned()]);
     }
 
     #[test]
