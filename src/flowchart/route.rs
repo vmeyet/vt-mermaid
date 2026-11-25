@@ -294,8 +294,8 @@ pub(super) struct Routed {
     pub(super) titles: Vec<Rect>,
 }
 
-/// Routes every edge, those between close blocks first and those crossing frames later, so the others go round
-/// what these already drew; an edge left without a path goes first on another try.
+/// Routes every edge, those between close blocks first, so the others go round what these already drew; an edge
+/// left without a path goes first on another try.
 pub(super) fn route(diagram: &Diagram, placement: &Placement) -> Result<Routed, Error> {
     let joins = port::joins(diagram, placement);
     let titles = titles(diagram, placement, &joins);
@@ -317,17 +317,14 @@ pub(super) fn route(diagram: &Diagram, placement: &Placement) -> Result<Routed, 
     Err(Error::Unroutable { from: name(edge.map(|edge| edge.from)), to: name(edge.map(|edge| edge.to)) })
 }
 
-/// The edges, those between close blocks first, those crossing frames later.
+/// The edges, those between close blocks first.
 fn nearest_first(diagram: &Diagram, placement: &Placement) -> Vec<usize> {
     let rect = |end: End| match end {
         End::Node(index) => placement.nodes[index],
         End::Group(index) => placement.groups[index],
     };
     let mut order: Vec<usize> = (0..diagram.edges.len()).collect();
-    order.sort_by_key(|&index| {
-        let edge = &diagram.edges[index];
-        distance(rect(edge.from), rect(edge.to)) * (1 + diagram.frames_between(edge.from, edge.to) as u32)
-    });
+    order.sort_by_key(|&index| distance(rect(diagram.edges[index].from), rect(diagram.edges[index].to)));
     order
 }
 

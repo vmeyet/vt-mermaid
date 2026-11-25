@@ -193,7 +193,7 @@ mod tests {
 
     #[test]
     fn edges_crossing_each_other_are_counted_once_each() {
-        assert_eq!(measured("tests/spike/cached.mmd").crossings, 2);
+        assert_eq!(measured("tests/spike/cached.mmd").crossings, 1);
     }
 
     #[test]

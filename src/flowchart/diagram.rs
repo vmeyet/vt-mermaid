@@ -140,13 +140,6 @@ impl Diagram {
         self.holders(from).into_iter().find(|group| around_to.contains(group)).map_or(self.flow, |group| self.groups[group].flow)
     }
 
-    /// How many group frames an edge between the ends crosses.
-    pub(super) fn frames_between(&self, from: End, to: End) -> usize {
-        let (around_from, around_to) = (self.holders(from), self.holders(to));
-        let only = |groups: &[usize], others: &[usize]| groups.iter().filter(|group| !others.contains(group)).count();
-        only(&around_from, &around_to) + only(&around_to, &around_from)
-    }
-
     /// The groups holding `end`, the innermost first.
     fn holders(&self, end: End) -> Vec<usize> {
         let container = match end {
@@ -290,7 +283,6 @@ mod tests {
         let end = |id: &str| End::Node(diagram.nodes.iter().position(|node| node.id == id).unwrap());
         assert_eq!(diagram.flow_between(end("A"), end("B")), Direction::Down);
         assert_eq!(diagram.flow_between(end("B"), end("C")), Direction::Right);
-        assert_eq!((diagram.frames_between(end("A"), end("B")), diagram.frames_between(end("B"), end("C"))), (1, 0));
     }
 
     #[test]
