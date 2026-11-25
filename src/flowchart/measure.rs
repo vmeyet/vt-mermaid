@@ -193,7 +193,7 @@ mod tests {
 
     #[test]
     fn edges_crossing_each_other_are_counted_once_each() {
-        assert_eq!(measured("tests/spike/cached.mmd").crossings, 1);
+        assert_eq!(measured("tests/spike/cached.mmd").crossings, 2);
     }
 
     #[test]
@@ -213,9 +213,8 @@ mod tests {
     #[test]
     fn an_edge_running_beside_a_node_it_does_not_join_counts_each_cell_beside_it() {
         let apart = measure("flowchart TB\n  A --> B", 80).unwrap();
-        let beside = measured("corpus/flowchart/docs--intro-getting-started--L46.mmd");
+        let beside = measure("flowchart TB\n  A & B --> C & D", 80).unwrap();
 
-        assert_eq!(apart.beside_nodes, 0);
-        assert!(beside.beside_nodes > 0, "{beside:?}");
+        assert_eq!((apart.beside_nodes, beside.beside_nodes), (0, 2));
     }
 }

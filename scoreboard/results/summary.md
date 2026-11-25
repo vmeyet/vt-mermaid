@@ -16,7 +16,7 @@ On the 605 inputs every tool drew:
 
 | Tool | Rows | Area | Crossings | Bends | Score |
 |---|--:|--:|--:|--:|--:|
-| vt-mermaid | 13.1 | 392.7 | 290 | 1240 | 97.2 |
+| vt-mermaid | 13.1 | 393.8 | 281 | 1265 | 97.3 |
 | mermaid-text | 17.2 | 678.8 | 295 | 2507 | 96.1 |
 | mermaid-ascii | 23.0 | 1249.7 | 315 | 758 | 94.1 |
 | beautiful-mermaid | 19.8 | 714.1 | 188 | 566 | 81.9 |
@@ -34,7 +34,7 @@ On the 620 inputs every tool drew:
 
 | Tool | Rows | Area | Crossings | Bends | Score |
 |---|--:|--:|--:|--:|--:|
-| vt-mermaid | 13.2 | 426.4 | 336 | 1304 | 97.0 |
+| vt-mermaid | 13.2 | 429.1 | 327 | 1340 | 97.0 |
 | mermaid-text | 17.7 | 754.0 | 438 | 2658 | 95.9 |
 | mermaid-ascii | 26.0 | 1520.4 | 356 | 813 | 94.8 |
 | beautiful-mermaid | 20.2 | 776.5 | 222 | 664 | 81.9 |
@@ -43,5 +43,5 @@ On the 620 inputs every tool drew:
 
 | Width | Drawn | Crossings | Crossing glyphs | Bends | Corner glyphs as bends | Edge cells | Cells beside a node | Inputs with violations | Violations |
 |--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| 80 | 898 | 223 | 569 | 2281 | 2896 | 32320 | 1278 | 10 | 16 |
-| 100 | 898 | 201 | 553 | 2252 | 2841 | 30654 | 1183 | 10 | 17 |
+| 80 | 898 | 231 | 554 | 2325 | 2935 | 32607 | 131 | 10 | 16 |
+| 100 | 898 | 220 | 566 | 2302 | 2884 | 31093 | 119 | 10 | 17 |

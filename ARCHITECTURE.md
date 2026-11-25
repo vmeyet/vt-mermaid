@@ -84,13 +84,13 @@ mermaid-rs-renderer's parser, which it replaces, accepts and refuses 908 of them
 - Ports: an edge leaves and joins a block through the side facing the other end, along the flow of the innermost group holding both; the edges of a side each get a cell, in the order of where they go, 2 cells apart while the side has room, the one going straight on the middle.
   A side without a cell for each, as the 1-cell side of a 3-row node, gives one cell and one trunk to its edges that draw alike; a folded or packed layout does so on every side.
   An edge going down or up through the room kept for its label joins both blocks under that room, as near its middle as each side has a free cell, so labels side by side each stand on their edge.
-- Route: edges between close blocks first, those crossing group frames later; a step costs 1, a bend 4, crossing another line 6, another cell of the side than the edge's own 2 a cell, another side 12, turning on the arrow's cell 3 more, a cell kept for another edge's label 3, passing behind a frame's title 4 more.
-  Equal paths are told apart by where they turn, right after the source, or right before the target for an edge that shares only its way in, and by not running right beside a node.
+- Route: edges between close blocks first, those crossing group frames later; a step costs 1, a bend 4, crossing another line 6, another cell of the side than the edge's own 2 a cell, another side 12, turning on the arrow's cell 3 more, a cell kept for another edge's label 3, a cell right beside the border of a node the edge does not join 2.5, passing behind a frame's title 4 more.
+  Equal paths are told apart by where they turn, right after the source, or right before the target for an edge that shares only its way in.
   Trunks: an edge may leave an earlier edge of its trunk between that one's first two turns or up to 2 cells before, and join one between its last two turns or up to 2 cells after, each edge leaving before any joins, so no line reads as going from one source to another's target; twin edges are one line.
   A group's title moves along its frame off the column an edge comes straight down through; when the frame is no wider than its title, the edge passes behind it.
   An edge that ends on a group may join its frame under the title: the arrow stands above it.
   An edge left without a path goes first on another try, three times at most.
-  Lines cross only at a right angle, never where one turns or ends, and never run along a node's border or another line they do not share a trunk with.
+  Lines cross only at a right angle, never where one turns or ends, and never run on a node's border or along another line they do not share a trunk with; they keep a cell off a node they pass wherever going round costs less.
   The arrow sits on the cell before the target; a line may turn there into `▾` or `▴`, never into `▸` or `◂`.
 - Edge labels go across the straight run through the room the layout kept, else the longest that has room, centred, or slid sideways on a vertical run as long as they still cover the line; else beside the run; else the same anywhere along a run, the nearest to its middle first; else nowhere.
   A label slid along a horizontal run keeps a line cell on each side, so it never touches a crossing.

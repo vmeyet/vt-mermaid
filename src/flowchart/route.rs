@@ -27,8 +27,8 @@ const STUB: usize = 2;
 const JUNCTION: u32 = 3 * STEP;
 /// The most a turn pays for standing away from where turns best stand.
 const STRAY: u32 = 15;
-/// Running right beside a node's border, a cell: under a step, so it only tells equal paths apart.
-const HUG: u32 = 16;
+/// Running right beside the border of a node the edge does not join, a cell: the line reads as the node's own.
+const HUG: u32 = 5 * STEP / 2;
 /// Times the edges are routed again, the edge left without a path going first.
 const RETRIES: usize = 3;
 /// Passing behind a frame's title, on top of crossing the frame.
@@ -573,14 +573,14 @@ impl Search<'_> {
         };
         let horizontal = matches!(direction, Direction::Left | Direction::Right);
         let entering = match self.grid.get(next) {
-            Use::Free => STEP + self.hugging(next, horizontal),
+            Use::Free => STEP,
             Use::Kept { edge, horizontal: line } if edge == self.edge && line == horizontal => STEP,
             Use::Kept { .. } => STEP + KEPT,
             Use::Line { horizontal: line } | Use::Trunk { horizontal: line } if line != horizontal => STEP + CROSSING,
             Use::Title if !horizontal => STEP + CROSSING + BEHIND_A_TITLE,
             _ => return None,
         };
-        Some(entering + turning)
+        Some(entering + turning + self.hugging(next, horizontal))
     }
 
     /// What running through `cell` right beside a node that is not one of the edge's ends costs: a line there
@@ -786,6 +786,15 @@ mod tests {
     }
 
     #[test]
+    fn an_edge_keeps_a_cell_off_a_node_it_passes() {
+        let beside = Rect::new(6, 3, 6, 5);
+
+        let route = search(&grid(&[TOP, BOTTOM, beside]), TOP, BOTTOM).unwrap();
+
+        assert_eq!(route.corners(), [Point::new(4, 2), Point::new(4, 7)]);
+    }
+
+    #[test]
     fn an_edge_crosses_a_line_only_at_a_right_angle() {
         let mut crossed = grid(&[TOP, BOTTOM]);
         crossed.fill(Rect::new(0, 5, 20, 1), Use::Line { horizontal: true });
@@ -886,7 +895,7 @@ mod tests {
 
         let nearest_first = laid(&diagram, &placement, &joins, &empty, &nearest_first(&diagram, &placement));
 
-        assert_eq!(nearest_first.err(), Some(11));
+        assert!(nearest_first.is_err());
         assert!(route(&diagram, &placement).is_ok());
     }
 

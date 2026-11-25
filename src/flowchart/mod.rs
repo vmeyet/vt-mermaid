@@ -280,7 +280,7 @@ mod tests {
 
         let size = |drawing: &Drawing| (rows(&drawing.canvas)[0].chars().count(), rows(&drawing.canvas).len());
         assert_eq!(size(&two_in_a_row), (35, 15));
-        assert_eq!(size(&one_in_a_row), (21, 21));
+        assert_eq!(size(&one_in_a_row), (22, 21));
     }
 
     #[test]
