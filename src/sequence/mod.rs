@@ -13,8 +13,10 @@ use crate::settings::Settings;
 use diagram::Diagram;
 use layout::{Fit, LOOSE, TIGHT};
 
-/// Widths labels wrap to, from not at all to narrow, tried in turn until the drawing fits.
+/// Widths labels wrap to at spaces, from not at all to narrow, tried in turn until the drawing fits.
 const WRAPS: [usize; 12] = [usize::MAX, 60, 48, 40, 32, 26, 20, 16, 12, 10, 8, 6];
+/// Widths labels wrap to when a word wider is broken or cut, column by column so no more is cut than needs be.
+const CUTS: std::ops::RangeInclusive<usize> = 6..=30;
 
 /// Draws `source` in the first form that fits: labels as written, then wrapped narrower and narrower at spaces, then
 /// the same with heads closer together, then with words wider than the lines broken or cut as `settings` say.
@@ -22,22 +24,15 @@ pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Canvas, Er
     let diagram = Diagram::read(source)?;
     let max_width = settings.max_width;
     let wraps = |gap| WRAPS.map(move |columns| Fit { wrap: Wrap::to(columns, settings.long_words), gap });
-    let tight = WRAPS.map(|columns| Fit { wrap: Wrap::to(columns, settings.long_words).tight(), gap: TIGHT });
-    let mut narrowest = Error::TooWide { width: usize::MAX, max_width };
+    let tight = CUTS.rev().map(|columns| Fit { wrap: Wrap::to(columns, settings.long_words).tight(), gap: TIGHT });
+    let mut narrowest = usize::MAX;
     for fit in wraps(LOOSE).into_iter().chain(wraps(TIGHT)).chain(tight) {
         match draw::draw(&layout::place(&diagram, fit), max_width) {
-            Err(Error::TooWide { width, .. }) => narrowest = narrower(narrowest, width, max_width),
+            Err(Error::TooWide { width, .. }) => narrowest = narrowest.min(width),
             drawn => return drawn,
         }
     }
-    Err(narrowest)
-}
-
-fn narrower(error: Error, width: usize, max_width: u16) -> Error {
-    match error {
-        Error::TooWide { width: earlier, .. } if earlier <= width => error,
-        _ => Error::TooWide { width, max_width },
-    }
+    Err(Error::TooWide { width: narrowest, max_width })
 }
 
 /// How much a sequence diagram holds once read.
@@ -100,7 +95,7 @@ mod tests {
         insta::assert_snapshot!(rows(&canvas, GlyphSet::Ascii).join("\n"));
     }
 
-    /// Every corpus diagram mermaid accepts is drawn within the width, but one with ten participants side by side.
+    /// Every corpus diagram mermaid accepts is drawn within the width, but two with eight and ten participants side by side.
     #[test]
     fn corpus_diagrams_are_drawn_within_80_columns() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("corpus/sequence");

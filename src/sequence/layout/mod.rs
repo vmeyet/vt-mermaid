@@ -4,7 +4,7 @@
 mod columns;
 
 use super::diagram::{Diagram, Event, Figure};
-use super::parse::{Block, Placement as NotePlacement, Tip};
+use super::parse::{Arrow, Block, Placement, Tip};
 use crate::label::{Label, Wrap};
 
 /// Spaces between two participants' heads, loose then tight.
@@ -47,8 +47,8 @@ impl Area {
 }
 
 /// Where each part goes, in cells that may start left of 0: the drawing moves them.
-#[derive(Debug, Clone, PartialEq)]
-pub(super) struct Placement {
+#[derive(Debug, Clone, Default, PartialEq)]
+pub(super) struct Layout {
     /// Participants' heads, at the top or where they are created, then their feet at the bottom.
     pub(super) heads: Vec<Head>,
     pub(super) lifelines: Vec<Lifeline>,
@@ -57,7 +57,14 @@ pub(super) struct Placement {
     pub(super) frames: Vec<Frame>,
     pub(super) groups: Vec<Titled>,
     /// Where a destroyed participant's lifeline ends.
-    pub(super) crosses: Vec<(i32, i32)>,
+    pub(super) crosses: Vec<Cell>,
+}
+
+/// A cell, where the layout's columns and rows start.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct Cell {
+    pub(super) x: i32,
+    pub(super) y: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -73,7 +80,14 @@ pub(super) struct Lifeline {
     pub(super) top: i32,
     pub(super) bottom: i32,
     /// Rows where the participant is active, drawn heavy.
-    pub(super) active: Vec<(i32, i32)>,
+    pub(super) active: Vec<Span>,
+}
+
+/// Rows from `top` to `bottom`, both included.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct Span {
+    pub(super) top: i32,
+    pub(super) bottom: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -88,7 +102,8 @@ pub(super) struct Message {
     pub(super) tip: Tip,
     pub(super) back_tip: Tip,
     pub(super) label: Label,
-    pub(super) label_at: (i32, i32),
+    /// Where the label's first line starts.
+    pub(super) label_at: Cell,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -97,13 +112,20 @@ pub(super) struct Note {
     pub(super) label: Label,
 }
 
-/// A block's frame, its title and its dividers' rows and titles.
+/// A block's frame, its title and its dividers.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct Frame {
     pub(super) area: Area,
     pub(super) title: String,
     pub(super) dashed: bool,
-    pub(super) dividers: Vec<(i32, String)>,
+    pub(super) dividers: Vec<Divider>,
+}
+
+/// `else`, `and` or `option`: a dashed line across a block, with its title.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct Divider {
+    pub(super) row: i32,
+    pub(super) title: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -113,12 +135,12 @@ pub(super) struct Titled {
 }
 
 /// Lays `diagram` out as tight as `fit` asks.
-pub(super) fn place(diagram: &Diagram, fit: Fit) -> Placement {
-    let shapes: Vec<Head> =
+pub(super) fn place(diagram: &Diagram, fit: Fit) -> Layout {
+    let heads: Vec<Head> =
         diagram.participants.iter().map(|participant| head(participant.figure, Label::wrapped_as(&participant.label, fit.wrap))).collect();
     let labels: Vec<Label> = diagram.events.iter().map(|event| event_label(event, fit.wrap)).collect();
-    let columns = columns::columns(diagram, &shapes, &labels, fit.gap);
-    Rows::new(diagram, &shapes, &columns, fit.wrap.columns).placed(&labels)
+    let columns = columns::columns(diagram, &heads, &labels, fit.gap);
+    Rows::new(diagram, &heads, &columns, fit.wrap.columns).placed(&labels)
 }
 
 /// A head sized for its label, at the origin.
@@ -165,11 +187,12 @@ impl Head {
 #[derive(Debug)]
 struct Rows<'a> {
     diagram: &'a Diagram,
-    shapes: &'a [Head],
+    /// Each participant's head, at the origin.
+    heads: &'a [Head],
     columns: &'a [i32],
-    /// The widest a frame's title widens it; a longer one is cut.
+    /// The widest a frame's or a divider's title widens a block; a longer one is cut.
     title_room: usize,
-    placement: Placement,
+    layout: Layout,
     /// The row an activation starts or ends on: the last message's arrow, or a note's last row.
     mark: i32,
     cursor: i32,
@@ -188,123 +211,89 @@ struct OpenFrame {
     event: usize,
     title: String,
     dashed: bool,
-    dividers: Vec<(i32, String)>,
+    dividers: Vec<Divider>,
 }
 
 impl<'a> Rows<'a> {
-    fn new(diagram: &'a Diagram, shapes: &'a [Head], columns: &'a [i32], title_room: usize) -> Self {
+    fn new(diagram: &'a Diagram, heads: &'a [Head], columns: &'a [i32], title_room: usize) -> Self {
         let top = i32::from(!diagram.groups.is_empty());
-        let placement = Placement {
-            heads: Vec::new(),
-            lifelines: Vec::new(),
-            messages: Vec::new(),
-            notes: Vec::new(),
-            frames: Vec::new(),
-            groups: Vec::new(),
-            crosses: Vec::new(),
-        };
         let mut rows = Self {
             diagram,
-            shapes,
+            heads,
             columns,
             title_room,
-            placement,
+            layout: Layout::default(),
             mark: top,
             cursor: top,
-            activations: vec![Vec::new(); shapes.len()],
-            ended: vec![false; shapes.len()],
+            activations: vec![Vec::new(); heads.len()],
+            ended: vec![false; heads.len()],
             open: Vec::new(),
             extents: vec![None; diagram.events.len()],
         };
-        rows.heads(top);
+        rows.top_heads(top);
         rows
     }
 
-    /// The heads of the participants there from the start, and the top of every lifeline.
-    fn heads(&mut self, top: i32) {
-        let present = self.shapes.iter().zip(&self.diagram.participants).filter(|(_, participant)| participant.created.is_none());
-        let tallest = present.map(|(shape, _)| shape.height()).max().unwrap_or(0);
-        for (place, shape) in self.shapes.iter().enumerate() {
+    /// The heads of the participants there from the start, their boxes, and the top of every lifeline.
+    fn top_heads(&mut self, top: i32) {
+        let present = self.heads.iter().zip(&self.diagram.participants).filter(|(_, participant)| participant.created.is_none());
+        let tallest = present.map(|(head, _)| head.height()).max().unwrap_or(0);
+        for (place, head) in self.heads.iter().enumerate() {
             let x = self.columns[place];
-            let created = self.diagram.participants[place].created.is_some();
-            let head = shape.at(x, top);
-            self.placement.lifelines.push(Lifeline { x, top: below(&head), bottom: 0, active: Vec::new() });
-            if !created {
-                self.placement.heads.push(head);
+            let head = head.at(x, top);
+            self.layout.lifelines.push(Lifeline { x, top: below(&head), bottom: 0, active: Vec::new() });
+            if self.diagram.participants[place].created.is_none() {
+                self.layout.heads.push(head);
             }
         }
-        self.bands(top, tallest, true);
+        let names = self.diagram.groups.iter().map(|group| group.name.clone());
+        let bands = self.bands(top, tallest).into_iter().zip(names).map(|(area, title)| Titled { area, title });
+        self.layout.groups.extend(bands);
         self.cursor = top + tallest + i32::from(!self.diagram.groups.is_empty());
         self.mark = self.cursor - 1;
     }
 
-    /// A frame around each box's participants, heads or feet, from the row above them to the row under them; the top
-    /// one holds the box's name.
-    fn bands(&mut self, top: i32, tallest: i32, named: bool) {
-        for (index, group) in self.diagram.groups.iter().enumerate() {
-            let members = self.diagram.participants.iter().enumerate().filter(|(_, participant)| participant.group == Some(index));
-            let spans = members
-                .map(|(place, _)| (self.columns[place] - self.shapes[place].before(), self.columns[place] + self.shapes[place].after()));
-            let Some((left, right)) = spans.reduce(|one, other| (one.0.min(other.0), one.1.max(other.1))) else { continue };
-            let area = Area { left: left - GROUP_PADDING, top: top - 1, right: right + GROUP_PADDING, bottom: top + tallest };
-            self.placement.groups.push(Titled { area, title: group.name.clone().filter(|_| named) });
-        }
+    /// The area around each box's participants, heads or feet, from the row above them to the row under them.
+    fn bands(&self, top: i32, tallest: i32) -> Vec<Area> {
+        let column_span =
+            |place: usize| (self.columns[place] - self.heads[place].before(), self.columns[place] + self.heads[place].after());
+        (0..self.diagram.groups.len())
+            .filter_map(|group| {
+                let members = (0..self.heads.len()).filter(|&place| self.diagram.participants[place].group == Some(group));
+                let (left, right) = members.map(column_span).reduce(|one, other| (one.0.min(other.0), one.1.max(other.1)))?;
+                Some(Area { left: left - GROUP_PADDING, top: top - 1, right: right + GROUP_PADDING, bottom: top + tallest })
+            })
+            .collect()
     }
 
-    fn placed(mut self, labels: &[Label]) -> Placement {
+    fn placed(mut self, labels: &[Label]) -> Layout {
         for (index, (event, label)) in self.diagram.events.iter().zip(labels).enumerate() {
             match *event {
-                Event::Message { from, to, arrow, .. } => {
-                    self.cursor += 1;
-                    let message = if from == to { self.looped(from, label) } else { self.between(index, from, to, label) };
-                    let destroys_receiver = from != to && self.diagram.participants[to].destroyed == Some(index);
-                    let tip = if destroys_receiver && arrow.tip() == Tip::Cross { Tip::None } else { arrow.tip() };
-                    let message = Message { dotted: arrow.is_dotted(), tip, back_tip: arrow.back_tip(), ..message };
-                    self.extents[index] = Some(extent(&message));
-                    self.destroy(index, [from, to], message.row);
-                    self.mark = message.row + i32::from(message.to_itself);
-                    self.placement.messages.push(message);
-                }
-                Event::Note { first, last, placement, .. } => {
-                    self.cursor += 1;
-                    let area = self.note(first, last, placement, label);
-                    self.extents[index] = Some((area.left, area.right));
-                    self.cursor = area.bottom + 1;
-                    self.mark = area.bottom;
-                    self.placement.notes.push(Note { area, label: label.clone() });
-                }
-                Event::Activation { participant, start: true } => self.activations[participant].push(self.mark),
-                Event::Activation { participant, start: false } => {
-                    if let Some(start) = self.activations[participant].pop() {
-                        self.placement.lifelines[participant].active.push((start, self.mark));
-                    }
-                }
-                Event::Open { block, ref title } => {
-                    self.cursor += 1;
-                    self.open.push(OpenFrame {
-                        top: self.cursor,
-                        event: index,
-                        title: title.clone(),
-                        dashed: block == Block::Rect,
-                        dividers: Vec::new(),
-                    });
-                    self.cursor += 1;
-                }
-                Event::Section { ref title } => {
-                    self.cursor += 1;
-                    if let Some(frame) = self.open.last_mut() {
-                        frame.dividers.push((self.cursor, title.clone()));
-                    }
-                    self.cursor += 1;
-                }
-                Event::Close => {
-                    self.cursor += 1;
-                    self.close(index);
-                    self.cursor += 1;
-                }
+                Event::Message { from, to, arrow, .. } => self.message(index, from, to, arrow, label),
+                Event::Note { first, last, placement, .. } => self.note(index, first, last, placement, label),
+                Event::Activation { participant, start } => self.activate(participant, start),
+                Event::Open { block, ref title } => self.open(index, block, title),
+                Event::Section { ref title } => self.section(title),
+                Event::Close => self.close(index),
             }
         }
         self.feet()
+    }
+
+    fn message(&mut self, index: usize, from: usize, to: usize, arrow: Arrow, label: &Label) {
+        self.cursor += 1;
+        let placed = if from == to { self.looped(from, label) } else { self.between(index, from, to, label) };
+        let message = Message { dotted: arrow.is_dotted(), tip: self.tip(index, from, to, arrow), back_tip: arrow.back_tip(), ..placed };
+        self.extents[index] = Some(extent(&message));
+        self.destroy(index, [from, to], message.row);
+        self.mark = message.row + i32::from(message.to_itself);
+        self.layout.messages.push(message);
+    }
+
+    /// The arrow's tip, but none for a cross on a receiver the message destroys, as its lifeline ends on a cross.
+    fn tip(&self, index: usize, from: usize, to: usize, arrow: Arrow) -> Tip {
+        let destroys_receiver = from != to && self.diagram.participants[to].destroyed == Some(index);
+        if destroys_receiver && arrow.tip() == Tip::Cross { Tip::None } else { arrow.tip() }
     }
 
     /// A message between two participants: its label over the line, centred between the lifelines, or between the
@@ -315,12 +304,12 @@ impl<'a> Rows<'a> {
         let label_top = self.cursor;
         let created = self.diagram.participants[to].created == Some(index);
         let (row, target) = if created {
-            let head = self.shapes[to].at(self.columns[to], label_top + label_rows);
+            let head = self.heads[to].at(self.columns[to], label_top + label_rows);
             let row = head.area.top + head.height() / 2;
             let edge = if direction > 0 { head.area.left } else { head.area.right };
             self.cursor = head.area.bottom + 1;
-            self.placement.lifelines[to].top = below(&head);
-            self.placement.heads.push(head);
+            self.layout.lifelines[to].top = below(&head);
+            self.layout.heads.push(head);
             (row, edge)
         } else {
             self.cursor = label_top + label_rows + 1;
@@ -339,7 +328,7 @@ impl<'a> Rows<'a> {
             tip: Tip::None,
             back_tip: Tip::None,
             label: label.clone(),
-            label_at: (label_x, label_top),
+            label_at: Cell { x: label_x, y: label_top },
         }
     }
 
@@ -357,18 +346,27 @@ impl<'a> Rows<'a> {
             tip: Tip::None,
             back_tip: Tip::None,
             label: label.clone(),
-            label_at: (x + 2, row - label_rows(label)),
+            label_at: Cell { x: x + 2, y: row - label_rows(label) },
         }
     }
 
-    fn note(&self, first: usize, last: usize, placement: NotePlacement, label: &Label) -> Area {
+    fn note(&mut self, index: usize, first: usize, last: usize, placement: Placement, label: &Label) {
+        self.cursor += 1;
+        let area = self.note_area(first, last, placement, label);
+        self.extents[index] = Some((area.left, area.right));
+        self.cursor = area.bottom + 1;
+        self.mark = area.bottom;
+        self.layout.notes.push(Note { area, label: label.clone() });
+    }
+
+    fn note_area(&self, first: usize, last: usize, placement: Placement, label: &Label) -> Area {
         let width = i32::from(label.width) + 4;
         let height = i32::from(label.height()) + 2;
         let (low, high) = (self.columns[first], self.columns[last]);
         let left = match placement {
-            NotePlacement::RightOf => high + 2,
-            NotePlacement::LeftOf => low - 1 - width,
-            NotePlacement::Over => {
+            Placement::RightOf => high + 2,
+            Placement::LeftOf => low - 1 - width,
+            Placement::Over => {
                 let width = width.max(high - low + 5);
                 return Area::sized(i32::midpoint(low, high) - (width - 1) / 2, self.cursor, width, height);
             }
@@ -376,20 +374,47 @@ impl<'a> Rows<'a> {
         Area::sized(left, self.cursor, width, height)
     }
 
+    /// An activation starts on the row of what came last, a deactivation ends the latest one there.
+    fn activate(&mut self, participant: usize, start: bool) {
+        if start {
+            self.activations[participant].push(self.mark);
+        } else if let Some(top) = self.activations[participant].pop() {
+            self.layout.lifelines[participant].active.push(Span { top, bottom: self.mark });
+        }
+    }
+
+    fn open(&mut self, index: usize, block: Block, title: &str) {
+        self.cursor += 1;
+        let frame =
+            OpenFrame { top: self.cursor, event: index, title: title.to_owned(), dashed: block == Block::Rect, dividers: Vec::new() };
+        self.open.push(frame);
+        self.cursor += 1;
+    }
+
+    fn section(&mut self, title: &str) {
+        self.cursor += 1;
+        let divider = Divider { row: self.cursor, title: title.to_owned() };
+        if let Some(frame) = self.open.last_mut() {
+            frame.dividers.push(divider);
+        }
+        self.cursor += 1;
+    }
+
     /// The lifelines of the participants a message destroys end on its row, with a cross.
     fn destroy(&mut self, index: usize, involved: [usize; 2], row: i32) {
         for place in involved {
             if self.diagram.participants[place].destroyed == Some(index) && !self.ended[place] {
                 self.ended[place] = true;
-                self.placement.lifelines[place].bottom = row;
-                self.placement.crosses.push((self.columns[place], row));
+                self.layout.lifelines[place].bottom = row;
+                self.layout.crosses.push(Cell { x: self.columns[place], y: row });
             }
         }
     }
 
-    /// A block's frame around what it holds, nested frames included, and wide enough for its title cut to the width
-    /// labels wrap to.
+    /// A block's frame around what it holds, nested frames included, and wide enough for its title and its dividers'
+    /// cut to the width labels wrap to.
     fn close(&mut self, index: usize) {
+        self.cursor += 1;
         let Some(open) = self.open.pop() else { return };
         let inside = open.event + 1..index;
         let held = self.extents[inside].iter().flatten().copied().reduce(|one, other| (one.0.min(other.0), one.1.max(other.1)));
@@ -397,34 +422,37 @@ impl<'a> Rows<'a> {
         let last = self.columns.last().copied().unwrap_or(0);
         let (left, right) = held.unwrap_or((first, last));
         let (left, right) = (left - FRAME_PADDING, right + FRAME_PADDING);
-        let title_width = i32::try_from(vt_canvas::width(&open.title).min(self.title_room)).unwrap_or(i32::MAX);
-        let right = right.max(left + title_width + 5);
+        let titles = std::iter::once(&open.title).chain(open.dividers.iter().map(|divider| &divider.title));
+        let title_width = titles.map(|title| vt_canvas::width(title).min(self.title_room)).max().unwrap_or(0);
+        let right = right.max(left + i32::try_from(title_width).unwrap_or(i32::MAX) + 5);
         let area = Area { left, top: open.top, right, bottom: self.cursor };
         self.extents[open.event] = Some((left, right));
         self.extents[index] = Some((left, right));
-        self.placement.frames.push(Frame { area, title: open.title, dashed: open.dashed, dividers: open.dividers });
+        self.layout.frames.push(Frame { area, title: open.title, dashed: open.dashed, dividers: open.dividers });
+        self.cursor += 1;
     }
 
     /// The feet of the participants still there at the end, the lifelines down to them, and the boxes around them.
-    fn feet(mut self) -> Placement {
+    fn feet(mut self) -> Layout {
         let bottom = self.cursor;
         for (place, active) in self.activations.iter().enumerate() {
-            let spans = active.iter().map(|&start| (start, bottom));
-            self.placement.lifelines[place].active.extend(spans);
+            let spans = active.iter().map(|&top| Span { top, bottom });
+            self.layout.lifelines[place].active.extend(spans);
         }
         let top = self.cursor + 1 + i32::from(!self.diagram.groups.is_empty());
         let mut tallest = 0;
-        for (place, shape) in self.shapes.iter().enumerate() {
+        for (place, head) in self.heads.iter().enumerate() {
             if self.ended[place] {
                 continue;
             }
-            let foot = shape.at(self.columns[place], top);
-            self.placement.lifelines[place].bottom = if foot.figure == Figure::Person { top - 1 } else { top };
-            self.placement.heads.push(foot);
-            tallest = tallest.max(shape.height());
+            let foot = head.at(self.columns[place], top);
+            self.layout.lifelines[place].bottom = if foot.figure == Figure::Person { top - 1 } else { top };
+            self.layout.heads.push(foot);
+            tallest = tallest.max(head.height());
         }
-        self.bands(top, tallest, false);
-        self.placement
+        let bands = self.bands(top, tallest).into_iter().map(|area| Titled { area, title: None });
+        self.layout.groups.extend(bands);
+        self.layout
     }
 }
 
@@ -453,8 +481,8 @@ fn label_rows(label: &Label) -> i32 {
 /// The columns a message covers, its label included.
 fn extent(message: &Message) -> (i32, i32) {
     let (low, high) = (message.start.min(message.end) - 1, message.start.max(message.end) + 1);
-    let label_end = message.label_at.0 + i32::from(message.label.width) - 1;
-    (low.min(message.label_at.0), high.max(label_end))
+    let label_end = message.label_at.x + i32::from(message.label.width) - 1;
+    (low.min(message.label_at.x), high.max(label_end))
 }
 
 #[cfg(test)]
@@ -462,55 +490,63 @@ mod tests {
     use super::*;
     use crate::settings::LongWords;
 
-    fn placed(body: &str) -> Placement {
+    fn placed(body: &str) -> Layout {
         place(&Diagram::read(&format!("sequenceDiagram\n{body}")).unwrap(), Fit { wrap: Wrap::wide(LongWords::Break), gap: LOOSE })
     }
 
     #[test]
     fn a_frame_keeps_its_padding_from_the_participants_outside_it() {
-        let placement = placed("participant A\nparticipant B\nparticipant C\nloop\nloop\nB->>C: hi\nend\nend\n");
+        let layout = placed("participant A\nparticipant B\nparticipant C\nloop\nloop\nB->>C: hi\nend\nend\n");
 
-        let outer = placement.frames.last().unwrap().area;
-        assert!(outer.left > placement.lifelines[0].x, "{outer:?}");
+        let outer = layout.frames.last().unwrap().area;
+        assert!(outer.left > layout.lifelines[0].x, "{outer:?}");
     }
 
     #[test]
     fn an_activation_runs_from_the_message_that_starts_it_to_the_one_that_ends_it() {
-        let placement = placed("A->>+B: go\nB-->>-A: done\n");
+        let layout = placed("A->>+B: go\nB-->>-A: done\n");
 
-        let rows: Vec<i32> = placement.messages.iter().map(|message| message.row).collect();
-        assert_eq!(placement.lifelines[1].active, [(rows[0], rows[1])]);
+        let rows: Vec<i32> = layout.messages.iter().map(|message| message.row).collect();
+        assert_eq!(layout.lifelines[1].active, [Span { top: rows[0], bottom: rows[1] }]);
     }
 
     #[test]
     fn a_created_participant_has_its_head_where_the_message_creating_it_arrives() {
-        let placement = placed("A->>B: hi\ncreate participant C\nB->>C: new\n");
+        let layout = placed("A->>B: hi\ncreate participant C\nB->>C: new\n");
 
-        let head = placement.heads.iter().find(|head| head.label.lines == ["C"]).unwrap();
-        let message = &placement.messages[1];
+        let head = layout.heads.iter().find(|head| head.label.lines == ["C"]).unwrap();
+        let message = &layout.messages[1];
         assert_eq!((message.row, message.end + 1), (head.area.top + 1, head.area.left));
     }
 
     #[test]
     fn a_destroyed_participant_has_no_foot_and_a_cross_where_its_lifeline_ends() {
-        let placement = placed("A->>B: hi\ndestroy B\nA->>B: bye\n");
+        let layout = placed("A->>B: hi\ndestroy B\nA->>B: bye\n");
 
-        assert_eq!(placement.crosses, [(placement.lifelines[1].x, placement.messages[1].row)]);
-        assert_eq!(placement.heads.len(), 3);
+        assert_eq!(layout.crosses, [Cell { x: layout.lifelines[1].x, y: layout.messages[1].row }]);
+        assert_eq!(layout.heads.len(), 3);
     }
 
     #[test]
     fn a_crossed_message_destroying_its_receiver_ends_on_one_cross() {
-        let placement = placed("A->>B: hi\ndestroy B\nA-xB: bye\n");
+        let layout = placed("A->>B: hi\ndestroy B\nA-xB: bye\n");
 
-        assert_eq!(placement.messages[1].tip, Tip::None);
-        assert_eq!(placement.crosses, [(placement.lifelines[1].x, placement.messages[1].row)]);
+        assert_eq!(layout.messages[1].tip, Tip::None);
+        assert_eq!(layout.crosses, [Cell { x: layout.lifelines[1].x, y: layout.messages[1].row }]);
+    }
+
+    #[test]
+    fn a_divider_title_widens_its_block_up_to_the_width_labels_wrap_to() {
+        let layout = placed("A->>B: x\nalt ok\nA->>B: y\nelse a long else condition that goes on\nB->>A: z\nend\n");
+
+        let frame = &layout.frames[0];
+        assert_eq!(frame.area.right - frame.area.left, 30 + 5);
     }
 
     #[test]
     fn participants_created_later_leave_no_room_among_the_heads() {
-        let placement = placed("A->>B: hi\ncreate actor C\nB->>C: new\n");
+        let layout = placed("A->>B: hi\ncreate actor C\nB->>C: new\n");
 
-        assert_eq!(placement.messages[0].label_at.1, 4);
+        assert_eq!(layout.messages[0].label_at.y, 4);
     }
 }

@@ -3,7 +3,7 @@
 use super::{FRAME_PADDING, GROUP_PADDING, Head};
 use crate::label::Label;
 use crate::sequence::diagram::{Diagram, Event};
-use crate::sequence::parse::Placement as NotePlacement;
+use crate::sequence::parse::Placement;
 
 /// How far an event reaches: from the participant at `low`, `before` columns further left, to the one at `high`,
 /// `after` columns further right; and the columns it needs between those two.
@@ -17,7 +17,7 @@ struct Reach {
 }
 
 /// The columns an event needs around the participants it involves.
-fn reach(diagram: &Diagram, shapes: &[Head], event: &Event, label: &Label) -> Option<Reach> {
+fn reach(diagram: &Diagram, heads: &[Head], index: usize, event: &Event, label: &Label) -> Option<Reach> {
     let width = i32::from(label.width);
     let note = width + 4;
     match *event {
@@ -25,21 +25,21 @@ fn reach(diagram: &Diagram, shapes: &[Head], event: &Event, label: &Label) -> Op
             Some(Reach { low: from, before: 0, high: from, after: (width + 2).max(4), between: 0 })
         }
         Event::Message { from, to, .. } => {
-            let created = diagram.participants[to].created.is_some();
-            let head = if !created {
+            let creates = diagram.participants[to].created == Some(index);
+            let head = if !creates {
                 0
             } else if to > from {
-                shapes[to].before()
+                heads[to].before()
             } else {
-                shapes[to].after()
+                heads[to].after()
             };
             Some(Reach { low: from.min(to), before: 0, high: from.max(to), after: 0, between: (width + 3).max(6) + head })
         }
         Event::Note { first, last, placement, .. } => Some(match placement {
-            NotePlacement::RightOf => Reach { low: last, before: 0, high: last, after: note + 1, between: 0 },
-            NotePlacement::LeftOf => Reach { low: first, before: note + 1, high: first, after: 0, between: 0 },
-            NotePlacement::Over if first == last => Reach { low: first, before: note / 2, high: first, after: note / 2, between: 0 },
-            NotePlacement::Over => Reach { low: first, before: 2, high: last, after: 2, between: note - 4 },
+            Placement::RightOf => Reach { low: last, before: 0, high: last, after: note + 1, between: 0 },
+            Placement::LeftOf => Reach { low: first, before: note + 1, high: first, after: 0, between: 0 },
+            Placement::Over if first == last => Reach { low: first, before: note / 2, high: first, after: note / 2, between: 0 },
+            Placement::Over => Reach { low: first, before: 2, high: last, after: 2, between: note - 4 },
         }),
         _ => None,
     }
@@ -47,15 +47,15 @@ fn reach(diagram: &Diagram, shapes: &[Head], event: &Event, label: &Label) -> Op
 
 /// Each participant's lifeline column: heads apart by `gap`, then the room each event needs beside or between its
 /// participants, a frame's padding for each level of block around it, and a box's around its participants.
-pub(super) fn columns(diagram: &Diagram, shapes: &[Head], labels: &[Label], gap: i32) -> Vec<i32> {
-    let reaches: Vec<Option<Reach>> =
-        diagram.events.iter().zip(labels).map(|(event, label)| reach(diagram, shapes, event, label)).collect();
-    let count = shapes.len();
+pub(super) fn columns(diagram: &Diagram, heads: &[Head], labels: &[Label], gap: i32) -> Vec<i32> {
+    let events = diagram.events.iter().zip(labels).enumerate();
+    let reaches: Vec<Option<Reach>> = events.map(|(index, (event, label))| reach(diagram, heads, index, event, label)).collect();
+    let count = heads.len();
     let mut gaps: Vec<i32> = (1..count)
         .map(|right| {
             let left = right - 1;
             let crosses_group = diagram.participants[left].group != diagram.participants[right].group;
-            shapes[left].after() + gap + 1 + shapes[right].before() + if crosses_group { 2 * GROUP_PADDING + 1 } else { 0 }
+            heads[left].after() + gap + 1 + heads[right].before() + if crosses_group { 2 * GROUP_PADDING + 1 } else { 0 }
         })
         .collect();
     let mut spans: Vec<(usize, usize, i32)> = Vec::new();
@@ -149,10 +149,10 @@ mod tests {
     fn columns_of(body: &str) -> Vec<i32> {
         let diagram = Diagram::read(&format!("sequenceDiagram\n{body}")).unwrap();
         let wrap = Wrap::wide(LongWords::Break);
-        let shapes: Vec<Head> =
+        let heads: Vec<Head> =
             diagram.participants.iter().map(|participant| head(participant.figure, Label::wrapped_as(&participant.label, wrap))).collect();
         let labels: Vec<Label> = diagram.events.iter().map(|event| event_label(event, wrap)).collect();
-        columns(&diagram, &shapes, &labels, LOOSE)
+        columns(&diagram, &heads, &labels, LOOSE)
     }
 
     #[test]

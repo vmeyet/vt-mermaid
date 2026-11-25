@@ -5,7 +5,7 @@
 use vt_canvas::{Canvas, Corner, Direction, Frame, LineKind, Point, Rect, Role, Shape};
 
 use super::diagram::Figure;
-use super::layout::{Area, Head, Lifeline, Message, Placement};
+use super::layout::{Area, Frame as Block, Head, Layout, Lifeline, Message};
 use super::parse::Tip;
 use crate::error::Error;
 use crate::label::Label;
@@ -13,9 +13,9 @@ use crate::label::Label;
 /// The stick figure of an `actor`, over its name.
 const PERSON: [&str; 3] = [" o ", "/|\\", "/ \\"];
 
-/// Draws `placement`, refused when wider than `max_width`.
-pub(super) fn draw(placement: &Placement, max_width: u16) -> Result<Canvas, Error> {
-    let bounds = bounds(placement);
+/// Draws `layout`, refused when wider than `max_width`.
+pub(super) fn draw(layout: &Layout, max_width: u16) -> Result<Canvas, Error> {
+    let bounds = bounds(layout);
     let (width, height) = (bounds.right - bounds.left + 1, bounds.bottom - bounds.top + 1);
     if width > i32::from(max_width) {
         return Err(Error::TooWide { width: usize::try_from(width).unwrap_or(usize::MAX), max_width });
@@ -25,37 +25,30 @@ pub(super) fn draw(placement: &Placement, max_width: u16) -> Result<Canvas, Erro
     let size = |value: i32| u16::try_from(value).map_err(|_overflow| too_large());
     let canvas = Canvas::new(size(width)?, size(height)?).map_err(|_canvas_error| too_large())?;
     let mut pen = Pen { canvas, origin: (bounds.left, bounds.top) };
-    for lifeline in &placement.lifelines {
+    for lifeline in &layout.lifelines {
         pen.lifeline(lifeline);
     }
-    for (x, y) in crossings(placement) {
+    for (x, y) in crossings(layout) {
         pen.text(x, y, " ", Role::Plain);
     }
-    for group in &placement.groups {
+    for group in &layout.groups {
         pen.frame(group.area, LineKind::Light, Corner::Rounded, group.title.as_deref());
     }
-    for frame in &placement.frames {
-        let kind = if frame.dashed { LineKind::Dashed } else { LineKind::Light };
-        pen.frame(frame.area, kind, Corner::Square, Some(frame.title.as_str()).filter(|title| !title.is_empty()));
-        for (row, title) in &frame.dividers {
-            pen.line((frame.area.left, *row), (frame.area.right, *row), LineKind::Dashed, Role::Group);
-            if !title.is_empty() {
-                pen.text(frame.area.left + 2, *row, &format!(" {title} "), Role::Group);
-            }
-        }
+    for block in &layout.frames {
+        pen.block(block);
     }
-    for head in &placement.heads {
+    for head in &layout.heads {
         pen.head(head);
     }
-    for note in &placement.notes {
+    for note in &layout.notes {
         pen.frame(note.area, LineKind::Light, Corner::Rounded, None);
         pen.centred(&note.label, note.area.left + 2, note.area.top + 1, note.area.right - note.area.left - 3, Role::Label);
     }
-    for message in &placement.messages {
+    for message in &layout.messages {
         pen.message(message);
     }
-    for &(x, y) in &placement.crosses {
-        pen.canvas.cross(pen.point(x, y), Role::Edge);
+    for cross in &layout.crosses {
+        pen.canvas.cross(pen.point(cross.x, cross.y), Role::Edge);
     }
     Ok(pen.canvas)
 }
@@ -93,13 +86,32 @@ impl Pen {
     fn frame(&mut self, area: Area, kind: LineKind, corner: Corner, title: Option<&str>) {
         let rect = self.rect(area);
         self.canvas.frame(rect, Frame { kind, corner, title: None, role: Role::Group });
+        if let Some(title) = title {
+            self.title(area, area.top, title);
+        }
+    }
+
+    /// A block's frame, square, dashed for a `rect`, and its dividers, dashed lines with their titles.
+    fn block(&mut self, block: &Block) {
+        let kind = if block.dashed { LineKind::Dashed } else { LineKind::Light };
+        self.frame(block.area, kind, Corner::Square, Some(block.title.as_str()));
+        for divider in &block.dividers {
+            self.line((block.area.left, divider.row), (block.area.right, divider.row), LineKind::Dashed, Role::Group);
+            self.title(block.area, divider.row, &divider.title);
+        }
+    }
+
+    /// `title` on row `y` of a frame, between ` ` after its second column and ` ` before its last two, cut to fit.
+    fn title(&mut self, area: Area, y: i32, title: &str) {
         let room = area.right - area.left - 5;
-        let Some(title) = title.filter(|title| !title.is_empty() && room > 0) else { return };
+        if title.is_empty() || room <= 0 {
+            return;
+        }
         let written = i32::try_from(vt_canvas::width(title)).unwrap_or(i32::MAX).min(room);
-        let at = self.point(area.left + 3, area.top);
+        let at = self.point(area.left + 3, y);
         self.canvas.text_cut(at, title, u16::try_from(room).unwrap_or(0), Role::Group);
-        self.text(area.left + 2, area.top, " ", Role::Group);
-        self.text(area.left + 3 + written, area.top, " ", Role::Group);
+        self.text(area.left + 2, y, " ", Role::Group);
+        self.text(area.left + 3 + written, y, " ", Role::Group);
     }
 
     /// Each line of `label` centred in `width` columns from `left`, cut with an ellipsis to the label's width.
@@ -117,8 +129,8 @@ impl Pen {
             return;
         }
         self.line((lifeline.x, lifeline.top), (lifeline.x, lifeline.bottom), LineKind::Light, Role::Edge);
-        for &(start, end) in &lifeline.active {
-            let (start, end) = (start.max(lifeline.top), end.max(start + 1).min(lifeline.bottom));
+        for span in lifeline.active.iter().filter(|span| span.top < lifeline.bottom) {
+            let (start, end) = (span.top.max(lifeline.top), span.bottom.max(span.top + 1).min(lifeline.bottom));
             self.line((lifeline.x, start), (lifeline.x, end), LineKind::Heavy, Role::Edge);
         }
     }
@@ -155,16 +167,14 @@ impl Pen {
             self.canvas.path(&points, kind, Role::Edge).unwrap_or_default();
             self.tip(message.tip, (start, row + 1), Direction::Left);
             self.tip(message.back_tip, (start, row), Direction::Left);
-            let (x, y) = message.label_at;
-            self.centred(&message.label, x, y, i32::from(message.label.width), Role::Label);
+            self.centred(&message.label, message.label_at.x, message.label_at.y, i32::from(message.label.width), Role::Label);
             return;
         }
         let (forward, back) = if end >= start { (Direction::Right, Direction::Left) } else { (Direction::Left, Direction::Right) };
         self.line((start, row), (end, row), kind, Role::Edge);
         self.tip(message.tip, (end, row), forward);
         self.tip(message.back_tip, (start, row), back);
-        let (x, y) = message.label_at;
-        self.centred(&message.label, x, y, i32::from(message.label.width), Role::Label);
+        self.centred(&message.label, message.label_at.x, message.label_at.y, i32::from(message.label.width), Role::Label);
     }
 
     fn tip(&mut self, tip: Tip, (x, y): (i32, i32), direction: Direction) {
@@ -178,19 +188,19 @@ impl Pen {
 }
 
 /// The smallest area holding every part.
-fn bounds(placement: &Placement) -> Area {
-    let heads = placement.heads.iter().map(|head| head.area);
-    let notes = placement.notes.iter().map(|note| note.area);
-    let frames = placement.frames.iter().map(|frame| frame.area);
-    let groups = placement.groups.iter().map(|group| group.area);
+fn bounds(layout: &Layout) -> Area {
+    let heads = layout.heads.iter().map(|head| head.area);
+    let notes = layout.notes.iter().map(|note| note.area);
+    let frames = layout.frames.iter().map(|frame| frame.area);
+    let groups = layout.groups.iter().map(|group| group.area);
     let lifelines =
-        placement.lifelines.iter().map(|lifeline| Area { left: lifeline.x, top: lifeline.top, right: lifeline.x, bottom: lifeline.bottom });
-    let messages = placement.messages.iter().map(|message| {
-        let label_right = message.label_at.0 + i32::from(message.label.width) - 1;
+        layout.lifelines.iter().map(|lifeline| Area { left: lifeline.x, top: lifeline.top, right: lifeline.x, bottom: lifeline.bottom });
+    let messages = layout.messages.iter().map(|message| {
+        let label_right = message.label_at.x + i32::from(message.label.width) - 1;
         let row = message.row + i32::from(message.to_itself);
         Area {
-            left: message.start.min(message.end).min(message.label_at.0),
-            top: message.label_at.1.min(message.row),
+            left: message.start.min(message.end).min(message.label_at.x),
+            top: message.label_at.y.min(message.row),
             right: message.start.max(message.end).max(label_right),
             bottom: row,
         }
@@ -200,27 +210,27 @@ fn bounds(placement: &Placement) -> Area {
 }
 
 /// The cells of the lifelines a message, a frame's border, a divider or a note passes in front of.
-fn crossings(placement: &Placement) -> Vec<(i32, i32)> {
+fn crossings(layout: &Layout) -> Vec<(i32, i32)> {
     let mut rows: Vec<(i32, i32, i32)> = Vec::new();
-    for message in &placement.messages {
+    for message in &layout.messages {
         let (left, right) = (message.start.min(message.end), message.start.max(message.end));
         rows.push((left, right, message.row));
         if message.to_itself {
             rows.push((left, right, message.row + 1));
         }
     }
-    for frame in &placement.frames {
+    for frame in &layout.frames {
         let area = frame.area;
-        let borders = [area.top, area.bottom].into_iter().chain(frame.dividers.iter().map(|(y, _)| *y));
+        let borders = [area.top, area.bottom].into_iter().chain(frame.dividers.iter().map(|divider| divider.row));
         rows.extend(borders.map(|y| (area.left + 1, area.right - 1, y)));
     }
-    for note in &placement.notes {
+    for note in &layout.notes {
         rows.extend((note.area.top..=note.area.bottom).map(|y| (note.area.left, note.area.right, y)));
     }
-    for group in &placement.groups {
+    for group in &layout.groups {
         rows.extend([group.area.top, group.area.bottom].map(|y| (group.area.left + 1, group.area.right - 1, y)));
     }
-    placement
+    layout
         .lifelines
         .iter()
         .flat_map(|lifeline| {
