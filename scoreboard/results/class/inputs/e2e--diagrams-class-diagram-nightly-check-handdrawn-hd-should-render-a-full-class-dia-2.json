@@ -5,6 +5,10 @@
       "80": {"status":"rendered","drawn":{"width":131,"rows":23,"area":3013,"fits":false,"node_labels":0,"edge_labels":0,"arrows":7,"crossings":0,"bends":11}},
       "100": {"status":"rendered","drawn":{"width":131,"rows":23,"area":3013,"fits":false,"node_labels":0,"edge_labels":0,"arrows":7,"crossings":0,"bends":11}}
     },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow"},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow"}
+    },
     "mermaid-text": {
       "80": {"status":"refused","reason":"parse error: classDiagram: `note for` not yet supported"},
       "100": {"status":"refused","reason":"parse error: classDiagram: `note for` not yet supported"}

@@ -6,13 +6,17 @@
       "80": {"status":"rendered","drawn":{"width":117,"rows":21,"area":2457,"fits":false,"node_labels":16,"edge_labels":8,"arrows":5,"crossings":0,"bends":12},"score":60},
       "100": {"status":"rendered","drawn":{"width":117,"rows":21,"area":2457,"fits":false,"node_labels":16,"edge_labels":8,"arrows":5,"crossings":0,"bends":12},"score":60}
     },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow","score":0}
+    },
     "mermaid-text": {
       "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"Class01 \\\"1\\\" <|--|> \\\"*\\\" AveryLongClass : Cool\"","score":0},
       "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"Class01 \\\"1\\\" <|--|> \\\"*\\\" AveryLongClass : Cool\"","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":75,"rows":84,"area":6300,"fits":true,"node_labels":19,"edge_labels":12,"arrows":9,"crossings":0,"bends":6},"score":97},
-      "100": {"status":"rendered","drawn":{"width":93,"rows":31,"area":2883,"fits":true,"node_labels":19,"edge_labels":12,"arrows":9,"crossings":0,"bends":5},"score":97}
+      "80": {"status":"rendered","drawn":{"width":75,"rows":84,"area":6300,"fits":true,"node_labels":19,"edge_labels":12,"arrows":9,"crossings":0,"bends":6},"score":97,"exact":{"crossings":0,"bends":6,"edge_cells":291,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":93,"rows":31,"area":2883,"fits":true,"node_labels":19,"edge_labels":12,"arrows":9,"crossings":0,"bends":5},"score":97,"exact":{"crossings":0,"bends":5,"edge_cells":112,"beside_nodes":0,"violations":[]}}
     }
   }
 }

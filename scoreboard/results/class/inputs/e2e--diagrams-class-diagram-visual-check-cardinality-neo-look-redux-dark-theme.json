@@ -5,6 +5,10 @@
       "80": {"status":"rendered","drawn":{"width":105,"rows":20,"area":2100,"fits":false,"node_labels":0,"edge_labels":0,"arrows":5,"crossings":0,"bends":5}},
       "100": {"status":"rendered","drawn":{"width":105,"rows":20,"area":2100,"fits":false,"node_labels":0,"edge_labels":0,"arrows":5,"crossings":0,"bends":5}}
     },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow"},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow"}
+    },
     "mermaid-text": {
       "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"Class01 \\\"1\\\" <|--|> \\\"*\\\" AveryLongClass : Cool\""},
       "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"Class01 \\\"1\\\" <|--|> \\\"*\\\" AveryLongClass : Cool\""}

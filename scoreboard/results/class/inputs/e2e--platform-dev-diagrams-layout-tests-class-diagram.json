@@ -6,13 +6,17 @@
       "80": {"status":"rendered","drawn":{"width":68,"rows":20,"area":1360,"fits":true,"node_labels":15,"edge_labels":0,"arrows":1,"crossings":0,"bends":2},"score":90},
       "100": {"status":"rendered","drawn":{"width":68,"rows":20,"area":1360,"fits":true,"node_labels":15,"edge_labels":0,"arrows":1,"crossings":0,"bends":2},"score":90}
     },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow","score":0}
+    },
     "mermaid-text": {
       "80": {"status":"refused","reason":"parse error: classDiagram: colon-shorthand member form not yet supported","score":0},
       "100": {"status":"refused","reason":"parse error: classDiagram: colon-shorthand member form not yet supported","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":65,"rows":20,"area":1300,"fits":true,"node_labels":15,"edge_labels":0,"arrows":3,"crossings":0,"bends":2},"score":100},
-      "100": {"status":"rendered","drawn":{"width":65,"rows":20,"area":1300,"fits":true,"node_labels":15,"edge_labels":0,"arrows":3,"crossings":0,"bends":2},"score":100}
+      "80": {"status":"rendered","drawn":{"width":65,"rows":20,"area":1300,"fits":true,"node_labels":15,"edge_labels":0,"arrows":3,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":4,"edge_cells":52,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":65,"rows":20,"area":1300,"fits":true,"node_labels":15,"edge_labels":0,"arrows":3,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":4,"edge_cells":52,"beside_nodes":0,"violations":[]}}
     }
   }
 }

@@ -6,13 +6,17 @@
       "80": {"status":"rendered","drawn":{"width":15,"rows":7,"area":105,"fits":true,"node_labels":3,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":73},
       "100": {"status":"rendered","drawn":{"width":15,"rows":7,"area":105,"fits":true,"node_labels":3,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":73}
     },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'classDiagram'. Supported types: 'graph' or 'flow","score":0}
+    },
     "mermaid-text": {
       "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised relationship marker \"--()\" in \"Class01 --() bar\"","score":0},
       "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised relationship marker \"--()\" in \"Class01 --() bar\"","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":27,"rows":19,"area":513,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":12},"score":85},
-      "100": {"status":"rendered","drawn":{"width":27,"rows":19,"area":513,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":12},"score":85}
+      "80": {"status":"rendered","drawn":{"width":27,"rows":19,"area":513,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":12},"score":85,"exact":{"crossings":0,"bends":0,"edge_cells":12,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":27,"rows":19,"area":513,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":12},"score":85,"exact":{"crossings":0,"bends":0,"edge_cells":12,"beside_nodes":0,"violations":[]}}
     }
   }
 }
