@@ -1,4 +1,4 @@
-//! How long `render` takes on a typical flowchart, sequence, state and class diagram and on inputs built at each limit:
+//! How long `render` takes on a typical flowchart, sequence, state, class and ER diagram and on inputs built at each limit:
 //! `cargo bench --bench limits`.
 
 use divan::black_box;
@@ -142,6 +142,27 @@ fn class_at_the_limits() -> Result<Canvas, Error> {
 fn class_source_at_the_limit() -> Result<Canvas, Error> {
     let end = "\n  }\n";
     let source = format!("classDiagram\n  class Huge {{\n{}", "    +String attribute\n".repeat(4_000));
+    render(&format!("{}{end}", source.chars().take(MAX_SOURCE_BYTES - end.len()).collect::<String>()))
+}
+
+#[divan::bench]
+fn shop() -> Result<Canvas, Error> {
+    render(include_str!("../tests/er/shop.mmd"))
+}
+
+/// The node and edge limits: 200 entities with an attribute each, 150 relationships from the first ten in turn.
+#[divan::bench(sample_count = 3, sample_size = 1)]
+fn er_at_the_limits() -> Result<Canvas, Error> {
+    let entities: String = (0..MAX_NODES).map(|index| format!("  E{index} {{\n    int id{index} PK\n  }}\n")).collect();
+    let relationships: String = (0..MAX_EDGES).map(|index| format!("  E{} ||--o{{ E{} : has\n", index % 10, index + 10)).collect();
+    render(&format!("erDiagram\n{entities}{relationships}"))
+}
+
+/// 64 KiB of attributes in one entity: one table nearly 3000 rows tall.
+#[divan::bench(sample_count = 10)]
+fn er_source_at_the_limit() -> Result<Canvas, Error> {
+    let end = "\n  }\n";
+    let source = format!("erDiagram\n  HUGE {{\n{}", "    string attribute PK\n".repeat(4_000));
     render(&format!("{}{end}", source.chars().take(MAX_SOURCE_BYTES - end.len()).collect::<String>()))
 }
 
