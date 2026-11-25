@@ -46,6 +46,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 - Ten minutes of fuzzing the parser alone, 1.8 million inputs, found no panic and no input that took a second.
   Ten minutes of the sequence parser alone, 9.2 million inputs, and twenty of `render` seeded with sequence diagrams, 4.9 million, found none either.
   Ten minutes of the state parser alone, 11.4 million inputs, and twenty of `render` seeded with state diagrams, 0.55 million, found none either.
+  Ten minutes of the class parser alone, 14.8 million inputs, two runs of the ER parser, 7.5 million, and twenty minutes of `render` seeded with class diagrams, 0.24 million, found none either.
   Read by mermaid itself, the 2785 state diagrams the state parser's fuzzing kept are accepted and refused alike but where mermaid's YAML reader refuses a front matter, or over the node limit, and the 1130 both read hold as many nodes and edges.
 - The `measure` feature adds `measure(source, max_width)` for flowcharts and state diagrams: crossings, bends, edge cells, cells beside a node and level C violations, read from where each part went.
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
