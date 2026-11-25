@@ -7,8 +7,8 @@
       "100": {"status":"refused","reason":"Invalid mermaid header: \"flowchart\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
     },
     "mermaid-ascii": {
-      "80": {"status":"rendered","drawn":{"width":39,"rows":35,"area":1365,"fits":true,"node_labels":8,"edge_labels":0,"arrows":9,"crossings":4,"bends":14},"score":87},
-      "100": {"status":"rendered","drawn":{"width":39,"rows":35,"area":1365,"fits":true,"node_labels":8,"edge_labels":0,"arrows":9,"crossings":4,"bends":14},"score":87}
+      "80": {"status":"rendered","drawn":{"width":39,"rows":35,"area":1365,"fits":true,"node_labels":8,"edge_labels":0,"arrows":12,"crossings":0,"bends":14},"score":97},
+      "100": {"status":"rendered","drawn":{"width":39,"rows":35,"area":1365,"fits":true,"node_labels":8,"edge_labels":0,"arrows":12,"crossings":0,"bends":14},"score":97}
     },
     "mermaid-text": {
       "80": {"status":"rendered","drawn":{"width":24,"rows":36,"area":864,"fits":true,"node_labels":8,"edge_labels":0,"arrows":10,"crossings":4,"bends":20},"score":88},

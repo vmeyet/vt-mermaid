@@ -6,6 +6,7 @@
 
 mod expected;
 mod gallery;
+mod lines;
 mod metrics;
 mod results;
 mod tool;

@@ -3,8 +3,8 @@
   "expected": {"node_labels":4,"edge_labels":2,"arrows":4},
   "tools": {
     "beautiful-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":22,"rows":25,"area":550,"fits":true,"node_labels":4,"edge_labels":2,"arrows":3,"crossings":0,"bends":2},"score":96},
-      "100": {"status":"rendered","drawn":{"width":22,"rows":25,"area":550,"fits":true,"node_labels":4,"edge_labels":2,"arrows":3,"crossings":0,"bends":2},"score":96}
+      "80": {"status":"rendered","drawn":{"width":22,"rows":25,"area":550,"fits":true,"node_labels":4,"edge_labels":2,"arrows":4,"crossings":0,"bends":2},"score":100},
+      "100": {"status":"rendered","drawn":{"width":22,"rows":25,"area":550,"fits":true,"node_labels":4,"edge_labels":2,"arrows":4,"crossings":0,"bends":2},"score":100}
     },
     "mermaid-ascii": {
       "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: Could not parse line: classDef exClass background:#bbb,border:1px solid ","score":0},

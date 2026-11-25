@@ -3,15 +3,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::expected::{Expected, without_markup};
+use crate::lines::{self, ARROWS, BOTTOM_LEFT, BOTTOM_RIGHT, CROSSINGS, Lines, TOP_LEFT, TOP_RIGHT};
 use crate::tool::{Run, Status};
-
-const CROSSINGS: &str = "┼╋╪╫╬┿╀╁╂╃╄╅╆╇╈╉╊";
-const TOP_LEFT: &str = "┌╭┏╔";
-const TOP_RIGHT: &str = "┐╮┓╗";
-const BOTTOM_LEFT: &str = "└╰┗╚";
-const BOTTOM_RIGHT: &str = "┘╯┛╝";
-const VERTICAL: &str = "│┃║╎╏┆┇┊┋├┤┝┥┠┨┣┫╞╡╟╢╠╣┼╋╪╫╬";
-const ARROWS: &str = "►▶▸▷→◄◀◂◁←▲▴△↑▼▾▽↓";
 
 /// How one tool did on one input at one width.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -69,6 +62,8 @@ impl Drawn {
         let all = rows.join("\n");
         let shown = without_markup(&all);
         let found = |labels: &[Vec<String>]| labels.iter().filter(|words| words.iter().all(|word| shown.contains(word.as_str()))).count();
+        let boxes = lines::boxes(&grid);
+        let lines = Lines::of(&grid, &boxes);
         let corners = count(&all, TOP_LEFT) + count(&all, TOP_RIGHT) + count(&all, BOTTOM_LEFT) + count(&all, BOTTOM_RIGHT);
         Self {
             width,
@@ -77,9 +72,9 @@ impl Drawn {
             fits: width <= usize::from(max_width),
             node_labels: expected.map_or(0, |expected| found(&expected.node_labels)),
             edge_labels: expected.map_or(0, |expected| found(&expected.edge_labels)),
-            arrows: count(&all, ARROWS),
-            crossings: count(&all, CROSSINGS),
-            bends: corners.saturating_sub(4 * boxes(&grid)),
+            arrows: count(&all, ARROWS) + lines.shared_arrows,
+            crossings: count(&all, CROSSINGS).saturating_sub(lines.trunk_crossings),
+            bends: corners.saturating_sub(4 * boxes.len()),
         }
     }
 
@@ -120,34 +115,6 @@ fn count(text: &str, glyphs: &str) -> usize {
     text.chars().filter(|char| glyphs.contains(*char)).count()
 }
 
-/// Closed rectangles: a top-left corner whose row reaches a top-right corner, with sides down to the two bottom corners.
-/// Their corners are frames, not edges bending, so they are taken out of the bend count.
-fn boxes(grid: &[Vec<char>]) -> usize {
-    let at = |row: usize, column: usize| grid.get(row).and_then(|cells| cells.get(column)).copied().unwrap_or(' ');
-    let is = |row: usize, column: usize, glyphs: &str| glyphs.contains(at(row, column));
-    let mut found = 0;
-    for (top, cells) in grid.iter().enumerate() {
-        let lefts = cells.iter().enumerate().filter(|(_, cell)| TOP_LEFT.contains(**cell)).map(|(left, _)| left);
-        for left in lefts {
-            let Some(right) = (left + 1..cells.len()).find(|&column| is(top, column, TOP_RIGHT) || is(top, column, TOP_LEFT)) else {
-                continue;
-            };
-            if !is(top, right, TOP_RIGHT) {
-                continue;
-            }
-            let side = |column: usize| (top + 1..grid.len()).find(|&row| !is(row, column, VERTICAL));
-            if let (Some(bottom), Some(other)) = (side(left), side(right))
-                && bottom == other
-                && is(bottom, left, BOTTOM_LEFT)
-                && is(bottom, right, BOTTOM_RIGHT)
-            {
-                found += 1;
-            }
-        }
-    }
-    found
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -163,6 +130,15 @@ mod tests {
         let drawn = Drawn::of(text, 80, Some(&expected(&["A", "B"], 1)));
 
         assert_eq!((drawn.bends, drawn.arrows, drawn.node_labels, drawn.rows, drawn.width), (1, 1, 2, 7, 9));
+    }
+
+    #[test]
+    fn edges_merged_into_one_line_count_an_arrow_each_and_their_trunk_is_no_crossing() {
+        let text = "┌───┐\n│ A ├───┐\n└───┘   │\n┌───┐   │  ┌───┐\n│ B ├───┼─▸│ D │\n└───┘   │  └───┘\n┌───┐   │\n│ C ├───┘\n└───┘";
+
+        let drawn = Drawn::of(text, 80, Some(&expected(&["A", "B", "C", "D"], 3)));
+
+        assert_eq!((drawn.arrows, drawn.crossings), (3, 0));
     }
 
     #[test]

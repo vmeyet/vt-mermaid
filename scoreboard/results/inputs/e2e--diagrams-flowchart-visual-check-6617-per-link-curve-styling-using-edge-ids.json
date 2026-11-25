@@ -7,16 +7,16 @@
       "100": {"status":"rendered","drawn":{"width":122,"rows":5,"area":610,"fits":false,"node_labels":5,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":57}
     },
     "mermaid-ascii": {
-      "80": {"status":"rendered","drawn":{"width":197,"rows":17,"area":3349,"fits":false,"node_labels":6,"edge_labels":0,"arrows":6,"crossings":1,"bends":5},"score":69},
-      "100": {"status":"rendered","drawn":{"width":197,"rows":17,"area":3349,"fits":false,"node_labels":6,"edge_labels":0,"arrows":6,"crossings":1,"bends":5},"score":69}
+      "80": {"status":"rendered","drawn":{"width":197,"rows":17,"area":3349,"fits":false,"node_labels":6,"edge_labels":0,"arrows":7,"crossings":1,"bends":5},"score":71},
+      "100": {"status":"rendered","drawn":{"width":197,"rows":17,"area":3349,"fits":false,"node_labels":6,"edge_labels":0,"arrows":7,"crossings":1,"bends":5},"score":71}
     },
     "mermaid-text": {
       "80": {"status":"refused","reason":"rendered diagram is 162 columns wide, exceeding the strict budget of 80","score":0},
       "100": {"status":"refused","reason":"rendered diagram is 167 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":18,"rows":21,"area":378,"fits":true,"node_labels":6,"edge_labels":0,"arrows":5,"crossings":1,"bends":8},"score":87,"exact":{"crossings":0,"bends":12,"edge_cells":67,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":18,"rows":21,"area":378,"fits":true,"node_labels":6,"edge_labels":0,"arrows":5,"crossings":1,"bends":8},"score":87,"exact":{"crossings":0,"bends":12,"edge_cells":67,"violations":[]}}
+      "80": {"status":"rendered","drawn":{"width":18,"rows":21,"area":378,"fits":true,"node_labels":6,"edge_labels":0,"arrows":8,"crossings":0,"bends":8},"score":100,"exact":{"crossings":0,"bends":12,"edge_cells":67,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":18,"rows":21,"area":378,"fits":true,"node_labels":6,"edge_labels":0,"arrows":8,"crossings":0,"bends":8},"score":100,"exact":{"crossings":0,"bends":12,"edge_cells":67,"violations":[]}}
     }
   }
 }

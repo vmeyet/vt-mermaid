@@ -47,14 +47,26 @@ Meaning comes from the oracle's level B results ([`oracle/results/flowchart.json
 | Width, rows, area | Display columns of the widest row, rows, their product; trailing spaces and blank rows above and below are left out | No |
 | Fits | Width at most the columns asked for | No |
 | Node labels, edge labels | A label is present when every word of it appears somewhere in the output, markup removed from both the same way for every tool; the table averages the share found per input | Yes: words can match elsewhere, and a label cut with `⋯` counts as missing |
-| Arrows right | Arrowhead glyphs (`►▶▸▷→◄◀◂◁←▲▴△↑▼▾▽↓`) equal the oracle's arrowheads: one per `-->`, two per `<-->`, none for open, circle or cross ends | Yes: edges a tool merges into one trunk share one arrowhead |
-| Crossings | `┼`-like glyphs | Yes: an edge through a group frame draws one too, and so does a trunk its edges leave on both sides |
+| Arrows right | Arrowhead glyphs (`►▶▸▷→◄◀◂◁←▲▴△↑▼▾▽↓`), and one more for each edge sharing an arrowhead, equal the oracle's arrowheads: one per `-->`, two per `<-->`, none for open, circle or cross ends | Yes: see [Lines followed](#lines-followed) |
+| Crossings | `┼`-like glyphs, those where a trunk parts or gathers both ways left out | Yes: an edge through a group frame draws one too; see [Lines followed](#lines-followed) |
 | Bends | Corner glyphs left once every closed rectangle's four corners are taken out | Yes: merged edges and odd shapes miscount |
 | Score | 0 when not rendered; else 50 × the share of labels found, 20 if it fits, 15 × how close the arrowheads are to the oracle's, 15 ÷ (1 + crossings); only for inputs whose oracle has a node | Yes: a weighting, made to rank, not to judge |
 | Median ms, p95 ms | Wall time of the child process over every input, start-up included: Node and ELK add about half a second to beautiful-mermaid | Noisy: the runs share all cores |
 
 Markup removed means: `<br>`, `<br/>` and `<br />` are a space, a tag (`<` with a letter or `/`, up to `>`) goes as the oracle's sanitised labels drop it, and so do `*` and backticks.
 The oracle's escaped characters (`&lt;`, `&amp;`…) are read back; a tool's are not, as a user would see them.
+
+### Lines followed
+
+Two counts follow the lines from glyph to glyph ([`lines.rs`](lines.rs)), the same way for every tool, since glyphs alone miscount merged edges.
+Lines joined end to end are one network; a `┼` joins only the cells it lies between, and the sides of a closed rectangle, a node or a frame, end a line.
+
+- Shared arrowheads: a network with an arrowhead counts an arrow for each end it has on a rectangle's side beyond its arrowheads, so a fan-in merged into one line counts one per edge.
+  A line that ends only on rectangles and crosses a line with an arrowhead gathers into it: each of its ends counts one more.
+- Trunk crossings: a `┼` is not a crossing when the line across it leads only to arrowheads, two or more (a trunk parting both ways), or gathers as above.
+- Where it is wrong: a line cut by its label, by a frame's title or ending on a shape that is no rectangle is followed no further, so its edges count as before;
+  an open link (`---`) or a `<-->` edge crossing an arrow edge reads as a trunk;
+  a tool that draws a line onto a frame's side gets an arrow too many.
 
 The second table per width compares layout only where it can: on the inputs every tool drew.
 
