@@ -13,6 +13,7 @@ mod unicode;
 
 use std::fmt;
 
+use crate::source;
 pub(super) use crate::source::is_space;
 
 pub(super) use db::{Edge, Flowchart, Subgraph};
@@ -81,7 +82,7 @@ pub(super) fn parse(source: &str, limits: Limits) -> Result<Flowchart, Error> {
     }
     let prepared = prepare::prepare(source);
     let text = prepared.text;
-    if !text.starts_with("graph") && !text.starts_with("flowchart") {
+    if !source::opens_with(&text, "graph") && !source::opens_with(&text, "flowchart") {
         return Err(Invalid::NoDiagram.into());
     }
     let tokens = lexer::tokens(&text)?;

@@ -58,7 +58,12 @@ pub(crate) struct Block {
 impl Block {
     /// The value of `key` when JavaScript counts it as given, as mermaid's `if (doc.key)` does.
     pub(crate) fn given(&self, key: &str) -> Option<&Value> {
-        self.pairs.iter().find(|(name, _)| name == key).map(|(_, value)| value).filter(|value| value.is_truthy())
+        self.value(key).filter(|value| value.is_truthy())
+    }
+
+    /// The value of `key` unless it is missing or null, as JavaScript's `doc.key ?? fallback` takes it.
+    pub(crate) fn value(&self, key: &str) -> Option<&Value> {
+        self.pairs.iter().find(|(name, _)| name == key).map(|(_, value)| value).filter(|value| **value != Value::Null)
     }
 }
 
@@ -72,7 +77,7 @@ pub(crate) fn read(block: &str) -> Result<Block, Malformed> {
 /// `{ key: value, key: "value" }`.
 fn flow_pairs(block: &str) -> Result<Vec<(String, Value)>, Malformed> {
     let mut pairs = Vec::new();
-    let mut rest = block.trim_matches(is_space);
+    let mut rest = without_comment(block).trim_matches(is_space);
     while !rest.is_empty() {
         let (key, after_key) = scalar(rest, Mapping::Flow)?;
         let after_colon = after_key.trim_start_matches(is_space).strip_prefix(':');
@@ -354,6 +359,12 @@ mod tests {
 
         assert_eq!(truthy, [false, true, false, false, false, true]);
         assert_eq!([Value::Number("42".to_owned()).text(), Value::Null.text()], [Some("42".to_owned()), None]);
+    }
+
+    #[test]
+    fn a_comment_ends_an_inline_block() {
+        assert_eq!(read("# \"type\": \"actor\" }").unwrap().pairs, []);
+        assert_eq!(read("a: 1 # b: 2").unwrap().pairs, [("a".to_owned(), Value::Number("1".to_owned()))]);
     }
 
     #[test]

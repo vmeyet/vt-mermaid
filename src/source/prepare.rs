@@ -186,12 +186,28 @@ fn with_entities_marked(text: &str) -> String {
     out
 }
 
+/// Mermaid's `stripAnyComments`, which its diagram detection runs: each `%%` up to its line end, with the spaces
+/// before it, becomes a line end; a `%%` on the last line, without a line end, stays.
+pub(crate) fn without_any_comments(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut consumed = 0;
+    while let Some(marker) = text[consumed..].find("%%").map(|at| consumed + at) {
+        let Some(line_end) = text[marker..].find('\n').map(|at| marker + at) else { break };
+        let start = consumed + text[consumed..marker].trim_end_matches(is_space).len();
+        out.push_str(&text[consumed..start]);
+        out.push('\n');
+        consumed = line_end + 1;
+    }
+    out.push_str(&text[consumed..]);
+    out
+}
+
 fn skip_space(text: &str, from: usize) -> usize {
     from + text[from..].find(|char| !is_space(char)).unwrap_or(text.len() - from)
 }
 
 /// A character of a JavaScript regex `\w`.
-fn is_word(char: char) -> bool {
+pub(crate) fn is_word(char: char) -> bool {
     char.is_ascii_alphanumeric() || char == '_'
 }
 
@@ -250,6 +266,11 @@ mod tests {
     fn the_last_semicolon_of_a_style_line_with_a_colour_goes() {
         assert_eq!(without_last_semicolon("style A fill:#f9f;stroke:#333;\nB;", "style"), "style A fill:#f9f;stroke:#333\nB;");
         assert_eq!(without_last_semicolon("style A fill: #f9f;", "style"), "style A fill: #f9f;");
+    }
+
+    #[test]
+    fn any_comment_becomes_a_line_end_with_the_spaces_before_it() {
+        assert_eq!(without_any_comments("%%\nsequenceDiagram\n  A %% c\nB %%"), "\nsequenceDiagram\n  A\nB %%");
     }
 
     #[test]

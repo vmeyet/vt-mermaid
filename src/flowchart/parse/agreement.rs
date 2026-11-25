@@ -11,7 +11,7 @@ use serde_json::Value;
 use super::db::TextKind;
 use super::{Flowchart, Limits, parse};
 use crate::error::Error;
-use crate::source::entity;
+use crate::source::sanitized;
 
 /// Mermaid's own limit, `maxEdges`, and no other, so the corpus is read as mermaid reads it.
 const MERMAID: Limits = Limits { bytes: usize::MAX, nodes: usize::MAX, edges: 500 };
@@ -143,25 +143,6 @@ fn kind_name(kind: TextKind) -> &'static str {
         TextKind::String => "string",
         TextKind::Markdown => "markdown",
     }
-}
-
-/// Mermaid's labels go through DOMPurify, which drops unknown tags and escapes text holding a tag: compared without
-/// tags and with entities decoded, as the scoreboard reads labels.
-fn sanitized(text: &str) -> String {
-    let mut untagged = String::with_capacity(text.len());
-    let mut rest = text;
-    while let Some(open) = rest.find('<') {
-        let is_tag = rest[open + 1..].starts_with(|char: char| char.is_ascii_alphabetic() || char == '/');
-        if let Some(close) = rest[open..].find('>').filter(|_| is_tag) {
-            untagged.push_str(&rest[..open]);
-            rest = &rest[open + close + 1..];
-        } else {
-            untagged.push_str(&rest[..=open]);
-            rest = &rest[open + 1..];
-        }
-    }
-    untagged.push_str(rest);
-    entity::decoded(&untagged)
 }
 
 /// The lines of `one` missing from `other`.
