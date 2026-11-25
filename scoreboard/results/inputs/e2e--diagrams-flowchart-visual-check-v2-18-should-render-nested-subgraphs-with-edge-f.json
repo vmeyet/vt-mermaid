@@ -15,8 +15,8 @@
       "100": {"status":"rendered","drawn":{"width":87,"rows":27,"area":2349,"fits":true,"node_labels":7,"edge_labels":0,"arrows":2,"crossings":1,"bends":7},"score":93}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the drawing needs 240 columns, more than the 80 allowed","score":0},
-      "100": {"status":"refused","reason":"the drawing needs 240 columns, more than the 100 allowed","score":0}
+      "80": {"status":"rendered","drawn":{"width":72,"rows":29,"area":2088,"fits":true,"node_labels":7,"edge_labels":0,"arrows":2,"crossings":3,"bends":0},"score":89,"exact":{"crossings":0,"bends":0,"edge_cells":18,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":72,"rows":29,"area":2088,"fits":true,"node_labels":7,"edge_labels":0,"arrows":2,"crossings":3,"bends":0},"score":89,"exact":{"crossings":0,"bends":0,"edge_cells":18,"violations":[]}}
     }
   }
 }

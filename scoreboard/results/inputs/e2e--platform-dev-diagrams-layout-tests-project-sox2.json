@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 136 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the drawing needs 228 columns, more than the 80 allowed","score":0},
-      "100": {"status":"refused","reason":"the drawing needs 228 columns, more than the 100 allowed","score":0}
+      "80": {"status":"rendered","drawn":{"width":76,"rows":102,"area":7752,"fits":true,"node_labels":20,"edge_labels":4,"arrows":25,"crossings":13,"bends":29},"score":81,"exact":{"crossings":13,"bends":29,"edge_cells":519,"violations":["edge 6 D → I label found no room","edge 9 E → J label found no room","edge 12 F → K label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":98,"rows":89,"area":8722,"fits":true,"node_labels":20,"edge_labels":4,"arrows":25,"crossings":9,"bends":24},"score":81,"exact":{"crossings":9,"bends":24,"edge_cells":514,"violations":["edge 6 D → I label found no room","edge 8 D → L label found no room","edge 9 E → J label found no room","edge 13 F → N label found no room"]}}
     }
   }
 }

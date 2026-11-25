@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 152 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the drawing needs 168 columns, more than the 80 allowed","score":0},
-      "100": {"status":"refused","reason":"the drawing needs 168 columns, more than the 100 allowed","score":0}
+      "80": {"status":"rendered","drawn":{"width":78,"rows":52,"area":4056,"fits":true,"node_labels":8,"edge_labels":0,"arrows":20,"crossings":21,"bends":32},"score":64,"exact":{"crossings":21,"bends":32,"edge_cells":631,"violations":["node 37 has 1 label lines not drawn whole","node 38 has 1 label lines not drawn whole","node 42 has 1 label lines not drawn whole","node 43 has 1 label lines not drawn whole","node 45 has 1 label lines not drawn whole","node 48 has 1 label lines not drawn whole"]}},
+      "100": {"status":"rendered","drawn":{"width":97,"rows":51,"area":4947,"fits":true,"node_labels":8,"edge_labels":0,"arrows":20,"crossings":23,"bends":38},"score":64,"exact":{"crossings":23,"bends":38,"edge_cells":628,"violations":["node 37 has 1 label lines not drawn whole","node 38 has 1 label lines not drawn whole","node 42 has 1 label lines not drawn whole","node 43 has 1 label lines not drawn whole","node 45 has 1 label lines not drawn whole","node 48 has 1 label lines not drawn whole"]}}
     }
   }
 }

@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 145 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the drawing needs 298 columns, more than the 80 allowed","score":0},
-      "100": {"status":"refused","reason":"the drawing needs 298 columns, more than the 100 allowed","score":0}
+      "80": {"status":"refused","reason":"no path joins 82072290_1ec3_e711_8c5a_005056ad0002 to 8f102290_1ec3_e711_8c5a_005056ad0002","score":0},
+      "100": {"status":"refused","reason":"the drawing needs 103 columns, more than the 100 allowed","score":0}
     }
   }
 }

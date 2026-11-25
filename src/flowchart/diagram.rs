@@ -85,15 +85,20 @@ impl Diagram {
         Ok(Self::new(&parse(source)?))
     }
 
-    /// Like [`read`](Self::read), its ranks going down whatever the source says: a left-to-right flowchart too wide
-    /// for the terminal often fits once turned.
+    /// Like [`read`](Self::read), its ranks and those of its groups going down where the source says sideways: a
+    /// left-to-right flowchart too wide for the terminal often fits once turned.
     pub(super) fn read_top_down(source: &str) -> Result<Self, Error> {
         let parsed = parse(source)?;
-        Ok(Self::new(&Parsed { graph: Graph { direction: mmdr::Direction::TopDown, ..parsed.graph }, ..parsed }))
+        let subgraphs =
+            parsed.graph.subgraphs.into_iter().map(|subgraph| mmdr::Subgraph { direction: subgraph.direction.map(top_down), ..subgraph });
+        let graph = Graph { direction: top_down(parsed.graph.direction), subgraphs: subgraphs.collect(), ..parsed.graph };
+        Ok(Self::new(&Parsed { graph, ..parsed }))
     }
 
-    pub(super) fn is_horizontal(&self) -> bool {
-        matches!(self.flow, Direction::Left | Direction::Right)
+    /// Whether its ranks, or those of one of its groups, go left or right.
+    pub(super) fn flows_sideways(&self) -> bool {
+        let sideways = |flow: Direction| matches!(flow, Direction::Left | Direction::Right);
+        sideways(self.flow) || self.groups.iter().any(|group| sideways(group.flow))
     }
 
     fn new(parsed: &Parsed) -> Self {
@@ -182,6 +187,13 @@ fn shape_of(shape: NodeShape) -> Shape {
         NodeShape::TrapezoidAlt => Shape::InvertedTrapezoid,
         NodeShape::Asymmetric => Shape::Asymmetric,
         _ => Shape::Rectangle,
+    }
+}
+
+fn top_down(direction: mmdr::Direction) -> mmdr::Direction {
+    match direction {
+        mmdr::Direction::LeftRight | mmdr::Direction::RightLeft => mmdr::Direction::TopDown,
+        vertical => vertical,
     }
 }
 

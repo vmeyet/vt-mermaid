@@ -20,7 +20,8 @@ This page says how the code is laid out today; when a module or a boundary chang
 ## Contract
 
 - `render(source, max_width)` returns the drawing as a `Canvas`, at most `max_width` columns wide.
-  A flowchart flowing sideways that is too wide is laid out again top-down; one still too wide is `Error::TooWide`, so the caller can fall back.
+  A flowchart too wide is drawn again until it fits: turned top-down when it or one of its groups flows sideways, then with half the room the layout leaves between blocks, then with none and its wide ranks folded into rows, each as written before turned.
+  One still too wide is `Error::TooWide`, so the caller can fall back.
 - Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`).
 - Time, measured on an Apple M5 in a release build with `cargo bench --bench limits` and `cargo bench --bench corpus`, the fastest of a few runs on a shared machine:
   - The corpus's 946 flowcharts at 100 columns: median 1 ms, p95 143 ms, p99 295 ms, slowest 3.1 s (`e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression`, too wide, so laid out twice).
@@ -63,6 +64,9 @@ Two modules rewrite what mmdr 0.3.1 misreads before it reads the source, with `s
 - Snap: one column is 8.192 layout pixels and one row 24, the size of the stand-in `n` and its line; a rank keeps the layout's start along the flow and centres its nodes across it.
   Blocks of one rank, or one within another's extent, move apart across the flow; a rank too close to the one before moves along, with every later rank.
   Gaps: 3 rows between ranks and 4 columns between siblings when the flow goes down or up; 6 columns, or the widest edge label plus 4, between ranks and 1 row between siblings when it goes sideways.
+  Room: the snap keeps the room the layout leaves between blocks from side to side of the screen, half of it, or none; the gaps stay.
+  With half, a rank going down keeps the middles of its blocks in proportion and a rank going sideways its start; a pulled rank still comes a rank gap after the blocks its edges come from.
+  With none, every block starts on the left and a rank going down wider than the columns allowed is folded into rows, a rank gap apart; a group has 4 columns fewer than its parent.
   A group's frame keeps 2 cells around what it holds and is wide enough for its title; the grid keeps 3 empty cells around everything.
 - Route: shortest edges first; a step costs 1, a bend 4, crossing another line 6, and leaving or entering a node through a side other than the flow's 4, plus half the distance from the middle of that side.
   Lines cross only at a right angle, never where one turns or ends, and never run along a node's border or another line.

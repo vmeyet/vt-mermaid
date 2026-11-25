@@ -18,6 +18,7 @@ use vt_canvas::{Canvas, Rect};
 use crate::error::{Error, MAX_AREA, MAX_SOURCE_BYTES};
 use diagram::Diagram;
 use route::Route;
+use snap::{MARGIN, Placement, Room};
 
 /// A drawn flowchart and where each part went, in canvas cells.
 #[derive(Debug, Clone)]
@@ -30,24 +31,40 @@ pub(crate) struct Drawing {
     labels: Vec<Option<Rect>>,
 }
 
-/// Draws `source` as laid out, or turned top-down when it flows sideways and that is too wide.
+/// Draws `source` in the first form that fits `max_width`: with the whole room the layout leaves, then half of it,
+/// then none and its wide ranks folded; each time as written, then turned top-down when it flows sideways.
 pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
     if source.len() > MAX_SOURCE_BYTES {
         return Err(Error::TooLong { bytes: source.len() });
     }
-    let diagram = Diagram::read(source)?;
-    match drawn(&diagram, max_width) {
-        Err(Error::TooWide { .. }) if diagram.is_horizontal() => drawn(&Diagram::read_top_down(source)?, max_width),
-        drawing => drawing,
+    let written = Diagram::read(source)?;
+    let as_laid_out = drawn(&written, Room::Whole, max_width);
+    if !matches!(as_laid_out, Err(Error::TooWide { .. })) {
+        return as_laid_out;
     }
+    let turned = if written.flows_sideways() { Some(Diagram::read_top_down(source)?) } else { None };
+    let tighter = [Room::Half, Room::Folded { columns: i32::from(max_width) }]
+        .into_iter()
+        .flat_map(|room| std::iter::once(&written).chain(&turned).map(move |diagram| (diagram, room)));
+    turned.iter().map(|diagram| (diagram, Room::Whole)).chain(tighter).fold(as_laid_out, |drawing, (diagram, room)| match drawing {
+        Err(Error::TooWide { .. }) => drawn(diagram, room, max_width),
+        found => found,
+    })
 }
 
-fn drawn(diagram: &Diagram, max_width: u16) -> Result<Drawing, Error> {
-    let placement = snap::place(diagram);
+fn drawn(diagram: &Diagram, room: Room, max_width: u16) -> Result<Drawing, Error> {
+    let placement = snap::place(diagram, room);
+    check_width(&placement, max_width)?;
     check_area(usize::from(placement.size.width), usize::from(placement.size.height))?;
     let (routes, grid) = route::route(diagram, &placement)?;
     let labels = edge_label::place(diagram, &routes, &grid);
     draw::draw(diagram, draw::Parts { nodes: placement.nodes, groups: placement.groups, routes, labels }, max_width)
+}
+
+/// Blocks wider than allowed are refused before their edges are routed: routes only add to the width.
+fn check_width(placement: &Placement, max_width: u16) -> Result<(), Error> {
+    let width = placement.size.width.saturating_sub(2 * MARGIN);
+    if width > max_width { Err(Error::TooWide { width: usize::from(width), max_width }) } else { Ok(()) }
 }
 
 fn check_area(width: usize, height: usize) -> Result<(), Error> {
@@ -158,6 +175,47 @@ mod tests {
 
         assert_eq!(rows(&sideways.canvas).len(), 3);
         assert!(rows(&turned.canvas).len() > 9);
+    }
+
+    #[test]
+    fn a_group_flowing_sideways_too_wide_is_turned_top_down() {
+        let source = "flowchart TB\n  subgraph Steps\n    direction LR\n    A[First step] --> B[Second step] --> C[Third step]\n  end";
+
+        let sideways = render(source, WIDTH).unwrap();
+        let turned = render(source, 30).unwrap();
+
+        assert_eq!(rows(&sideways.canvas).len(), 7);
+        assert!(rows(&turned.canvas).len() > 13);
+    }
+
+    #[test]
+    fn a_rank_too_wide_is_folded_into_rows() {
+        let source = "flowchart TB\n  A[Start] --> B[First option] & C[Second option] & D[Third option]";
+
+        let one_row = render(source, WIDTH).unwrap();
+        let folded = render(source, 40).unwrap();
+
+        assert_eq!(rows(&one_row.canvas).len(), 9);
+        assert_eq!(
+            rows(&folded.canvas),
+            [
+                "  ┌───────┐                           ",
+                "┌─┤ Start ├────────────┐              ",
+                "│ └───┬───┘            │              ",
+                "│     │                │              ",
+                "│     │                │              ",
+                "│     ▾                ▾              ",
+                "│ ┌──────────────┐    ┌──────────────┐",
+                "│ │ First option │    │ Third option │",
+                "│ └──────────────┘    └──────────────┘",
+                "│                                     ",
+                "│                                     ",
+                "│                                     ",
+                "│ ┌───────────────┐                   ",
+                "└▸│ Second option │                   ",
+                "  └───────────────┘                   ",
+            ]
+        );
     }
 
     #[test]
