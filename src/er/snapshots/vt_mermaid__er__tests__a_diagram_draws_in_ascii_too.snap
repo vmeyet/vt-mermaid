@@ -1,0 +1,27 @@
+---
+source: src/er/mod.rs
+expression: "ascii.join(\"\\n\")"
+---
++----------+
+| CUSTOMER |
++----------+
+     +      
+     +      
+     |      
+  places    
+     |      
+     o      
+     ^      
+ +-------+  
+ | ORDER |  
+ +-------+  
+     v      
+     +      
+     :      
+ billed in  
+     :      
+     +      
+     +      
++---------+ 
+| INVOICE | 
++---------+

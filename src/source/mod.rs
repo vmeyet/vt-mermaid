@@ -19,11 +19,11 @@ pub(crate) enum Kind {
     Sequence,
     State,
     Class,
+    Er,
 }
 
 /// Headers of the diagram kinds mermaid knows but none drawn here, each a prefix of the word a source starts with.
-const OTHER_KINDS: [&str; 27] = [
-    "erDiagram",
+const OTHER_KINDS: [&str; 26] = [
     "journey",
     "gantt",
     "pie",
@@ -68,6 +68,8 @@ impl Kind {
             Ok(Self::State)
         } else if opens_with(&text, "classDiagram") {
             Ok(Self::Class)
+        } else if opens_with(&text, "erDiagram") {
+            Ok(Self::Er)
         } else if OTHER_KINDS.iter().any(|kind| opens_with(&text, kind)) {
             Err(Error::Unsupported)
         } else {
@@ -122,7 +124,7 @@ mod tests {
 
     #[test]
     fn a_diagram_of_another_kind_is_unsupported_and_text_without_a_header_invalid() {
-        assert_eq!(Kind::of("erDiagram\n  A ||--o{ B : has"), Err(Error::Unsupported));
+        assert_eq!(Kind::of("journey\n  title A day"), Err(Error::Unsupported));
         assert!(matches!(Kind::of("not a diagram"), Err(Error::Invalid { .. })));
     }
 

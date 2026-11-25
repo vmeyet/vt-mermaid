@@ -1,0 +1,30 @@
+erDiagram
+  direction TB
+  CUSTOMER[Customer] {
+    int id PK
+    string email UK "login"
+    string name
+  }
+  ORDER {
+    int id PK
+    int customer_id FK
+    date placed_at
+  }
+  LINE_ITEM {
+    int order_id PK, FK
+    int product_id PK, FK
+    int quantity
+  }
+  PRODUCT {
+    int id PK
+    string title
+    decimal price "in euros"
+  }
+  ADDRESS {
+    int id PK
+    string city
+  }
+  CUSTOMER ||--o{ ORDER : places
+  ORDER ||--|{ LINE_ITEM : contains
+  PRODUCT ||--o{ LINE_ITEM : "is sold as"
+  CUSTOMER }o..o| ADDRESS : "ships to"

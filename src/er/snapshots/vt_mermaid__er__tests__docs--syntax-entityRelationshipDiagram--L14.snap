@@ -1,0 +1,27 @@
+---
+source: src/er/mod.rs
+expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
+---
+          ┌──────────┐             
+          │ CUSTOMER │             
+          └──────────┘             
+              ┼ V                  
+              ┼ ┼                  
+      ┌───────┘ ╎                  
+      │       uses                 
+   places       ╎                  
+      o         ┼                  
+      Ʌ         Ʌ                  
+  ┌───────┐    ┌──────────────────┐
+  │ ORDER │    │ DELIVERY-ADDRESS │
+  └───────┘    └──────────────────┘
+      ┼                            
+      ┼                            
+      │                            
+  contains                         
+      │                            
+      ┼                            
+      Ʌ                            
+┌───────────┐                      
+│ LINE-ITEM │                      
+└───────────┘

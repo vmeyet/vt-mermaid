@@ -9,7 +9,8 @@ mod lexer;
 
 use std::fmt;
 
-pub(super) use db::ErDiagram;
+pub(super) use db::{Attribute, Entity, ErDiagram, Relationship};
+pub(super) use lexer::{Cardinality, Direction};
 
 use crate::error::{Error, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
 use crate::source;

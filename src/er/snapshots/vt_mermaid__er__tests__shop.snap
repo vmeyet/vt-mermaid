@@ -1,0 +1,39 @@
+---
+source: src/er/mod.rs
+expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
+---
+            ┌──────────────────────────┐                                             
+            │         Customer         │                                             
+            ├──────────────────────────┤                                             
+            │ int     id     PK        │                                             
+            │ string  email  UK  login │                                             
+            │ string  name             │                                             
+            └──────────────────────────┘                                             
+             ┼                        V                                              
+             ┼                        o                                              
+             │                        ╎                                              
+          places                  ships to                                           
+             │                        ╎                                              
+             o                        o                                              
+             Ʌ                        ┼                                              
+┌───────────────────────┐    ┌──────────────────┐    ┌──────────────────────────────┐
+│         ORDER         │    │     ADDRESS      │    │           PRODUCT            │
+├───────────────────────┤    ├──────────────────┤    ├──────────────────────────────┤
+│ int   id           PK │    │ int     id    PK │    │ int      id     PK           │
+│ int   customer_id  FK │    │ string  city     │    │ string   title               │
+│ date  placed_at       │    └──────────────────┘┌─┼┼│ decimal  price      in euros │
+└───────────────────────┘                        │   └──────────────────────────────┘
+            ┼                                    │                                   
+            ┼                                    │                                   
+            └──────────────────────┐        is sold as                               
+                                   │             │                                   
+                               contains          │                                   
+                                   ┼             o                                   
+                                   Ʌ             Ʌ                                   
+                            ┌────────────────────────┐                               
+                            │       LINE_ITEM        │                               
+                            ├────────────────────────┤                               
+                            │ int  order_id    PK,FK │                               
+                            │ int  product_id  PK,FK │                               
+                            │ int  quantity          │                               
+                            └────────────────────────┘

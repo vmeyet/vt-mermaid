@@ -6,8 +6,8 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 ## Owns
 
-- Mermaid source to a text drawing, one diagram kind at a time; flowcharts, sequence, state and class diagrams today.
-- Laying a graph (a flowchart, a state or a class diagram) out in layers on the grid, then routing its edges on the grid.
+- Mermaid source to a text drawing, one diagram kind at a time; flowcharts, sequence, state, class and ER diagrams today.
+- Laying a graph (a flowchart, a state, class or ER diagram) out in layers on the grid, then routing its edges on the grid.
 - Laying a sequence diagram out: each participant's column, then each event on rows of its own.
 - Handing chart kinds (xychart, pie, sankey…) to vt-graph.
 
@@ -195,7 +195,23 @@ A class diagram counts its classes, lollipops, notes and namespaces against `MAX
 `db` does what `erDb.ts` does: an entity is added the first time a statement names it, named `entity-<name>-<place>`, an alias given later counts while it has none, a relationship's end named like a subgraph closed before is that subgraph, and a subgraph holds each name its document hands it once but those a subgraph closed before holds.
 An ER diagram counts its entities and subgraphs against `MAX_NODES`, its relationships against `MAX_EDGES`.
 `parse::agreement`, a test, compares it with the oracle on every corpus ER diagram: it accepts and refuses the 315 as mermaid does (level A), and reads the 312 mermaid accepts into the same entities, attributes, relationships and subgraphs (level B).
-Drawing comes next: `render` refuses an ER diagram mermaid reads as `Error::Unsupported`.
+
+`diagram` turns the db into the graph drawn, which `graph` lays out, routes and draws as it does a flowchart:
+
+- An entity is a table: its alias, else its name, centred, over one row per attribute, its type, name, keys (`PK,FK`) and comment each in a column as wide as its widest cell, two spaces apart, a column no attribute fills left out; a comment wraps at spaces onto rows of its own so a row keeps within 60 columns while the comment keeps 12.
+- A subgraph is a group framed with its title, flowing its own `direction` else its parent's; an entity named like a subgraph is that subgraph, and a relationship may end on it.
+- A relationship is an edge from its first entity to its second, solid when identifying (`--`), dashed when not (`..`), its role on it as a flowchart edge's label.
+- Crow's feet, two cells next to each entity, the line straight through them and a line cell beside them before a label; none is East Asian ambiguous outside box drawing.
+  Drawn with the entity on the right of a line going right; the fork opens onto the entity whichever side it joins (`< > Ʌ V`):
+
+  | Written | Means | Drawn (ASCII) |
+  |---|---|---|
+  | `\|\|` | exactly one | `┼┼` (`++`) |
+  | `\|o`, `o\|` | zero or one | `o┼` (`o+`) |
+  | `}\|`, `\|{` | one or more | `┼<` (`+<`) |
+  | `}o`, `o{` | zero or more | `o<` (`o<`) |
+  | `u` | parent of a generalisation | nothing, as mermaid draws none |
+
 
 ## Dependency direction
 
@@ -212,6 +228,7 @@ vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its 
 - `examples/agreement.rs`: compares mermaid-rs-renderer's parser with the oracle per kind; a dev-only program, so the library's API never sees the dependency.
   Flowcharts are compared with vt-mermaid's own parser by `parse::agreement` instead.
 - `tests/class/diagrams.txt`: class diagrams from the corpus and `tests/class/library.mmd`, each an insta snapshot at 100 columns that keeps the level C invariants; every corpus diagram mermaid accepts is drawn within 80 columns, the four packing eight pairs of classes side by side with 16 labels left out.
+- `tests/er/diagrams.txt`: ER diagrams from the corpus and `tests/er/shop.mmd`, each an insta snapshot at 100 columns that keeps the level C invariants; every corpus diagram mermaid accepts is drawn within 80 columns, those breaking the invariants only with wide characters the measures miscount, a comment cut past 60 columns or a relationship of an entity to itself.
 - `tests/sequence/diagrams.txt`: sequence diagrams from the corpus and `tests/sequence/checkout.mmd`, each an insta snapshot at 100 columns; every corpus diagram mermaid accepts is drawn within 80 columns but two with eight and ten participants side by side.
 - `tests/state/diagrams.txt`: state diagrams from the corpus and `tests/state/`, each an insta snapshot at 100 columns; every corpus diagram mermaid accepts is drawn within 80 columns and passes the level C checks, but for labels the layout leaves without room.
 - `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks of `measure` (every node and label drawn whole, every edge joining both ends, nothing overlapping).

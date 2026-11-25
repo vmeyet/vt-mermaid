@@ -1,0 +1,23 @@
+---
+source: src/er/mod.rs
+expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
+---
+                       ╭─ domain ───────╮
+                       │                │
+                       │                │
+                       │  ┌──────────┐  │
+                       │  │ CUSTOMER │  │
+                       │  └──────────┘  │
+                       │       ┼        │
+                       │       ┼        │
+┌─────────┐            │       │        │
+│ PRODUCT │┼┼─links──o<│    places      │
+└─────────┘            │       │        │
+                       │       o        │
+                       │       Ʌ        │
+                       │   ┌───────┐    │
+                       │   │ ORDER │    │
+                       │   └───────┘    │
+                       │                │
+                       │                │
+                       ╰────────────────╯

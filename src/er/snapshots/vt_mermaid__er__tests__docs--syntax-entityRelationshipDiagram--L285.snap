@@ -1,0 +1,37 @@
+---
+source: src/er/mod.rs
+expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
+---
+          ┌──────────────┐                                                                        
+          │ MANUFACTURER │                                                                        
+          └──────────────┘                                                                        
+                 ┼                                                                                
+                 ┼                                                                                
+                 │                                                                                
+               makes                                                                              
+                 │                                                                                
+                 o                                                                                
+                 Ʌ                                                                                
+┌──────────────────────────────────┐    ┌────────────────────────────────────────────────────────┐
+│               CAR                │    │                         PERSON                         │
+├──────────────────────────────────┤    ├────────────────────────────────────────────────────────┤
+│ string    registrationNumber  PK │    │ string      driversLicense  PK  The license #          │
+│ string    make                   │    │ string(99)  firstName           Only 99 characters are │
+│ string    model                  │    │                                 allowed                │
+│ string[]  parts                  │┼┼┐ │ string      lastName                                   │
+└──────────────────────────────────┘  │ │ string      phone           UK                         │
+                                      │ │ int         age                                        │
+                                      │ └────────────────────────────────────────────────────────┘
+                                      │      ┼                                                    
+                                   allows    ┼                                                    
+                                      │      │                                                    
+                                      │     is                                                    
+                                      │      │                                                    
+                                      o      o                                                    
+                                      Ʌ      Ʌ                                                    
+                       ┌──────────────────────────────────────┐                                   
+                       │             NAMED-DRIVER             │                                   
+                       ├──────────────────────────────────────┤                                   
+                       │ string  carRegistrationNumber  PK,FK │                                   
+                       │ string  driverLicence          PK,FK │                                   
+                       └──────────────────────────────────────┘

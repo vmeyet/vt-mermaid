@@ -1,0 +1,38 @@
+---
+source: src/er/mod.rs
+expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
+---
+   ┌────────────────────┐  
+   │      CUSTOMER      │  
+   ├────────────────────┤  
+   │ string  name       │  
+   │ string  custNumber │  
+   │ string  sector     │  
+   └────────────────────┘  
+             ┼             
+             ┼             
+             │             
+          places           
+             │             
+             o             
+             Ʌ             
+┌─────────────────────────┐
+│          ORDER          │
+├─────────────────────────┤
+│ int     orderNumber     │
+│ string  deliveryAddress │
+└─────────────────────────┘
+             ┼             
+             ┼             
+             │             
+         contains          
+             │             
+             ┼             
+             Ʌ             
+  ┌──────────────────────┐ 
+  │      LINE-ITEM       │ 
+  ├──────────────────────┤ 
+  │ string  productCode  │ 
+  │ int     quantity     │ 
+  │ float   pricePerUnit │ 
+  └──────────────────────┘
