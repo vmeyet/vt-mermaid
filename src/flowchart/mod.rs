@@ -130,6 +130,19 @@ mod tests {
         assert_eq!(check_area(MAX_AREA / 100 + 1, 100), Err(Error::TooLarge { width: MAX_AREA / 100 + 1, height: 100 }));
     }
 
+    /// Found by fuzzing: each one failed an assertion mmdr only checks in debug builds.
+    #[test]
+    fn layouts_mmdr_grades_as_flawed_are_still_drawn() {
+        let sources = [
+            "graph T\nsubgraph \"1.fir\na\n end\nsubgraph 2. second\nd",
+            "h-/\nA B;subgraph ol styl a brokken;cc",
+        ];
+
+        for source in sources {
+            assert!(render(source, WIDTH).is_ok(), "{source:?}");
+        }
+    }
+
     #[test]
     fn a_sideways_flowchart_too_wide_is_turned_top_down() {
         let source = "flowchart LR\n  A[First step] --> B[Second step] --> C[Third step]";
