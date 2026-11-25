@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--diagrams-flowchart-visual-check-v2-17-should-apply-class-def-colour-to-edge-labe.mmd",
+  "expected": {"node_labels":2,"edge_labels":1,"arrows":1},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":9,"rows":5,"area":45,"fits":true,"node_labels":1,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":52},
+      "100": {"status":"rendered","drawn":{"width":9,"rows":5,"area":45,"fits":true,"node_labels":1,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":52}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: Could not parse line: classDef myClass fill:#bbf,stroke:#f66,stroke-widt","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: Could not parse line: classDef myClass fill:#bbf,stroke:#f66,stroke-widt","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":35,"rows":3,"area":105,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":35,"rows":3,"area":105,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":100}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":31,"rows":3,"area":93,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":10,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":31,"rows":3,"area":93,"fits":true,"node_labels":2,"edge_labels":1,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":10,"violations":[]}}
+    }
+  }
+}

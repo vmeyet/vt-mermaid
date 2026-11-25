@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-layout-tests-project-sox2.mmd",
+  "expected": {"node_labels":20,"edge_labels":7,"arrows":25},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":534,"rows":77,"area":41118,"fits":false,"node_labels":20,"edge_labels":7,"arrows":20,"crossings":4,"bends":14},"score":65},
+      "100": {"status":"rendered","drawn":{"width":534,"rows":77,"area":41118,"fits":false,"node_labels":20,"edge_labels":7,"arrows":20,"crossings":4,"bends":14},"score":65}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"crashed","reason":"panic: runtime error: index out of range [23] with length 23","score":0},
+      "100": {"status":"crashed","reason":"panic: runtime error: index out of range [23] with length 23","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 124 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 136 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the drawing needs 228 columns, more than the 80 allowed","score":0},
+      "100": {"status":"refused","reason":"the drawing needs 228 columns, more than the 100 allowed","score":0}
+    }
+  }
+}

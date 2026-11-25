@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/spec--diagram-api-diagram-orchestration--L19.mmd",
+  "expected": {"node_labels":0,"edge_labels":0,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"flowchart TD;\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc."},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"flowchart TD;\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc."}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":""},
+      "100": {"status":"refused","reason":""}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":""},
+      "100": {"status":"refused","reason":""}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":""},
+      "100": {"status":"refused","reason":""}
+    }
+  }
+}

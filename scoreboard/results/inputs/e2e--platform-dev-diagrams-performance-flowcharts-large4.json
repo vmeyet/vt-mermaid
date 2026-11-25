@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-performance-flowcharts-large4.mmd",
+  "expected": {"node_labels":50,"edge_labels":0,"arrows":51},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":499,"rows":79,"area":39421,"fits":false,"node_labels":50,"edge_labels":0,"arrows":34,"crossings":54,"bends":32},"score":60},
+      "100": {"status":"rendered","drawn":{"width":499,"rows":79,"area":39421,"fits":false,"node_labels":50,"edge_labels":0,"arrows":34,"crossings":54,"bends":32},"score":60}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":571,"rows":57,"area":32547,"fits":false,"node_labels":50,"edge_labels":0,"arrows":35,"crossings":39,"bends":42},"score":61},
+      "100": {"status":"rendered","drawn":{"width":571,"rows":57,"area":32547,"fits":false,"node_labels":50,"edge_labels":0,"arrows":35,"crossings":39,"bends":42},"score":61}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 507 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 507 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram is 73901 bytes, over the 65536 byte limit","score":0},
+      "100": {"status":"refused","reason":"the diagram is 73901 bytes, over the 65536 byte limit","score":0}
+    }
+  }
+}

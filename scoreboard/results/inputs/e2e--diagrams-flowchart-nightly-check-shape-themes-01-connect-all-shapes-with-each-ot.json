@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--diagrams-flowchart-nightly-check-shape-themes-01-connect-all-shapes-with-each-ot.mmd",
+  "expected": {"node_labels":5,"edge_labels":0,"arrows":10},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":43,"rows":17,"area":731,"fits":true,"node_labels":0,"edge_labels":0,"arrows":4,"crossings":0,"bends":7},"score":41},
+      "100": {"status":"rendered","drawn":{"width":43,"rows":17,"area":731,"fits":true,"node_labels":0,"edge_labels":0,"arrows":4,"crossings":0,"bends":7},"score":41}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"crashed","reason":"panic: runtime error: index out of range [11] with length 11","score":0},
+      "100": {"status":"crashed","reason":"panic: runtime error: index out of range [11] with length 11","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 107 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 129 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":35,"rows":67,"area":2345,"fits":true,"node_labels":5,"edge_labels":0,"arrows":10,"crossings":2,"bends":13},"score":90,"exact":{"crossings":2,"bends":13,"edge_cells":135,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":35,"rows":67,"area":2345,"fits":true,"node_labels":5,"edge_labels":0,"arrows":10,"crossings":2,"bends":13},"score":90,"exact":{"crossings":2,"bends":13,"edge_cells":135,"violations":[]}}
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/spec--flowchart-parser-flow-arrows--L94.mmd",
+  "expected": {"node_labels":2,"edge_labels":0,"arrows":1},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"graph v;A-->B;\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"graph v;A-->B;\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph direction 'v;A-->B'. Supported directions: TD, TB, BT,","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph direction 'v;A-->B'. Supported directions: TD, TB, BT,","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: unknown direction 'v'","score":0},
+      "100": {"status":"refused","reason":"parse error: unknown direction 'v'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":5,"rows":9,"area":45,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":5,"rows":9,"area":45,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}}
+    }
+  }
+}

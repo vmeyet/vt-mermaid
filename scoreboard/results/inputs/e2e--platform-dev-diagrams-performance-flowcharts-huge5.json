@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-performance-flowcharts-huge5.mmd",
+  "expected": {"node_labels":335,"edge_labels":60,"arrows":390},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"crashed","reason":"Maximum call stack size exceeded","score":0},
+      "100": {"status":"crashed","reason":"Maximum call stack size exceeded","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: Could not parse line: classDef tjssufzvBkzh fill:#60a5fa,color:#fff,stro","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: Could not parse line: classDef tjssufzvBkzh fill:#60a5fa,color:#fff,stro","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"timed_out","reason":"","score":0},
+      "100": {"status":"timed_out","reason":"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram is 120658 bytes, over the 65536 byte limit","score":0},
+      "100": {"status":"refused","reason":"the diagram is 120658 bytes, over the 65536 byte limit","score":0}
+    }
+  }
+}

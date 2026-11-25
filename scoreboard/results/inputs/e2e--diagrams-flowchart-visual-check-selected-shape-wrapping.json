@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--diagrams-flowchart-visual-check-selected-shape-wrapping.mmd",
+  "expected": {"node_labels":14,"edge_labels":0,"arrows":15},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":185,"rows":37,"area":6845,"fits":false,"node_labels":14,"edge_labels":0,"arrows":13,"crossings":0,"bends":2},"score":78},
+      "100": {"status":"rendered","drawn":{"width":185,"rows":37,"area":6845,"fits":false,"node_labels":14,"edge_labels":0,"arrows":13,"crossings":0,"bends":2},"score":78}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":442,"rows":27,"area":11934,"fits":false,"node_labels":14,"edge_labels":0,"arrows":14,"crossings":0,"bends":7},"score":79},
+      "100": {"status":"rendered","drawn":{"width":442,"rows":27,"area":11934,"fits":false,"node_labels":14,"edge_labels":0,"arrows":14,"crossings":0,"bends":7},"score":79}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 133 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 156 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the drawing needs 225 columns, more than the 80 allowed","score":0},
+      "100": {"status":"refused","reason":"the drawing needs 225 columns, more than the 100 allowed","score":0}
+    }
+  }
+}

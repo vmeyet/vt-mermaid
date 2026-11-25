@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--diagrams-flowchart-visual-check-20-multiple-nodes-and-chaining-in-one-statement.mmd",
+  "expected": {"node_labels":4,"edge_labels":2,"arrows":4},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":22,"rows":25,"area":550,"fits":true,"node_labels":4,"edge_labels":2,"arrows":3,"crossings":0,"bends":2},"score":96},
+      "100": {"status":"rendered","drawn":{"width":22,"rows":25,"area":550,"fits":true,"node_labels":4,"edge_labels":2,"arrows":3,"crossings":0,"bends":2},"score":96}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: Could not parse line: classDef exClass background:#bbb,border:1px solid ","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: Could not parse line: classDef exClass background:#bbb,border:1px solid ","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":27,"rows":23,"area":621,"fits":true,"node_labels":4,"edge_labels":2,"arrows":4,"crossings":0,"bends":8},"score":100},
+      "100": {"status":"rendered","drawn":{"width":27,"rows":23,"area":621,"fits":true,"node_labels":4,"edge_labels":2,"arrows":4,"crossings":0,"bends":8},"score":100}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":17,"rows":9,"area":153,"fits":true,"node_labels":3,"edge_labels":2,"arrows":2,"crossings":0,"bends":2},"score":84,"exact":{"crossings":0,"bends":2,"edge_cells":14,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":17,"rows":9,"area":153,"fits":true,"node_labels":3,"edge_labels":2,"arrows":2,"crossings":0,"bends":2},"score":84,"exact":{"crossings":0,"bends":2,"edge_cells":14,"violations":[]}}
+    }
+  }
+}

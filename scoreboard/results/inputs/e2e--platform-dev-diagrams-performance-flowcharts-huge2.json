@@ -1,0 +1,21 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-performance-flowcharts-huge2.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"timed_out","reason":""},
+      "100": {"status":"timed_out","reason":""}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"timed_out","reason":""},
+      "100": {"status":"timed_out","reason":""}
+    },
+    "mermaid-text": {
+      "80": {"status":"timed_out","reason":""},
+      "100": {"status":"timed_out","reason":""}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram is 136003 bytes, over the 65536 byte limit"},
+      "100": {"status":"refused","reason":"the diagram is 136003 bytes, over the 65536 byte limit"}
+    }
+  }
+}

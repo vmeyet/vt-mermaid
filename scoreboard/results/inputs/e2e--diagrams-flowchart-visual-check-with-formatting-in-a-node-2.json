@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--diagrams-flowchart-visual-check-with-formatting-in-a-node-2.mmd",
+  "expected": {"node_labels":6,"edge_labels":6,"arrows":8},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":43,"rows":25,"area":1075,"fits":true,"node_labels":5,"edge_labels":3,"arrows":4,"crossings":0,"bends":5},"score":76},
+      "100": {"status":"rendered","drawn":{"width":43,"rows":25,"area":1075,"fits":true,"node_labels":5,"edge_labels":3,"arrows":4,"crossings":0,"bends":5},"score":76}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":76,"rows":55,"area":4180,"fits":true,"node_labels":6,"edge_labels":6,"arrows":5,"crossings":1,"bends":4},"score":87},
+      "100": {"status":"rendered","drawn":{"width":76,"rows":55,"area":4180,"fits":true,"node_labels":6,"edge_labels":6,"arrows":5,"crossings":1,"bends":4},"score":87}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 89 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"rendered","drawn":{"width":99,"rows":16,"area":1584,"fits":true,"node_labels":6,"edge_labels":6,"arrows":8,"crossings":1,"bends":13},"score":93}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":28,"rows":33,"area":924,"fits":true,"node_labels":6,"edge_labels":6,"arrows":8,"crossings":0,"bends":1},"score":100,"exact":{"crossings":0,"bends":1,"edge_cells":72,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":28,"rows":33,"area":924,"fits":true,"node_labels":6,"edge_labels":6,"arrows":8,"crossings":0,"bends":1},"score":100,"exact":{"crossings":0,"bends":1,"edge_cells":72,"violations":[]}}
+    }
+  }
+}

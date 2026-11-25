@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-knsv-knsv2-18-flowchart-dagre-lr-shapes.mmd",
+  "expected": {"node_labels":2,"edge_labels":2,"arrows":1},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":22,"rows":5,"area":110,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":22,"rows":5,"area":110,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":0},"score":100}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":32,"rows":25,"area":800,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":2},"score":100},
+      "100": {"status":"rendered","drawn":{"width":32,"rows":25,"area":800,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":2},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":55,"rows":15,"area":825,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":1,"bends":4},"score":93},
+      "100": {"status":"rendered","drawn":{"width":55,"rows":15,"area":825,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":1,"bends":4},"score":93}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":18,"rows":21,"area":378,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"violations":["edge 0 A → B label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":18,"rows":21,"area":378,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"violations":["edge 0 A → B label found no room"]}}
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "input": "flowchart/spec--er-parser-erDiagram--L545.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"graph title\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc."},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"graph title\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc."}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph direction 'title'. Supported directions: TD, TB, BT, L"},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph direction 'title'. Supported directions: TD, TB, BT, L"}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: unknown direction 'title'"},
+      "100": {"status":"refused","reason":"parse error: unknown direction 'title'"}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":""},
+      "100": {"status":"refused","reason":""}
+    }
+  }
+}

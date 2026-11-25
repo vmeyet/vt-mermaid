@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--diagrams-flowchart-visual-check-76-handle-unicode-encoded-character-with-html-la.mmd",
+  "expected": {"node_labels":2,"edge_labels":0,"arrows":1},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":79,"rows":5,"area":395,"fits":true,"node_labels":1,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":60},
+      "100": {"status":"rendered","drawn":{"width":79,"rows":5,"area":395,"fits":true,"node_labels":1,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":60}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":176,"rows":5,"area":880,"fits":false,"node_labels":1,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":40},
+      "100": {"status":"rendered","drawn":{"width":176,"rows":5,"area":880,"fits":false,"node_labels":1,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":40}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 81 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"rendered","drawn":{"width":84,"rows":6,"area":504,"fits":true,"node_labels":1,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":60}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram does not parse: invalid flowchart edge syntax: --> b{{\"Lorem #quot;ipsum#quot; dolor #quot;sit#quot; amet,#q","score":0},
+      "100": {"status":"refused","reason":"the diagram does not parse: invalid flowchart edge syntax: --> b{{\"Lorem #quot;ipsum#quot; dolor #quot;sit#quot; amet,#q","score":0}
+    }
+  }
+}

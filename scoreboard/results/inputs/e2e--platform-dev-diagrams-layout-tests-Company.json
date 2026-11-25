@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-layout-tests-Company.mmd",
+  "expected": {"node_labels":10,"edge_labels":3,"arrows":10},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":53,"rows":35,"area":1855,"fits":true,"node_labels":10,"edge_labels":2,"arrows":8,"crossings":0,"bends":3},"score":93},
+      "100": {"status":"rendered","drawn":{"width":53,"rows":35,"area":1855,"fits":true,"node_labels":10,"edge_labels":2,"arrows":8,"crossings":0,"bends":3},"score":93}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":96,"rows":17,"area":1632,"fits":false,"node_labels":10,"edge_labels":3,"arrows":10,"crossings":0,"bends":4},"score":80},
+      "100": {"status":"rendered","drawn":{"width":96,"rows":17,"area":1632,"fits":true,"node_labels":10,"edge_labels":3,"arrows":10,"crossings":0,"bends":4},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":55,"rows":44,"area":2420,"fits":true,"node_labels":10,"edge_labels":3,"arrows":10,"crossings":2,"bends":29},"score":90},
+      "100": {"status":"rendered","drawn":{"width":55,"rows":44,"area":2420,"fits":true,"node_labels":10,"edge_labels":3,"arrows":10,"crossings":2,"bends":29},"score":90}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":78,"rows":27,"area":2106,"fits":true,"node_labels":10,"edge_labels":2,"arrows":10,"crossings":0,"bends":4},"score":96,"exact":{"crossings":0,"bends":4,"edge_cells":77,"violations":["edge 1 USCompany → HongKongCompany label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":78,"rows":27,"area":2106,"fits":true,"node_labels":10,"edge_labels":2,"arrows":10,"crossings":0,"bends":4},"score":96,"exact":{"crossings":0,"bends":4,"edge_cells":77,"violations":["edge 1 USCompany → HongKongCompany label found no room"]}}
+    }
+  }
+}

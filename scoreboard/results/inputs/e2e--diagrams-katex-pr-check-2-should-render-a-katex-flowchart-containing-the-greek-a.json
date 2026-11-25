@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--diagrams-katex-pr-check-2-should-render-a-katex-flowchart-containing-the-greek-a.mmd",
+  "expected": {"node_labels":2,"edge_labels":0,"arrows":1},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":210,"rows":7,"area":1470,"fits":false,"node_labels":1,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":55},
+      "100": {"status":"rendered","drawn":{"width":210,"rows":7,"area":1470,"fits":false,"node_labels":1,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":55}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":206,"rows":7,"area":1442,"fits":false,"node_labels":1,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":55},
+      "100": {"status":"rendered","drawn":{"width":206,"rows":7,"area":1442,"fits":false,"node_labels":1,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":55}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 86 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 106 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":74,"rows":3,"area":222,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":50,"exact":{"crossings":0,"bends":0,"edge_cells":7,"violations":["node A has 1 label lines not drawn whole","node B has 1 label lines not drawn whole"]}},
+      "100": {"status":"rendered","drawn":{"width":74,"rows":3,"area":222,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":50,"exact":{"crossings":0,"bends":0,"edge_cells":7,"violations":["node A has 1 label lines not drawn whole","node B has 1 label lines not drawn whole"]}}
+    }
+  }
+}

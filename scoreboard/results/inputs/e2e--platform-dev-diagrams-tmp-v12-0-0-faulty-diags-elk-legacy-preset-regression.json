@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression.mmd",
+  "expected": {"node_labels":31,"edge_labels":0,"arrows":28},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":215,"rows":179,"area":38485,"fits":false,"node_labels":8,"edge_labels":0,"arrows":26,"crossings":11,"bends":26},"score":28},
+      "100": {"status":"rendered","drawn":{"width":215,"rows":179,"area":38485,"fits":false,"node_labels":8,"edge_labels":0,"arrows":26,"crossings":11,"bends":26},"score":28}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":309,"rows":159,"area":49131,"fits":false,"node_labels":8,"edge_labels":0,"arrows":22,"crossings":37,"bends":50},"score":25},
+      "100": {"status":"rendered","drawn":{"width":309,"rows":159,"area":49131,"fits":false,"node_labels":8,"edge_labels":0,"arrows":22,"crossings":37,"bends":50},"score":25}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 109 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 125 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"timed_out","reason":"","score":0},
+      "100": {"status":"timed_out","reason":"","score":0}
+    }
+  }
+}

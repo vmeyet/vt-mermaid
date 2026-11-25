@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-layout-tests-labels-long.mmd",
+  "expected": {"node_labels":10,"edge_labels":0,"arrows":24},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":201,"rows":55,"area":11055,"fits":false,"node_labels":10,"edge_labels":0,"arrows":6,"crossings":4,"bends":1},"score":57},
+      "100": {"status":"rendered","drawn":{"width":201,"rows":55,"area":11055,"fits":false,"node_labels":10,"edge_labels":0,"arrows":6,"crossings":4,"bends":1},"score":57}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":196,"rows":35,"area":6860,"fits":false,"node_labels":10,"edge_labels":0,"arrows":6,"crossings":0,"bends":1},"score":69},
+      "100": {"status":"rendered","drawn":{"width":196,"rows":35,"area":6860,"fits":false,"node_labels":10,"edge_labels":0,"arrows":6,"crossings":0,"bends":1},"score":69}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 81 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"rendered","drawn":{"width":96,"rows":33,"area":3168,"fits":true,"node_labels":10,"edge_labels":0,"arrows":6,"crossings":132,"bends":39},"score":74}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"no path joins a3 to a9","score":0},
+      "100": {"status":"refused","reason":"no path joins a3 to a9","score":0}
+    }
+  }
+}

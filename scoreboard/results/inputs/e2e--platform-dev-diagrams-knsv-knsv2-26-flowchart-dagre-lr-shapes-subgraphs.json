@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-knsv-knsv2-26-flowchart-dagre-lr-shapes-subgraphs.mmd",
+  "expected": {"node_labels":14,"edge_labels":10,"arrows":11},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":92,"rows":69,"area":6348,"fits":false,"node_labels":14,"edge_labels":10,"arrows":4,"crossings":6,"bends":16},"score":58},
+      "100": {"status":"rendered","drawn":{"width":92,"rows":69,"area":6348,"fits":true,"node_labels":14,"edge_labels":10,"arrows":4,"crossings":6,"bends":16},"score":78}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":73,"rows":267,"area":19491,"fits":true,"node_labels":14,"edge_labels":10,"arrows":11,"crossings":7,"bends":16},"score":87},
+      "100": {"status":"rendered","drawn":{"width":73,"rows":267,"area":19491,"fits":true,"node_labels":14,"edge_labels":10,"arrows":11,"crossings":7,"bends":16},"score":87}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 84 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"rendered","drawn":{"width":97,"rows":87,"area":8439,"fits":true,"node_labels":14,"edge_labels":10,"arrows":11,"crossings":5,"bends":8},"score":88}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the drawing needs 285 columns, more than the 80 allowed","score":0},
+      "100": {"status":"refused","reason":"the drawing needs 285 columns, more than the 100 allowed","score":0}
+    }
+  }
+}

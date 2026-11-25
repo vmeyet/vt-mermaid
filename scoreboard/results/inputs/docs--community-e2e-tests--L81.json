@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/docs--community-e2e-tests--L81.mmd",
+  "expected": {"node_labels":10,"edge_labels":9,"arrows":9},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":232,"rows":29,"area":6728,"fits":false,"node_labels":10,"edge_labels":9,"arrows":11,"crossings":0,"bends":7},"score":77},
+      "100": {"status":"rendered","drawn":{"width":232,"rows":29,"area":6728,"fits":false,"node_labels":10,"edge_labels":9,"arrows":11,"crossings":0,"bends":7},"score":77}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":211,"rows":28,"area":5908,"fits":false,"node_labels":10,"edge_labels":9,"arrows":11,"crossings":0,"bends":7},"score":77},
+      "100": {"status":"rendered","drawn":{"width":211,"rows":28,"area":5908,"fits":false,"node_labels":10,"edge_labels":9,"arrows":11,"crossings":0,"bends":7},"score":77}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 126 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 136 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the drawing needs 183 columns, more than the 80 allowed","score":0},
+      "100": {"status":"refused","reason":"the drawing needs 183 columns, more than the 100 allowed","score":0}
+    }
+  }
+}

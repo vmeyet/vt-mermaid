@@ -1,0 +1,21 @@
+{
+  "input": "flowchart/spec--flowchart-parser-flow-text--L582.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"graph TD; A[This is a () in text];\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", et"},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"graph TD; A[This is a () in text];\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", et"}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unexpected tokens after graph direction: \\\"A[This is a () in text]\\\"\""},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unexpected tokens after graph direction: \\\"A[This is a () in text]\\\"\""}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":26,"rows":3,"area":78,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0}},
+      "100": {"status":"rendered","drawn":{"width":26,"rows":3,"area":78,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0}}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":24,"rows":3,"area":72,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":24,"rows":3,"area":72,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":0,"violations":[]}}
+    }
+  }
+}

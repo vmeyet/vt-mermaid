@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-layout-tests-life-choices.mmd",
+  "expected": {"node_labels":24,"edge_labels":0,"arrows":27},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"flowchart\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"flowchart\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"crashed","reason":"panic: runtime error: index out of range [35] with length 35","score":0},
+      "100": {"status":"crashed","reason":"panic: runtime error: index out of range [35] with length 35","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 127 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 138 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the drawing needs 150 columns, more than the 80 allowed","score":0},
+      "100": {"status":"refused","reason":"the drawing needs 150 columns, more than the 100 allowed","score":0}
+    }
+  }
+}

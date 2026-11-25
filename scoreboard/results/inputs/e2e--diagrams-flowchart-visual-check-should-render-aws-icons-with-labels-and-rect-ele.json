@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--diagrams-flowchart-visual-check-should-render-aws-icons-with-labels-and-rect-ele.mmd",
+  "expected": {"node_labels":3,"edge_labels":0,"arrows":2},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":14,"rows":25,"area":350,"fits":true,"node_labels":2,"edge_labels":0,"arrows":2,"crossings":0,"bends":0},"score":83},
+      "100": {"status":"rendered","drawn":{"width":14,"rows":25,"area":350,"fits":true,"node_labels":2,"edge_labels":0,"arrows":2,"crossings":0,"bends":0},"score":83}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":188,"rows":17,"area":3196,"fits":false,"node_labels":3,"edge_labels":0,"arrows":2,"crossings":0,"bends":1},"score":80},
+      "100": {"status":"rendered","drawn":{"width":188,"rows":17,"area":3196,"fits":false,"node_labels":3,"edge_labels":0,"arrows":2,"crossings":0,"bends":1},"score":80}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 97 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 112 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":33,"rows":41,"area":1353,"fits":true,"node_labels":3,"edge_labels":0,"arrows":2,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":10,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":33,"rows":41,"area":1353,"fits":true,"node_labels":3,"edge_labels":0,"arrows":2,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":10,"violations":[]}}
+    }
+  }
+}

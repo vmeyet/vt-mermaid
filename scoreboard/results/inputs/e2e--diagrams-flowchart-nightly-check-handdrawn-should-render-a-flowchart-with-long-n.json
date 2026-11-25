@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--diagrams-flowchart-nightly-check-handdrawn-should-render-a-flowchart-with-long-n.mmd",
+  "expected": {"node_labels":15,"edge_labels":0,"arrows":19},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":46,"rows":315,"area":14490,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":35},
+      "100": {"status":"rendered","drawn":{"width":46,"rows":315,"area":14490,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":35}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":111,"rows":353,"area":39183,"fits":false,"node_labels":15,"edge_labels":0,"arrows":14,"crossings":0,"bends":88},"score":76},
+      "100": {"status":"rendered","drawn":{"width":111,"rows":353,"area":39183,"fits":false,"node_labels":15,"edge_labels":0,"arrows":14,"crossings":0,"bends":88},"score":76}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"rendered diagram is 111 columns wide, exceeding the strict budget of 80","score":0},
+      "100": {"status":"refused","reason":"rendered diagram is 127 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the flowchart has 284 edges, over the 150 limit","score":0},
+      "100": {"status":"refused","reason":"the flowchart has 284 edges, over the 150 limit","score":0}
+    }
+  }
+}

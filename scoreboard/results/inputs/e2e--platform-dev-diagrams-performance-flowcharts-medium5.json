@@ -1,0 +1,22 @@
+{
+  "input": "flowchart/e2e--platform-dev-diagrams-performance-flowcharts-medium5.mmd",
+  "expected": {"node_labels":184,"edge_labels":3,"arrows":170},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"timed_out","reason":"","score":0},
+      "100": {"status":"timed_out","reason":"","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"timed_out","reason":"","score":0},
+      "100": {"status":"timed_out","reason":"","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"timed_out","reason":"","score":0},
+      "100": {"status":"timed_out","reason":"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the flowchart has 291 nodes, over the 200 limit","score":0},
+      "100": {"status":"refused","reason":"the flowchart has 291 nodes, over the 200 limit","score":0}
+    }
+  }
+}
