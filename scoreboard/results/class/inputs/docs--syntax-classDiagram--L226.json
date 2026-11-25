@@ -1,0 +1,18 @@
+{
+  "input": "class/docs--syntax-classDiagram--L226.mmd",
+  "expected": {"node_labels":9,"edge_labels":0,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":39,"rows":13,"area":507,"fits":true,"node_labels":8,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":94},
+      "100": {"status":"rendered","drawn":{"width":39,"rows":13,"area":507,"fits":true,"node_labels":8,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":94}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: generics not yet supported (got \"Square~Shape~\" in \"class Square~Shape~{\")","score":0},
+      "100": {"status":"refused","reason":"parse error: classDiagram: generics not yet supported (got \"Square~Shape~\" in \"class Square~Shape~{\")","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":42,"rows":13,"area":546,"fits":true,"node_labels":6,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":83},
+      "100": {"status":"rendered","drawn":{"width":42,"rows":13,"area":546,"fits":true,"node_labels":6,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":83}
+    }
+  }
+}

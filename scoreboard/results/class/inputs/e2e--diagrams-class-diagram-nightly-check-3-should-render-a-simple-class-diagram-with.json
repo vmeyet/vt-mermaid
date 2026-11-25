@@ -1,0 +1,17 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-3-should-render-a-simple-class-diagram-with.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":27,"rows":17,"area":459,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0}},
+      "100": {"status":"rendered","drawn":{"width":27,"rows":17,"area":459,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0}}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"&lt;&lt;interface&gt;&gt; Class01\""},
+      "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"&lt;&lt;interface&gt;&gt; Class01\""}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 3"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 3"}
+    }
+  }
+}

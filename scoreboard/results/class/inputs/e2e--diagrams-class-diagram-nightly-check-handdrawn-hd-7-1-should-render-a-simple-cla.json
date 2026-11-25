@@ -1,0 +1,18 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-handdrawn-hd-7-1-should-render-a-simple-cla.mmd",
+  "expected": {"node_labels":10,"edge_labels":1,"arrows":2},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":46,"rows":8,"area":368,"fits":true,"node_labels":7,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":67},
+      "100": {"status":"rendered","drawn":{"width":46,"rows":8,"area":368,"fits":true,"node_labels":7,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":67}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: generics not yet supported (got \"Class01~T~\" in \"class Class01~T~\")","score":0},
+      "100": {"status":"refused","reason":"parse error: classDiagram: generics not yet supported (got \"Class01~T~\" in \"class Class01~T~\")","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":49,"rows":14,"area":686,"fits":true,"node_labels":9,"edge_labels":1,"arrows":2,"crossings":0,"bends":0},"score":95},
+      "100": {"status":"rendered","drawn":{"width":49,"rows":14,"area":686,"fits":true,"node_labels":9,"edge_labels":1,"arrows":2,"crossings":0,"bends":0},"score":95}
+    }
+  }
+}

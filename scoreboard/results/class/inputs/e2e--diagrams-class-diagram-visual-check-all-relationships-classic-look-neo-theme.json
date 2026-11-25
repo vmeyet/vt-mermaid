@@ -1,0 +1,17 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-visual-check-all-relationships-classic-look-neo-theme.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":131,"rows":23,"area":3013,"fits":false,"node_labels":0,"edge_labels":0,"arrows":7,"crossings":0,"bends":11}},
+      "100": {"status":"rendered","drawn":{"width":131,"rows":23,"area":3013,"fits":false,"node_labels":0,"edge_labels":0,"arrows":7,"crossings":0,"bends":11}}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"&lt;&lt;interface&gt;&gt; Class01\""},
+      "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"&lt;&lt;interface&gt;&gt; Class01\""}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 3"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 3"}
+    }
+  }
+}

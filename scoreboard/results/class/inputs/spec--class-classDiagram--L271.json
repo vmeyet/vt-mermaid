@@ -1,0 +1,18 @@
+{
+  "input": "class/spec--class-classDiagram--L271.mmd",
+  "expected": {"node_labels":0,"edge_labels":0,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":36,"rows":5,"area":180,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0}},
+      "100": {"status":"rendered","drawn":{"width":36,"rows":5,"area":180,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0}}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"accTitle: My Title\""},
+      "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"accTitle: My Title\""}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":""},
+      "100": {"status":"refused","reason":""}
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-visual-check-dark-theme.mmd",
+  "expected": {"node_labels":31,"edge_labels":11,"arrows":15},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"classDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"classDiagram\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"accTitle: This is a title\"","score":0},
+      "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"accTitle: This is a title\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":64,"rows":50,"area":3200,"fits":true,"node_labels":31,"edge_labels":6,"arrows":19,"crossings":28,"bends":49},"score":76},
+      "100": {"status":"rendered","drawn":{"width":100,"rows":38,"area":3800,"fits":true,"node_labels":31,"edge_labels":11,"arrows":19,"crossings":18,"bends":38},"score":82}
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-2-should-render-a-simple-class-diagrams-wit-2.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"classDiagram-v2\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc."},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"classDiagram-v2\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc."}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"unsupported diagram type: 'classdiagram-v2'"},
+      "100": {"status":"refused","reason":"unsupported diagram type: 'classdiagram-v2'"}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 3"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 3"}
+    }
+  }
+}

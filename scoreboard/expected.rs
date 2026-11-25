@@ -7,12 +7,15 @@ use std::path::Path;
 
 use serde::Deserialize;
 
+use crate::lines::ARROWS;
+
 /// The diagram kinds on the board.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Kind {
     Flowchart,
     Sequence,
     State,
+    Class,
 }
 
 impl Kind {
@@ -22,6 +25,7 @@ impl Kind {
             Self::Flowchart => "flowchart",
             Self::Sequence => "sequence",
             Self::State => "state",
+            Self::Class => "class",
         }
     }
 
@@ -31,11 +35,12 @@ impl Kind {
             Self::Flowchart => "flowchart",
             Self::Sequence => "sequence diagram",
             Self::State => "state diagram",
+            Self::Class => "class diagram",
         }
     }
 
     pub(crate) fn named(name: &str) -> Option<Self> {
-        [Self::Flowchart, Self::Sequence, Self::State].into_iter().find(|kind| kind.name() == name)
+        [Self::Flowchart, Self::Sequence, Self::State, Self::Class].into_iter().find(|kind| kind.name() == name)
     }
 
     /// Its folder under `scoreboard/results/`: flowcharts were there first, at the top.
@@ -44,14 +49,26 @@ impl Kind {
             Self::Flowchart => "",
             Self::Sequence => "sequence",
             Self::State => "state",
+            Self::Class => "class",
+        }
+    }
+
+    /// The glyphs counted as heads: arrowheads, and for a class diagram its triangles and diamonds too.
+    pub(crate) fn heads(self) -> &'static str {
+        match self {
+            Self::Flowchart | Self::Sequence | Self::State => ARROWS,
+            Self::Class => CLASS_HEADS,
         }
     }
 
     /// Whether vt-mermaid measures its drawings of this kind exactly, from their geometry.
     pub(crate) fn measured(self) -> bool {
-        matches!(self, Self::Flowchart | Self::State)
+        matches!(self, Self::Flowchart | Self::State | Self::Class)
     }
 }
+
+/// Arrowheads, then the triangles and diamonds class relations end on, in any tool's glyphs.
+const CLASS_HEADS: &str = "►▶▸▷→◄◀◂◁←▲▴△↑▼▾▽↓▵▹▿◃⬥⬦◆◇♦♢◊";
 
 /// The labels a drawing of one input must show, each as the words it is made of, and how many arrowheads it has.
 ///
@@ -127,6 +144,42 @@ struct StateEdge {
 /// The shapes of a state diagram that show their label: a dot, a bar, a choice, a region and a note's group do not.
 const LABELLED_SHAPES: [&str; 5] = ["rect", "rectWithTitle", "roundedWithTitle", "note", "-"];
 
+#[derive(Debug, Deserialize)]
+struct Class {
+    classes: Vec<ClassBox>,
+    relations: Vec<Relation>,
+    notes: Vec<Note>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ClassBox {
+    label: String,
+    members: Vec<Member>,
+    methods: Vec<Member>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Member {
+    id: String,
+    parameters: Option<String>,
+    #[serde(rename = "returnType")]
+    returns: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Relation {
+    type1: serde_json::Value,
+    type2: serde_json::Value,
+    title1: String,
+    title2: String,
+    title: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Note {
+    text: String,
+}
+
 /// Every diagram of `kind` the oracle accepted, by its path under `corpus/`.
 pub(crate) fn read(results: &Path, kind: Kind) -> Result<BTreeMap<String, Expected>, Box<dyn Error>> {
     let json = fs::read_to_string(results)?;
@@ -141,6 +194,9 @@ pub(crate) fn read(results: &Path, kind: Kind) -> Result<BTreeMap<String, Expect
             .collect(),
         Kind::State => {
             serde_json::from_str::<Results<State>>(&json)?.cases.into_iter().map(|(path, case)| (path, Expected::of_state(&case))).collect()
+        }
+        Kind::Class => {
+            serde_json::from_str::<Results<Class>>(&json)?.cases.into_iter().map(|(path, case)| (path, Expected::of_class(&case))).collect()
         }
     })
 }
@@ -165,6 +221,30 @@ impl Expected {
             node_labels: texts.map(|text| words(text)).filter(|words| !words.is_empty()).collect(),
             edge_labels: case.edges.iter().map(|edge| words(&edge.label)).filter(|words| !words.is_empty()).collect(),
             arrows: case.edges.iter().filter(|edge| edge.arrowhead == "normal").count(),
+        }
+    }
+
+    /// A class's name and each member's name, parameters and return type are its labels, a generic type's `~` a
+    /// space, as tools draw it `<T>`; a relation's label and the texts at its ends are edge labels, and each typed end
+    /// a head.
+    fn of_class(case: &Class) -> Self {
+        let generic = |text: &str| words(&text.replace('~', " "));
+        let member = |member: &Member| {
+            let call = [member.parameters.as_deref(), member.returns.as_deref()].into_iter().flatten().collect::<Vec<_>>().join(" ");
+            generic(&format!("{} {call}", member.id))
+        };
+        let members = case.classes.iter().flat_map(|class| class.members.iter().chain(&class.methods).map(member));
+        let names = case.classes.iter().map(|class| generic(&class.label));
+        let notes = case.notes.iter().map(|note| words(&note.text));
+        let texts = case.relations.iter().flat_map(|relation| {
+            let ends = [&relation.title1, &relation.title2].into_iter().filter(|text| *text != "none").map(|text| words(text));
+            ends.chain(relation.title.as_deref().map(words))
+        });
+        let typed = |end: &serde_json::Value| usize::from(end.is_number());
+        Self {
+            node_labels: names.chain(members).chain(notes).filter(|words| !words.is_empty()).collect(),
+            edge_labels: texts.filter(|words| !words.is_empty()).collect(),
+            arrows: case.relations.iter().map(|relation| typed(&relation.type1) + typed(&relation.type2)).sum(),
         }
     }
 

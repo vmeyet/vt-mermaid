@@ -1,0 +1,18 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-should-handle-an-empty-class-body-with-empt.mmd",
+  "expected": {"node_labels":5,"edge_labels":0,"arrows":1},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":23,"rows":13,"area":299,"fits":true,"node_labels":5,"edge_labels":0,"arrows":1,"crossings":0,"bends":5},"score":100},
+      "100": {"status":"rendered","drawn":{"width":23,"rows":13,"area":299,"fits":true,"node_labels":5,"edge_labels":0,"arrows":1,"crossings":0,"bends":5},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: generics not yet supported (got \"FooBase~T~ {}\" in \"class FooBase~T~ {}\")","score":0},
+      "100": {"status":"refused","reason":"parse error: classDiagram: generics not yet supported (got \"FooBase~T~ {}\" in \"class FooBase~T~ {}\")","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":28,"rows":13,"area":364,"fits":true,"node_labels":5,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":28,"rows":13,"area":364,"fits":true,"node_labels":5,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

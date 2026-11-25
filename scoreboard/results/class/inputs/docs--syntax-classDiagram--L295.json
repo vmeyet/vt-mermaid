@@ -1,0 +1,18 @@
+{
+  "input": "class/docs--syntax-classDiagram--L295.mmd",
+  "expected": {"node_labels":16,"edge_labels":8,"arrows":6},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":95,"rows":9,"area":855,"fits":false,"node_labels":14,"edge_labels":7,"arrows":7,"crossings":0,"bends":0},"score":71},
+      "100": {"status":"rendered","drawn":{"width":95,"rows":9,"area":855,"fits":true,"node_labels":14,"edge_labels":7,"arrows":7,"crossings":0,"bends":0},"score":91}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised relationship marker \"..\" in \"classO .. classP : Link(Dashed)\"","score":0},
+      "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised relationship marker \"..\" in \"classO .. classP : Link(Dashed)\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":77,"rows":63,"area":4851,"fits":true,"node_labels":16,"edge_labels":8,"arrows":6,"crossings":1,"bends":16},"score":93},
+      "100": {"status":"rendered","drawn":{"width":96,"rows":9,"area":864,"fits":true,"node_labels":16,"edge_labels":8,"arrows":6,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

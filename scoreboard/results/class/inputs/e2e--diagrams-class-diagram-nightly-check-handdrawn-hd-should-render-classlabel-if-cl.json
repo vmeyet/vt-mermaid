@@ -1,0 +1,18 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-handdrawn-hd-should-render-classlabel-if-cl.mmd",
+  "expected": {"node_labels":2,"edge_labels":0,"arrows":1},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":10,"rows":9,"area":90,"fits":true,"node_labels":1,"edge_labels":0,"arrows":1,"crossings":0,"bends":2},"score":75},
+      "100": {"status":"rendered","drawn":{"width":10,"rows":9,"area":90,"fits":true,"node_labels":1,"edge_labels":0,"arrows":1,"crossings":0,"bends":2},"score":75}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":50,"rows":10,"area":500,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":1,"bends":0},"score":93},
+      "100": {"status":"rendered","drawn":{"width":50,"rows":10,"area":500,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":1,"bends":0},"score":93}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":24,"rows":9,"area":216,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":24,"rows":9,"area":216,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

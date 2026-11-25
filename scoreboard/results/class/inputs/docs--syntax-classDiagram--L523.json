@@ -1,0 +1,18 @@
+{
+  "input": "class/docs--syntax-classDiagram--L523.mmd",
+  "expected": {"node_labels":6,"edge_labels":5,"arrows":3},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":41,"rows":9,"area":369,"fits":true,"node_labels":6,"edge_labels":1,"arrows":3,"crossings":0,"bends":4},"score":82},
+      "100": {"status":"rendered","drawn":{"width":41,"rows":9,"area":369,"fits":true,"node_labels":6,"edge_labels":1,"arrows":3,"crossings":0,"bends":4},"score":82}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"Customer \\\"1\\\" --> \\\"*\\\" Ticket\"","score":0},
+      "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"Customer \\\"1\\\" --> \\\"*\\\" Ticket\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":41,"rows":9,"area":369,"fits":true,"node_labels":6,"edge_labels":5,"arrows":3,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":41,"rows":9,"area":369,"fits":true,"node_labels":6,"edge_labels":5,"arrows":3,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

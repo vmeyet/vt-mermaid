@@ -1,0 +1,17 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-visual-check-cardinality-classic-look-neo-dark-theme.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":105,"rows":20,"area":2100,"fits":false,"node_labels":0,"edge_labels":0,"arrows":5,"crossings":0,"bends":5}},
+      "100": {"status":"rendered","drawn":{"width":105,"rows":20,"area":2100,"fits":false,"node_labels":0,"edge_labels":0,"arrows":5,"crossings":0,"bends":5}}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"Class01 \\\"1\\\" <|--|> \\\"*\\\" AveryLongClass : Cool\""},
+      "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised line: \"Class01 \\\"1\\\" <|--|> \\\"*\\\" AveryLongClass : Cool\""}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 3"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 3"}
+    }
+  }
+}

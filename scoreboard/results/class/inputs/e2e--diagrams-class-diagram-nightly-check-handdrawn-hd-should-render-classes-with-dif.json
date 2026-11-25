@@ -1,0 +1,18 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-handdrawn-hd-should-render-classes-with-dif.mmd",
+  "expected": {"node_labels":12,"edge_labels":0,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":17,"rows":3,"area":51,"fits":true,"node_labels":1,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":54},
+      "100": {"status":"rendered","drawn":{"width":17,"rows":3,"area":51,"fits":true,"node_labels":1,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":54}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: generics not yet supported (got \"C12[\\\"With ~!@#$%^&*()_+=-/?\\\"]\" in \"class C12[\\\"With ~!@#$%","score":0},
+      "100": {"status":"refused","reason":"parse error: classDiagram: generics not yet supported (got \"C12[\\\"With ~!@#$%^&*()_+=-/?\\\"]\" in \"class C12[\\\"With ~!@#$%","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":77,"rows":21,"area":1617,"fits":true,"node_labels":12,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":91,"rows":15,"area":1365,"fits":true,"node_labels":12,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":100}
+    }
+  }
+}

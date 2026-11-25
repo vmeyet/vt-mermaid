@@ -1,0 +1,17 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-handdrawn-hd-should-render-a-full-class-dia-2.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":131,"rows":23,"area":3013,"fits":false,"node_labels":0,"edge_labels":0,"arrows":7,"crossings":0,"bends":11}},
+      "100": {"status":"rendered","drawn":{"width":131,"rows":23,"area":3013,"fits":false,"node_labels":0,"edge_labels":0,"arrows":7,"crossings":0,"bends":11}}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: `note for` not yet supported"},
+      "100": {"status":"refused","reason":"parse error: classDiagram: `note for` not yet supported"}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 5"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 5"}
+    }
+  }
+}

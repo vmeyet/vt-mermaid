@@ -69,9 +69,10 @@ impl Network {
 }
 
 impl Lines {
-    pub(crate) fn of(grid: &[Vec<char>], boxes: &[Rectangle]) -> Self {
+    /// `heads` are the glyphs that end a line on an arrowhead.
+    pub(crate) fn of(grid: &[Vec<char>], boxes: &[Rectangle], heads: &str) -> Self {
         let borders: HashSet<(usize, usize)> = boxes.iter().flat_map(|found| found.border()).collect();
-        let networks = networks(grid, &borders);
+        let networks = networks(grid, &borders, heads);
         let through: HashMap<Place, &Network> =
             networks.iter().flat_map(|network| network.crossings.iter().map(move |&place| (place, network))).collect();
         let pointed =
@@ -90,14 +91,14 @@ impl Lines {
     }
 }
 
-fn networks(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>) -> Vec<Network> {
+fn networks(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>, heads: &str) -> Vec<Network> {
     let mut seen: HashSet<Place> = HashSet::new();
     let mut networks = Vec::new();
     for (row, cells) in grid.iter().enumerate() {
         for (column, &glyph) in cells.iter().enumerate() {
             for start in [false, true].map(|level| (row, column, level && CROSSINGS.contains(glyph))) {
                 if ways(glyph) != 0 && !borders.contains(&(row, column)) && !seen.contains(&start) {
-                    let (network, places) = network(grid, borders, start);
+                    let (network, places) = network(grid, borders, heads, start);
                     seen.extend(places);
                     networks.push(network);
                 }
@@ -142,7 +143,7 @@ pub(crate) fn boxes(grid: &[Vec<char>]) -> Vec<Rectangle> {
 }
 
 /// What the lines joined to `start` end on, and every place they run through.
-fn network(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>, start: Place) -> (Network, HashSet<Place>) {
+fn network(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>, heads: &str, start: Place) -> (Network, HashSet<Place>) {
     let mut network = Network::default();
     let mut seen = HashSet::from([start]);
     let mut waiting = vec![start];
@@ -159,7 +160,7 @@ fn network(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>, start: Place) 
             };
             let next = at(grid, next_row, next_column);
             let passes = CROSSINGS.contains(next);
-            if ARROWS.contains(next) {
+            if heads.contains(next) {
                 network.arrowheads.insert((next_row, next_column));
             } else if borders.contains(&(next_row, next_column)) && ways(next) != 0 && !passes {
                 network.sources += 1;
@@ -221,7 +222,7 @@ mod tests {
 
     fn lines(text: &str) -> Lines {
         let grid: Vec<Vec<char>> = text.lines().map(|row| row.chars().collect()).collect();
-        Lines::of(&grid, &boxes(&grid))
+        Lines::of(&grid, &boxes(&grid), ARROWS)
     }
 
     #[test]

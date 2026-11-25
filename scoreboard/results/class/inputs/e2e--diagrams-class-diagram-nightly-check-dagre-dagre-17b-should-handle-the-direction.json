@@ -1,0 +1,18 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-dagre-dagre-17b-should-handle-the-direction.mmd",
+  "expected": {"node_labels":8,"edge_labels":6,"arrows":2},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":42,"rows":14,"area":588,"fits":true,"node_labels":8,"edge_labels":1,"arrows":2,"crossings":0,"bends":2},"score":82},
+      "100": {"status":"rendered","drawn":{"width":42,"rows":14,"area":588,"fits":true,"node_labels":8,"edge_labels":1,"arrows":2,"crossings":0,"bends":2},"score":82}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: `direction` directive not yet supported","score":0},
+      "100": {"status":"refused","reason":"parse error: classDiagram: `direction` directive not yet supported","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":50,"rows":13,"area":650,"fits":true,"node_labels":8,"edge_labels":6,"arrows":2,"crossings":0,"bends":2},"score":100},
+      "100": {"status":"rendered","drawn":{"width":50,"rows":13,"area":650,"fits":true,"node_labels":8,"edge_labels":6,"arrows":2,"crossings":0,"bends":2},"score":100}
+    }
+  }
+}

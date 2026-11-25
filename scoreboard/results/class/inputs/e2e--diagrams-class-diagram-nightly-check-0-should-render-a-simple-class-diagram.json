@@ -1,0 +1,18 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-0-should-render-a-simple-class-diagram.mmd",
+  "expected": {"node_labels":4,"edge_labels":3,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"Invalid mermaid header: \"classDiagram-v2\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0},
+      "100": {"status":"refused","reason":"Invalid mermaid header: \"classDiagram-v2\". Expected \"graph TD\", \"flowchart LR\", \"stateDiagram-v2\", etc.","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"unsupported diagram type: 'classdiagram-v2'","score":0},
+      "100": {"status":"refused","reason":"unsupported diagram type: 'classdiagram-v2'","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":24,"rows":15,"area":360,"fits":true,"node_labels":4,"edge_labels":3,"arrows":0,"crossings":0,"bends":2},"score":100},
+      "100": {"status":"rendered","drawn":{"width":24,"rows":15,"area":360,"fits":true,"node_labels":4,"edge_labels":3,"arrows":0,"crossings":0,"bends":2},"score":100}
+    }
+  }
+}

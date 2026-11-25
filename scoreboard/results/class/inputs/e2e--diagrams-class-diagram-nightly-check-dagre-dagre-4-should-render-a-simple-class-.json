@@ -1,0 +1,18 @@
+{
+  "input": "class/e2e--diagrams-class-diagram-nightly-check-dagre-dagre-4-should-render-a-simple-class-.mmd",
+  "expected": {"node_labels":21,"edge_labels":3,"arrows":8},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":117,"rows":21,"area":2457,"fits":false,"node_labels":18,"edge_labels":1,"arrows":6,"crossings":0,"bends":13},"score":66},
+      "100": {"status":"rendered","drawn":{"width":117,"rows":21,"area":2457,"fits":false,"node_labels":18,"edge_labels":1,"arrows":6,"crossings":0,"bends":13},"score":66}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: classDiagram: unrecognised relationship marker \"..\" in \"Class07 .. Class08\"","score":0},
+      "100": {"status":"refused","reason":"parse error: classDiagram: unrecognised relationship marker \"..\" in \"Class07 .. Class08\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":75,"rows":84,"area":6300,"fits":true,"node_labels":19,"edge_labels":3,"arrows":8,"crossings":0,"bends":6},"score":96},
+      "100": {"status":"rendered","drawn":{"width":93,"rows":31,"area":2883,"fits":true,"node_labels":19,"edge_labels":3,"arrows":8,"crossings":0,"bends":5},"score":96}
+    }
+  }
+}
