@@ -190,7 +190,8 @@ fn size(diagram: &Diagram, item: Item, content: &Arrangement) -> (i32, i32) {
     match item {
         Item::Node(index) => {
             let node = &diagram.nodes[index];
-            let size = shape::size(node.shape, &node.label, &node.compartments);
+            let vertical = matches!(diagram.flow_around(End::Node(index)), Direction::Down | Direction::Up);
+            let size = shape::size(node.figure, &node.label, &node.compartments, vertical);
             (i32::from(size.width), i32::from(size.height))
         }
         Item::Group(index) => {

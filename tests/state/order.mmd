@@ -1,0 +1,15 @@
+stateDiagram-v2
+    state paid <<choice>>
+    state split <<fork>>
+    state merge <<join>>
+    [*] --> Placed
+    Placed --> paid
+    paid --> Cancelled : refused
+    paid --> split : accepted
+    split --> Packing
+    split --> Invoicing
+    Packing --> merge
+    Invoicing --> merge
+    merge --> Shipped
+    Shipped --> [*]
+    Cancelled --> [*]

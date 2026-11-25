@@ -9,7 +9,8 @@ mod lexer;
 
 use std::fmt;
 
-pub(super) use db::Diagram;
+pub(super) use db::{Diagram, Edge, Node, Shape};
+pub(super) use lexer::Direction;
 
 use crate::error::{Error, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
 use crate::source;

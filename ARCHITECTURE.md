@@ -6,7 +6,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 ## Owns
 
-- Mermaid source to a text drawing, one diagram kind at a time; flowcharts and sequence diagrams today.
+- Mermaid source to a text drawing, one diagram kind at a time; flowcharts, sequence diagrams and state diagrams today.
 - Laying a graph (a flowchart) out in layers on the grid, then routing its edges on the grid.
 - Laying a sequence diagram out: each participant's column, then each event on rows of its own.
 - Handing chart kinds (xychart, pie, sankey…) to vt-graph.
@@ -21,7 +21,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 - `render(source, max_width)` returns the drawing as a `Canvas`, at most `max_width` columns wide.
   `render_with(source, settings)` does the same as `Settings` say: `max_width`, and `long_words`, `Break` unless set.
-  A flowchart too wide, or with an edge left without a path, is laid out again until it fits: tight; tight with node labels wrapped at 20 then 14 columns; with the ranks going down folded to 8, 7, 6, 5 and 4 eighths of the width; folded again to 8 down to 2 eighths with labels wrapped at 14; then packed to 8, 6 and 4 eighths without room for the links passing a rank; each as written, then turned top-down when it or one of its groups flows sideways.
+  A flowchart or a state diagram too wide, or with an edge left without a path, is laid out again until it fits: tight; tight with node labels wrapped at 20 then 14 columns; with the ranks going down folded to 8, 7, 6, 5 and 4 eighths of the width; folded again to 8 down to 2 eighths with labels wrapped at 14; then packed to 8, 6 and 4 eighths without room for the links passing a rank; each as written, then turned top-down when it or one of its groups flows sideways.
   That is at most thirty-eight placements, each routed only when its blocks fit; one still too wide is `Error::TooWide`, so the caller can fall back.
   A sequence diagram too wide is laid out again: its labels as written, then wrapped at spaces to 60, 48, 40, 32, 26, 20, 16, 12, 10, 8 and 6 columns, a word up to 30 columns kept whole; the same with heads 1 space apart instead of 3; then wrapped to 30 columns down to 6, one at a time, every word wider than the lines broken or cut as `long_words` says.
   That is at most forty-nine placements, each a few passes over the events; one still too wide is `Error::TooWide`.
@@ -39,7 +39,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 - No font is ever loaded: a node is as wide as its label's columns, so the drawing is the same on every machine.
 - Ten minutes of fuzzing the parser alone, 1.8 million inputs, found no panic and no input that took a second.
   Ten minutes of the sequence parser alone, 9.2 million inputs, and twenty of `render` seeded with sequence diagrams, 4.9 million, found none either.
-- The `measure` feature adds `measure(source, max_width)`: crossings, bends, edge cells, cells beside a node and level C violations, read from where each part went.
+- The `measure` feature adds `measure(source, max_width)` for flowcharts and state diagrams: crossings, bends, edge cells, cells beside a node and level C violations, read from where each part went.
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
 - The `fuzz` feature adds `read_flowchart(source)`, `read_sequence(source)` and `read_class(source)`, each parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
 
@@ -77,6 +77,7 @@ mermaid-rs-renderer's parser, which it replaces, accepts and refuses 908 of them
 - Invisible links (`~~~`): the layout ranks their ends as it does an edge's; they are never routed or drawn.
 - Compartments: a node may hold lines under its label, each list in a compartment below a rule (`├───┤`), from the left; flowcharts have none, class and ER diagrams draw their members and attributes so.
 - Shapes: vt-canvas draws each outline (`Canvas::shape`), so every glyph follows the glyph set.
+  A node is a figure (`graph::diagram::Figure`): an outline around its label, a marker on one cell (`Canvas::marker`) or a heavy bar across the flow of its group, both without their label; every edge joins a marker's cell, from any side, and a bar's cells each way across it.
   A shape a node's brackets or its `@{ shape: … }` block names maps to the closest one, `doc`, `flag` or any name without a close match to a rectangle; `((text))` is a circle, `(((text)))` a double circle; only a pointed head draws an arrow.
   A node named like a subgraph is that subgraph, as mermaid merges them; a subgraph whose id an edge names inside another subgraph moves into it, as mermaid draws it.
   A node is its label plus a space and the shape's inset on each side.
@@ -141,7 +142,14 @@ The rules looking past the token at hand (a `direction` or a `<<fork>>` later on
 Nodes, note groups included, count towards `MAX_NODES` and edges towards `MAX_EDGES` as they are made, each found through an index, so the work stays linear in the statements.
 Every pattern runs in one pass over the text: no regex, no backtracking on the source.
 `parse::agreement`, a test, compares it with the oracle on every corpus state diagram: it accepts and refuses the 279 as mermaid does (level A), and reads the 276 mermaid accepts into the same nodes (id, shape, label, descriptions, parent, direction, note side) and edges (ends, label, head) (level B).
-Drawing comes next: `render` refuses a state diagram mermaid reads as `Error::Unsupported`.
+
+`render` then turns the db into the graph drawn (`diagram`) and draws it as a flowchart is drawn, with the same fit ladder:
+
+- A state is a rectangle, its descriptions as lines under its label; a start is a dot `⬤`, an end a ringed dot `◉`, a choice a diamond `⬥`, each on one cell, and a fork or a join a heavy bar with a cell for each edge of its busier side, two apart, five cells at the least.
+  `●` and `◇` would be East Asian ambiguous; `⬤ ◉ ⬥` are one column wide everywhere.
+- A composite state is a frame with its title, flowing its own `direction`, top-down when it has none, as mermaid lays it out; a transition naming it ends on its frame.
+- Transitions point at their target; their labels are one line of at most 60 columns.
+- Notes and concurrent regions come next: notes are left out, regions drawn as frames without a title.
 
 ## Class diagrams
 
@@ -169,6 +177,7 @@ vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its 
 - `examples/agreement.rs`: compares mermaid-rs-renderer's parser with the oracle per kind; a dev-only program, so the library's API never sees the dependency.
   Flowcharts are compared with vt-mermaid's own parser by `parse::agreement` instead.
 - `tests/sequence/diagrams.txt`: sequence diagrams from the corpus and `tests/sequence/checkout.mmd`, each an insta snapshot at 100 columns; every corpus diagram mermaid accepts is drawn within 80 columns but two with eight and ten participants side by side.
+- `tests/state/diagrams.txt`: state diagrams from the corpus and `tests/state/`, each an insta snapshot at 100 columns; every corpus diagram mermaid accepts is drawn within 80 columns and passes the level C checks, but for labels the layout leaves without room.
 - `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks of `measure` (every node and label drawn whole, every edge joining both ends, nothing overlapping).
 - [`scoreboard/`](scoreboard/README.md): every corpus flowchart and sequence diagram drawn by vt-mermaid and three other text renderers, measured the same way, results committed; a dev-only example, run by hand.
 - `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`, seeded from `corpus/flowchart`, and from `corpus/sequence` and `corpus/class` for those kinds; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits; `cargo +nightly fuzz run parse` feeds it to the parser alone, through `read_flowchart` behind the `fuzz` feature, and checks it never panics and keeps the limits; `parse_sequence` and `parse_class` do the same for the sequence and class parsers through `read_sequence` and `read_class`.

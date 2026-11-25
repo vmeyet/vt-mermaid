@@ -1,0 +1,19 @@
+---
+source: src/state/mod.rs
+expression: "ascii.join(\"\\n\")"
+---
+  *  
+  |  
+  |  
+  v  
+  ?  
+  |  
+  |  
+  v  
++---+
+| A |
++-+-+
+  |  
+  |  
+  v  
+  @

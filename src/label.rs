@@ -12,7 +12,7 @@ const MAX_LINE_COLUMNS: usize = 60;
 const SEPARATORS: [char; 8] = ['.', '/', '-', '_', ':', ',', '=', '&'];
 
 /// Text drawn in a node or on an edge, already cut into the lines it is drawn on.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct Label {
     pub(crate) lines: Vec<String>,
     /// Columns of the widest line, at most the label kind's limit.

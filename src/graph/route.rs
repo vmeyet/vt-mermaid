@@ -97,6 +97,8 @@ pub(super) enum Use {
     },
     /// A node's border cell: edges join it, never pass it.
     Border,
+    /// A node of one cell: any number of edges join it, from any side.
+    Hub,
     /// A frame's top side under its title: an edge passes behind the title when no other cell will do.
     Title,
     /// Free, and kept for the label of an edge: the edge runs through it, horizontally or not, and anything else
@@ -171,6 +173,10 @@ impl Grid {
     }
 
     fn node(&mut self, rect: Rect) {
+        if rect.width == 1 && rect.height == 1 {
+            self.set(Point::new(rect.x, rect.y), Use::Hub);
+            return;
+        }
         self.fill(rect, Use::Border);
         self.fill(Rect::new(rect.x + 1, rect.y + 1, rect.width.saturating_sub(2), rect.height.saturating_sub(2)), Use::Blocked);
     }
@@ -192,7 +198,6 @@ impl Grid {
         self.fill(title, Use::Title);
     }
 
-    /// Lays `route` on the grid so later routes only cross it at a right angle, away from its turns and ends.
     /// Lays the cells of `route` it does not share on the grid so later routes only cross it at a right angle, away
     /// from its turns and ends; the cells it shares with its trunk are no place for a label any more, and no route
     /// crosses where it leaves or joins the trunk.
@@ -212,8 +217,10 @@ impl Grid {
             };
             self.set(cell, next);
         }
-        for end in route.cells.first().into_iter().chain([&route.end]) {
-            self.set(*end, Use::Blocked);
+        for &end in route.cells.first().into_iter().chain([&route.end]) {
+            if self.get(end) != Use::Hub {
+                self.set(end, Use::Blocked);
+            }
         }
     }
 }
@@ -566,7 +573,7 @@ impl Search<'_> {
     /// The arrow goes on that cell: a line may turn there into `▾` or `▴` (`──▾` reads well), never into `▸` or `◂`,
     /// which a vertical line beside them would hide.
     fn arrival(&self, cell: Point, heading: Direction, next: Point, direction: Direction) -> Option<u32> {
-        let inward = side(self.to, next) == Some(opposite(direction)) && self.joinable(next);
+        let inward = sides(self.to, next).any(|side| side == opposite(direction)) && self.joinable(next);
         let turn = match (direction == heading, direction) {
             (true, _) => Some(0),
             (false, _) if self.straight.to > 0 => None,
@@ -641,12 +648,12 @@ impl Search<'_> {
         let (right, bottom) = (rect.x + rect.width - 1, rect.y + rect.height - 1);
         let rows = (rect.x..=right).flat_map(move |x| [Point::new(x, rect.y), Point::new(x, bottom)]);
         let columns = (rect.y..=bottom).flat_map(move |y| [Point::new(rect.x, y), Point::new(right, y)]);
-        rows.chain(columns).filter(|cell| self.joinable(*cell)).filter_map(move |cell| side(rect, cell).map(|outward| (cell, outward)))
+        rows.chain(columns).filter(|cell| self.joinable(*cell)).flat_map(move |cell| sides(rect, cell).map(move |outward| (cell, outward)))
     }
 
     /// A node's border or a frame's side no earlier edge joins; under a frame's title too, which the arrow stays clear of.
     fn joinable(&self, cell: Point) -> bool {
-        matches!(self.grid.get(cell), Use::Border | Use::Line { .. } | Use::Trunk { .. } | Use::Title)
+        matches!(self.grid.get(cell), Use::Border | Use::Hub | Use::Line { .. } | Use::Trunk { .. } | Use::Title)
     }
 
     fn path(&self, previous: &[usize], last: usize) -> Vec<Point> {
@@ -690,21 +697,22 @@ fn off_centre(rect: Rect, cell: Point) -> u32 {
     (offset + 2) / 4
 }
 
-/// The direction out of `rect` through `cell`, a border cell that is not a corner.
-fn side(rect: Rect, cell: Point) -> Option<Direction> {
+/// The directions out of `rect` through `cell`, a border cell that is not a corner: one for a block of three rows
+/// and columns or more, both ways across a bar one cell thick, every way out of a single cell.
+fn sides(rect: Rect, cell: Point) -> impl Iterator<Item = Direction> {
     let (right, bottom) = (rect.x + rect.width - 1, rect.y + rect.height - 1);
-    let (across, down) = ((rect.x + 1..right).contains(&cell.x), (rect.y + 1..bottom).contains(&cell.y));
-    if across && cell.y == rect.y {
-        Some(Direction::Up)
-    } else if across && cell.y == bottom {
-        Some(Direction::Down)
-    } else if down && cell.x == rect.x {
-        Some(Direction::Left)
-    } else if down && cell.x == right {
-        Some(Direction::Right)
-    } else {
-        None
-    }
+    let across = (rect.x + 1..right).contains(&cell.x) || (rect.width == 1 && cell.x == rect.x);
+    let down = (rect.y + 1..bottom).contains(&cell.y) || (rect.height == 1 && cell.y == rect.y);
+    let up = across && cell.y == rect.y;
+    let thick = rect.height > 1 && rect.width > 1;
+    [
+        (up, Direction::Up),
+        (across && cell.y == bottom && !(up && thick), Direction::Down),
+        (down && cell.x == rect.x, Direction::Left),
+        (down && cell.x == right && !(cell.x == rect.x && thick), Direction::Right),
+    ]
+    .into_iter()
+    .filter_map(|(out, direction)| out.then_some(direction))
 }
 
 /// Whether `cell` lies outside `rect`, `cells` or fewer away from it, diagonally included.
@@ -782,6 +790,20 @@ mod tests {
     use crate::graph::edge_label::EndLabels;
     use crate::graph::layout::{self, Fit};
     use crate::graph::{draw, measure};
+
+    #[test]
+    fn a_bar_is_left_both_ways_across_and_a_single_cell_every_way() {
+        let directions = |rect: Rect, cell: Point| sides(rect, cell).collect::<Vec<_>>();
+
+        assert_eq!(directions(Rect::new(2, 2, 5, 1), Point::new(4, 2)), [Direction::Up, Direction::Down]);
+        assert_eq!(directions(Rect::new(2, 2, 5, 1), Point::new(2, 2)), [Direction::Left]);
+        assert_eq!(
+            directions(Rect::new(2, 2, 1, 1), Point::new(2, 2)),
+            [Direction::Up, Direction::Down, Direction::Left, Direction::Right]
+        );
+        assert_eq!(directions(Rect::new(2, 2, 1, 1), Point::new(2, 5)), []);
+        assert_eq!(directions(Rect::new(2, 2, 5, 3), Point::new(4, 4)), [Direction::Down]);
+    }
 
     const TOP: Rect = Rect::new(2, 0, 7, 3);
     const BOTTOM: Rect = Rect::new(2, 8, 7, 3);

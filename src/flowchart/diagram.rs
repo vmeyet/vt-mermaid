@@ -7,7 +7,7 @@ use vt_canvas::{Direction, LineKind};
 use super::parse::{self, Arrow, Flowchart, Limits, Stroke};
 use super::shape;
 use crate::error::Error;
-use crate::graph::diagram::{Diagram, Edge, End, Group, Head, Invisible, Node};
+use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, Head, Invisible, Node};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
 
@@ -33,7 +33,7 @@ fn diagram(flowchart: &Flowchart) -> Diagram {
             text: node.text.shown(),
             label: Label::wrapped(&node.text.shown()),
             compartments: Vec::new(),
-            shape: shape::named(node.shape.as_deref()),
+            figure: Figure::Shape(shape::named(node.shape.as_deref())),
             group: innermost(&subgraphs, &groups, &node.id),
             order,
         })
@@ -246,10 +246,10 @@ mod tests {
 
         assert_eq!(ids(&diagram), ["A", "B"]);
         assert_eq!(
-            (node(&diagram, "A").shape, node(&diagram, "A").label.lines.as_slice()),
-            (Shape::LeanRight, ["In".to_owned()].as_slice())
+            (node(&diagram, "A").figure, node(&diagram, "A").label.lines.as_slice()),
+            (Figure::Shape(Shape::LeanRight), ["In".to_owned()].as_slice())
         );
-        assert_eq!(node(&diagram, "B").shape, Shape::DoubleCircle);
+        assert_eq!(node(&diagram, "B").figure, Figure::Shape(Shape::DoubleCircle));
     }
 
     #[test]
@@ -288,7 +288,10 @@ mod tests {
     fn a_double_circle_and_a_circle_keep_their_shapes() {
         let diagram = read("flowchart LR\n  A(((one))) --> B((two)) --o C --x D").unwrap();
 
-        assert_eq!((node(&diagram, "A").shape, node(&diagram, "B").shape), (Shape::DoubleCircle, Shape::Circle));
+        assert_eq!(
+            (node(&diagram, "A").figure, node(&diagram, "B").figure),
+            (Figure::Shape(Shape::DoubleCircle), Figure::Shape(Shape::Circle))
+        );
         assert_eq!(diagram.edges.iter().map(|edge| edge.end).collect::<Vec<_>>(), [Head::Arrow, Head::None, Head::None]);
     }
 

@@ -33,7 +33,7 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
         canvas.frame(*rect, Frame { kind: LineKind::Light, corner: Corner::Rounded, title: None, role: Role::Group });
     }
     for (node, rect) in diagram.nodes.iter().zip(&parts.nodes) {
-        shape::draw(&mut canvas, *rect, node.shape, &node.label, &node.compartments);
+        shape::draw(&mut canvas, *rect, node.figure, &node.label, &node.compartments);
     }
     for (edge, route) in diagram.edges.iter().zip(&parts.routes) {
         draw_edge(&mut canvas, edge, route);

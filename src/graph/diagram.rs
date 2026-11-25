@@ -1,7 +1,7 @@
 //! A graph as a diagram kind reads it: nodes, groups, edges and invisible links, laid out and drawn alike whatever
 //! the kind.
 
-use vt_canvas::{Direction, LineKind, Shape, Tip};
+use vt_canvas::{Direction, LineKind, Marker, Shape, Tip};
 
 use crate::label::{Label, Wrap};
 
@@ -27,11 +27,29 @@ pub(crate) struct Node {
     /// Lines under its label, each list in a compartment of its own below a rule, left-aligned: a class's
     /// attributes and methods, an entity's attributes.
     pub(crate) compartments: Vec<Vec<String>>,
-    pub(crate) shape: Shape,
+    pub(crate) figure: Figure,
     /// The innermost group holding it.
     pub(crate) group: Option<usize>,
     /// Its place among the nodes in the order the source first names them.
     pub(crate) order: usize,
+}
+
+/// What a node is drawn as.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Figure {
+    /// An outline around its label.
+    Shape(Shape),
+    /// One cell, its label left out: every edge joins that cell, from any side.
+    Marker(Marker),
+    /// A heavy bar across the flow of the group holding it, `length` cells long, its label left out.
+    Bar { length: u16 },
+}
+
+impl Figure {
+    /// Whether the node draws its label.
+    pub(crate) fn shows_label(self) -> bool {
+        matches!(self, Self::Shape(_))
+    }
 }
 
 /// A group of nodes framed together: a subgraph, a composite state.
@@ -97,7 +115,7 @@ pub(crate) struct Invisible {
 impl Diagram {
     /// Its nodes' text cut into lines again, as `wrap` says.
     pub(crate) fn wrapped(&self, wrap: Wrap) -> Self {
-        let nodes = self.nodes.iter().map(|node| Node { label: Label::wrapped_as(&node.text, wrap), ..node.clone() }).collect();
+        let nodes = self.nodes.iter().map(|node| Node { label: node.label_wrapped_as(wrap), ..node.clone() }).collect();
         Self { nodes, wrap, ..self.clone() }
     }
 
@@ -144,5 +162,12 @@ impl Diagram {
             End::Node(node) => &self.nodes[node].id,
             End::Group(group) => &self.groups[group].id,
         }
+    }
+}
+
+impl Node {
+    /// Its text cut into lines as `wrap` says, none when its figure leaves its label out.
+    fn label_wrapped_as(&self, wrap: Wrap) -> Label {
+        if self.figure.shows_label() { Label::wrapped_as(&self.text, wrap) } else { Label::default() }
     }
 }

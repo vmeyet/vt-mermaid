@@ -147,7 +147,7 @@ pub(crate) fn violations(diagram: &Diagram, drawing: &Drawing) -> Vec<String> {
             found.push(format!("{name} has no cells"));
             continue;
         };
-        let interior = Rect::new(from.x + 1, from.y + 1, from.width - 2, from.height - 2);
+        let interior = Rect::new(from.x + 1, from.y + 1, from.width.saturating_sub(2), from.height.saturating_sub(2));
         if !contains(from, first) || contains(interior, first) {
             found.push(format!("{name} does not leave from its source's border"));
         }

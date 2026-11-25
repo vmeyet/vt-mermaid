@@ -22,10 +22,10 @@ pub use error::{Error, MAX_AREA, MAX_EDGES, MAX_MESSAGES, MAX_NODES, MAX_PARTICI
 pub use settings::{LongWords, Settings};
 pub use vt_canvas::{Canvas, GlyphSet, Role, Run};
 
-/// Exact measures of a flowchart drawing, for the scoreboard: not part of the API, behind the `measure` feature.
+/// Exact measures of a drawing, for the scoreboard: not part of the API, behind the `measure` feature.
 #[cfg(feature = "measure")]
 #[doc(hidden)]
-pub use {flowchart::measure, graph::measure::Measures};
+pub use graph::measure::Measures;
 
 /// Reads a flowchart as `render` does, without laying it out, for the fuzzer: not part of the API, behind the `fuzz`
 /// feature.
@@ -44,6 +44,18 @@ pub use sequence::{Counts as SequenceCounts, read as read_sequence};
 #[cfg(feature = "fuzz")]
 #[doc(hidden)]
 pub use class::{Counts as ClassCounts, read as read_class};
+
+/// Draws a flowchart or a state diagram as [`render`] does, then measures the drawing: not part of the API, behind
+/// the `measure` feature.
+#[cfg(feature = "measure")]
+#[doc(hidden)]
+pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
+    match source::Kind::of(source)? {
+        source::Kind::Flowchart => flowchart::measure(source, max_width),
+        source::Kind::State => state::measure(source, max_width),
+        source::Kind::Sequence => Err(Error::Unsupported),
+    }
+}
 
 /// Draws the diagram in `source` no wider than `max_width` columns.
 pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
@@ -64,6 +76,6 @@ pub fn render_with(source: &str, settings: Settings) -> Result<Canvas, Error> {
     match source::Kind::of(source)? {
         source::Kind::Flowchart => flowchart::render_with(source, settings).map(|drawing| drawing.canvas),
         source::Kind::Sequence => sequence::render_with(source, settings),
-        source::Kind::State => state::render(source),
+        source::Kind::State => state::render_with(source, settings),
     }
 }

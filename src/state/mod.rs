@@ -1,13 +1,83 @@
-//! State diagrams.
+//! State diagrams: read as mermaid reads them, then drawn as a graph.
 
+mod diagram;
 mod parse;
 
 use vt_canvas::Canvas;
 
 use crate::error::Error;
+use crate::graph;
+use crate::settings::Settings;
 
-/// Reads `source` as a state diagram; one mermaid reads is not drawn yet.
-pub(crate) fn render(source: &str) -> Result<Canvas, Error> {
-    parse::parse(source, parse::Limits::DRAWN)?;
-    Err(Error::Unsupported)
+/// Draws `source` as a graph, in the first form that fits.
+pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Canvas, Error> {
+    graph::render(&diagram::read(source)?, settings).map(|drawing| drawing.canvas)
+}
+
+/// Draws `source` as [`render`](crate::render) does, then measures the drawing.
+#[cfg(any(test, feature = "measure"))]
+pub(crate) fn measure(source: &str, max_width: u16) -> Result<graph::measure::Measures, Error> {
+    let written = diagram::read(source)?;
+    let drawing = graph::render(&written, Settings::new(max_width))?;
+    Ok(graph::measure::measures(&written.wrapped(drawing.wrap), &drawing))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::path::Path;
+
+    use vt_canvas::GlyphSet;
+
+    use super::*;
+    use crate::graph::measure::rows;
+
+    fn listed() -> Vec<(String, String)> {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let list = fs::read_to_string(root.join("tests/state/diagrams.txt")).unwrap();
+        list.lines()
+            .map(|path| {
+                let name = Path::new(path).file_stem().unwrap().to_string_lossy().into_owned();
+                (name, fs::read_to_string(root.join(path)).unwrap())
+            })
+            .collect()
+    }
+
+    #[test]
+    fn listed_diagrams_match_their_snapshots_at_100_columns() {
+        for (name, source) in listed() {
+            insta::assert_snapshot!(name, rows(&render_with(&source, Settings::new(100)).unwrap()).join("\n"));
+        }
+    }
+
+    #[test]
+    fn a_diagram_draws_in_ascii_too() {
+        let canvas = render_with("stateDiagram-v2\n  state c <<choice>>\n  [*] --> c\n  c --> A\n  A --> [*]", Settings::new(40)).unwrap();
+
+        let ascii: Vec<String> = canvas.rows(GlyphSet::Ascii).map(|runs| runs.into_iter().map(|run| run.text).collect()).collect();
+        insta::assert_snapshot!(ascii.join("\n"));
+    }
+
+    /// Every corpus diagram mermaid accepts is drawn within 80 columns, each node and label whole, each edge joining
+    /// both its ends and nothing overlapping; only a label left without room, as the layout gives two labels of a
+    /// cycle between the same states, is let through.
+    #[test]
+    fn corpus_diagrams_are_drawn_within_80_columns_keeping_the_level_c_invariants() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("corpus/state");
+        let mut found = Vec::new();
+        for entry in fs::read_dir(root).unwrap() {
+            let path = entry.unwrap().path();
+            let Ok(measures) = measure(&fs::read_to_string(&path).unwrap(), 80) else { continue };
+            let name = path.file_name().unwrap().to_string_lossy().into_owned();
+            found.extend(
+                measures
+                    .violations
+                    .into_iter()
+                    .filter(|found| !found.ends_with("label found no room"))
+                    .map(|found| format!("{name}: {found}")),
+            );
+        }
+
+        assert_eq!(found, [""; 0]);
+    }
 }
