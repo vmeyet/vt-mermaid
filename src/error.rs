@@ -2,9 +2,9 @@ use std::fmt;
 
 /// Longest source [`render`](crate::render) reads, in bytes.
 pub const MAX_SOURCE_BYTES: usize = 64 * 1024;
-/// Most nodes a flowchart or a state diagram may have.
+/// Most nodes a flowchart, a state or a class diagram may have.
 pub const MAX_NODES: usize = 200;
-/// Most edges a flowchart or a state diagram may have: each one is a path search over the whole grid.
+/// Most edges a flowchart, a state or a class diagram may have: each one is a path search over the whole grid.
 pub const MAX_EDGES: usize = 150;
 /// Most cells of the grid edges are routed on, margins included.
 pub const MAX_AREA: usize = 250_000;
@@ -29,12 +29,12 @@ pub enum Error {
     },
     /// The source is a Mermaid diagram of a kind not drawn yet.
     Unsupported,
-    /// The flowchart or state diagram has more than [`MAX_NODES`] nodes.
+    /// The flowchart, state or class diagram has more than [`MAX_NODES`] nodes.
     TooManyNodes {
         /// How many it has.
         nodes: usize,
     },
-    /// The flowchart or state diagram has more than [`MAX_EDGES`] edges.
+    /// The flowchart, state or class diagram has more than [`MAX_EDGES`] edges.
     TooManyEdges {
         /// How many it has.
         edges: usize,
