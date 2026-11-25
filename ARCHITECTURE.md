@@ -47,7 +47,7 @@ This page says how the code is laid out today; when a module or a boundary chang
   Read by mermaid itself, the 2785 state diagrams the state parser's fuzzing kept are accepted and refused alike but where mermaid's YAML reader refuses a front matter, or over the node limit, and the 1130 both read hold as many nodes and edges.
 - The `measure` feature adds `measure(source, max_width)` for flowcharts and state diagrams: crossings, bends, edge cells, cells beside a node and level C violations, read from where each part went.
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
-- The `fuzz` feature adds `read_flowchart(source)`, `read_sequence(source)`, `read_class(source)` and `read_state(source)`, each parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
+- The `fuzz` feature adds `read_flowchart(source)`, `read_sequence(source)`, `read_class(source)`, `read_state(source)` and `read_er(source)`, each parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
 
 ## Every kind
 
@@ -187,6 +187,16 @@ A class diagram counts its classes, lollipops, notes and namespaces against `MAX
 
 - Edges with a hollow head at one side of a class share it, so a parent's children hang from one `▵` on one trunk.
 
+## ER diagrams
+
+`parse` is mermaid's own ER parser rewritten by hand, in three steps after the shared preparation:
+`lexer` applies the rules of `erDiagram.jison` in their order, case-insensitive, the first that matches winning, each start condition a state on a stack, so `one`, `many` or `to` naming an entity is a cardinality or a line, and `1` a cardinality before a name or a line; a type with tildes runs to the last tilde of its line in one pass, never a backtracking regex;
+`grammar` reads the tokens top-down, accepting what mermaid's LALR parser accepts and calling the db in the order its actions do: statements may share a line, and a subgraph hands its document's names and directions to the db once it ends;
+`db` does what `erDb.ts` does: an entity is added the first time a statement names it, named `entity-<name>-<place>`, an alias given later counts while it has none, a relationship's end named like a subgraph closed before is that subgraph, and a subgraph holds each name its document hands it once but those a subgraph closed before holds.
+An ER diagram counts its entities and subgraphs against `MAX_NODES`, its relationships against `MAX_EDGES`.
+`parse::agreement`, a test, compares it with the oracle on every corpus ER diagram: it accepts and refuses the 315 as mermaid does (level A), and reads the 312 mermaid accepts into the same entities, attributes, relationships and subgraphs (level B).
+Drawing comes next: `render` refuses an ER diagram mermaid reads as `Error::Unsupported`.
+
 ## Dependency direction
 
 ```
@@ -206,7 +216,7 @@ vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its 
 - `tests/state/diagrams.txt`: state diagrams from the corpus and `tests/state/`, each an insta snapshot at 100 columns; every corpus diagram mermaid accepts is drawn within 80 columns and passes the level C checks, but for labels the layout leaves without room.
 - `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks of `measure` (every node and label drawn whole, every edge joining both ends, nothing overlapping).
 - [`scoreboard/`](scoreboard/README.md): every corpus flowchart, sequence, state and class diagram drawn by vt-mermaid and three other text renderers, measured the same way, results committed; a dev-only example, run by hand.
-- `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`, seeded from `corpus/flowchart`, and from `corpus/sequence`, `corpus/class` and `corpus/state` for those kinds; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits; `cargo +nightly fuzz run parse` feeds it to the parser alone, through `read_flowchart` behind the `fuzz` feature, and checks it never panics and keeps the limits; `parse_sequence`, `parse_class` and `parse_state` do the same for those parsers through `read_sequence`, `read_class` and `read_state`.
+- `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`, seeded from `corpus/flowchart`, and from `corpus/sequence`, `corpus/class`, `corpus/state` and `corpus/er` for those kinds; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits; `cargo +nightly fuzz run parse` feeds it to the parser alone, through `read_flowchart` behind the `fuzz` feature, and checks it never panics and keeps the limits; `parse_sequence`, `parse_class`, `parse_state` and `parse_er` do the same for those parsers through `read_sequence`, `read_class`, `read_state` and `read_er`.
   On stable, build a target with `cargo build --release --target <host>` and the sanitizer-coverage `RUSTFLAGS` cargo-fuzz passes, then run the binary.
 - `benches/`: `limits` times a typical flowchart, sequence, state and class diagram and inputs built at each limit with divan, `corpus` times every corpus flowchart, sequence, state and class diagram and prints the spread of each kind; both run with `cargo bench` only.
 - `examples/compare.rs`: prints each spike flowchart drawn by mermaid-text, then by vt-mermaid; mermaid-text is a dev-dependency only.
