@@ -22,8 +22,17 @@ This page says how the code is laid out today; when a module or a boundary chang
 - `render(source, max_width)` returns the drawing as a `Canvas`, at most `max_width` columns wide.
   A flowchart flowing sideways that is too wide is laid out again top-down; one still too wide is `Error::TooWide`, so the caller can fall back.
 - Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`).
+- Time, measured on an Apple M5 in a release build with `cargo bench --bench limits` and `cargo bench --bench corpus`, the fastest of a few runs on a shared machine:
+  - The corpus's 946 flowcharts at 100 columns: median 1 ms, p95 143 ms, p99 295 ms, slowest 3.1 s (`e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression`, too wide, so laid out twice).
+  - mermaid-rs-renderer's parse and layout take 99% of that time, nearly all of it in its own edge routing and path cleanup, whose paths vt-mermaid does not use; the grid routing takes 1% (95 ms at most), snapping and drawing under 1 ms.
+  - At each limit: 64 KiB of edges is refused by the counts after 14 ms of parsing; 200 nodes with 150 edges take 0.8 s; 150 edges between 20 nodes 4.4 s; a sideways tree routed on 233000 cells 2.5 s, 0.25 s of it routing.
+  - Peak memory stays under 24 MB, the most on the 233000-cell grid.
+  - Fuzzing found a 27 KiB flowchart, 19 subgraphs and 107 edges, that takes 35 s to lay out before the area limit refuses it (`benches/inputs/fuzzed-subgraphs.mmd`).
+- No count bounds mermaid-rs-renderer's time: it grows with edges, subgraphs and label sizes together, and 25 edges between 20 nodes already take 0.9 s.
+  The library has no clock, so the deadline belongs to the caller: run `render` on a thread of its own and give up on it after 2 s, which spares all but one corpus flowchart, then fall back.
 - mermaid-rs-renderer never loads a font: it lays out a stand-in graph whose labels are `n`s, measured with its fast metrics, so the drawing is the same on every machine.
 - mermaid-rs-renderer may panic on input it misreads; the caller catches it, as mrk does with `mermaid::catch::caught`.
+  Thirty minutes of fuzzing found no such panic in a release build, only its debug assertions, which grade its own layout: the dev profile turns them off, and a caller's debug build should too.
 - The `measure` feature adds `measure(source, max_width)`: crossings, bends, edge cells and level C violations, read from where each part went.
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
 
