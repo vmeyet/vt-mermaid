@@ -7,7 +7,7 @@ use vt_canvas::{Direction, LineKind, Shape, Tip};
 
 use super::parse::{self, Attribute, Cardinality, Entity, ErDiagram, Limits, Relationship};
 use crate::error::Error;
-use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Node};
+use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Node, without_cycles};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
 use crate::source::entity;
@@ -18,7 +18,8 @@ pub(super) fn read(source: &str) -> Result<Diagram, Error> {
 }
 
 /// An entity named like a subgraph is that subgraph, as mermaid draws it; a subgraph or an entity belongs to the
-/// first subgraph listing it.
+/// first subgraph listing it, and of subgraphs holding each other, as a repeated id makes them, the first is held by
+/// none.
 fn graph(diagram: &ErDiagram) -> Diagram {
     let flow = direction(diagram.direction);
     let group_index: HashMap<&str, usize> =
@@ -30,11 +31,14 @@ fn graph(diagram: &ErDiagram) -> Diagram {
         .rev()
         .flat_map(|(index, subgraph)| subgraph.nodes.iter().map(move |node| (node.as_str(), index)))
         .collect();
-    let parents: Vec<Option<usize>> = diagram
-        .subgraphs
-        .iter()
-        .map(|subgraph| holder.get(subgraph.id.as_str()).copied().filter(|&parent| parent != group_index[subgraph.id.as_str()]))
-        .collect();
+    let parents = without_cycles(
+        diagram
+            .subgraphs
+            .iter()
+            .enumerate()
+            .map(|(index, subgraph)| holder.get(subgraph.id.as_str()).copied().filter(|&parent| parent != index))
+            .collect(),
+    );
     let flows = flows(diagram, &parents, flow);
     let groups = diagram
         .subgraphs
@@ -233,5 +237,16 @@ mod tests {
         assert_eq!((diagram.groups[0].id.as_str(), diagram.groups[0].title.lines[0].as_str()), ("Sales", "Sales area"));
         assert_eq!(node(&diagram, "ORDER").group, Some(0));
         assert_eq!(diagram.edges[0].to, End::Group(0));
+    }
+
+    /// Found by fuzzing: subgraphs sharing an id held each other, so none was placed and its frame overflowed.
+    #[test]
+    fn subgraphs_named_alike_never_hold_each_other() {
+        let source = "erDiagram\n   TOP\n tion LR\n    subgraph TOP\n  n LR\n    subgraph TOP\n tion LR\n        end\n    e     subgraph B3    \ndirection LR\n    subgraph TOP\n tion LR\n    subgraph TOP\n   directio    \n        end\n  \n        end\n    end\nn LR\n    subgraph TOP\n tion \n     z  end\n    e     subgraph B1    \n      subgraphLR\n    subgrLR\n        end\n    e     subgraph B2   \n         end\n    end\nNia";
+
+        let diagram = read(source).unwrap();
+
+        let parents = diagram.groups.iter().map(|group| group.parent).collect::<Vec<_>>();
+        assert!(crate::graph::render(&diagram, crate::settings::Settings::new(100)).is_ok(), "{parents:?}");
     }
 }
