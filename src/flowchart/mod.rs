@@ -4,6 +4,8 @@ mod diagram;
 mod draw;
 mod edge_label;
 mod label;
+#[cfg(any(test, feature = "measure"))]
+pub(crate) mod measure;
 mod route;
 mod shape;
 mod snap;
@@ -16,7 +18,7 @@ use route::Route;
 
 /// A drawn flowchart and where each part went, in canvas cells.
 #[derive(Debug, Clone)]
-#[cfg_attr(not(test), expect(dead_code, reason = "the parts are read by the level C checks"))]
+#[cfg_attr(not(any(test, feature = "measure")), expect(dead_code, reason = "the parts are read by the measures"))]
 pub(crate) struct Drawing {
     pub(crate) canvas: Canvas,
     nodes: Vec<Rect>,
@@ -54,8 +56,7 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
-    use vt_canvas::{GlyphSet, Point};
-
+    use super::measure::{rows, violations};
     use super::*;
 
     /// Wide enough for every spike flowchart: the comparison with mermaid-text judges the width.
@@ -70,99 +71,6 @@ mod tests {
                 (name, fs::read_to_string(root.join(path)).unwrap())
             })
             .collect()
-    }
-
-    fn rows(canvas: &Canvas) -> Vec<String> {
-        canvas.rows(GlyphSet::Unicode).map(|runs| runs.into_iter().map(|run| run.text).collect()).collect()
-    }
-
-    /// The text of `rect`'s first row as drawn.
-    fn text_at(rows: &[String], rect: Rect) -> String {
-        rows[usize::from(rect.y)].chars().skip(usize::from(rect.x)).take(usize::from(rect.width)).collect()
-    }
-
-    fn contains(rect: Rect, cell: Point) -> bool {
-        (rect.x..rect.x + rect.width).contains(&cell.x) && (rect.y..rect.y + rect.height).contains(&cell.y)
-    }
-
-    fn inside(inner: Rect, outer: Rect) -> bool {
-        outer.x < inner.x
-            && outer.y < inner.y
-            && inner.x + inner.width < outer.x + outer.width
-            && inner.y + inner.height < outer.y + outer.height
-    }
-
-    fn disjoint(first: Rect, second: Rect) -> bool {
-        first.x + first.width <= second.x
-            || second.x + second.width <= first.x
-            || first.y + first.height <= second.y
-            || second.y + second.height <= first.y
-    }
-
-    /// Level C: every node and label drawn whole, every edge joining both its ends, nothing on top of anything else.
-    fn violations(source: &str) -> Vec<String> {
-        let diagram = Diagram::read(source).unwrap();
-        let drawing = render(source, WIDTH).unwrap();
-        let rows = rows(&drawing.canvas);
-        let rect = |end| match end {
-            diagram::End::Node(index) => drawing.nodes[index],
-            diagram::End::Group(index) => drawing.groups[index],
-        };
-        let mut found = Vec::new();
-        for (index, (node, &node_rect)) in diagram.nodes.iter().zip(&drawing.nodes).enumerate() {
-            let drawn: String = (node_rect.y..node_rect.y + node_rect.height)
-                .map(|y| text_at(&rows, Rect::new(node_rect.x, y, node_rect.width, 1)))
-                .collect();
-            let missing = node.label.lines.iter().filter(|line| !drawn.contains(line.as_str())).count();
-            if missing > 0 {
-                found.push(format!("node {} has {missing} label lines not drawn whole", node.id));
-            }
-            if let Some(group) = node.group.filter(|&group| !inside(node_rect, drawing.groups[group])) {
-                found.push(format!("node {} is outside its group {}", node.id, diagram.groups[group].id));
-            }
-            for (other, &other_rect) in drawing.nodes.iter().enumerate().skip(index + 1) {
-                if !disjoint(node_rect, other_rect) {
-                    found.push(format!("node {} overlaps node {}", node.id, diagram.nodes[other].id));
-                }
-            }
-        }
-        for (group, &group_rect) in diagram.groups.iter().zip(&drawing.groups) {
-            if let Some(parent) = group.parent.filter(|&parent| !inside(group_rect, drawing.groups[parent])) {
-                found.push(format!("group {} is outside its parent {}", group.id, diagram.groups[parent].id));
-            }
-        }
-        for (index, (edge, route)) in diagram.edges.iter().zip(&drawing.routes).enumerate() {
-            let name = format!("edge {index} {} → {}", diagram.name(edge.from), diagram.name(edge.to));
-            let (from, to) = (rect(edge.from), rect(edge.to));
-            let last = *route.cells.last().unwrap();
-            let interior = Rect::new(from.x + 1, from.y + 1, from.width - 2, from.height - 2);
-            if !contains(from, route.cells[0]) || contains(interior, route.cells[0]) {
-                found.push(format!("{name} does not leave from its source's border"));
-            }
-            if !contains(to, route.end) || last.x.abs_diff(route.end.x) + last.y.abs_diff(route.end.y) != 1 {
-                found.push(format!("{name} does not reach its target's border"));
-            }
-            for cell in &route.cells[1..] {
-                if let Some(node) = drawing.nodes.iter().position(|&node_rect| contains(node_rect, *cell)) {
-                    found.push(format!("{name} runs through node {}", diagram.nodes[node].id));
-                }
-            }
-            match (&edge.label, drawing.labels[index]) {
-                (Some(label), Some(label_rect)) if text_at(&rows, label_rect) != label.lines[0] => {
-                    found.push(format!("{name} label is not drawn whole"));
-                }
-                (Some(_), None) => found.push(format!("{name} label found no room")),
-                _ => {}
-            }
-        }
-        let labels: Vec<Rect> = drawing.labels.iter().flatten().copied().collect();
-        for (index, &label) in labels.iter().enumerate() {
-            let on_node = drawing.nodes.iter().chain(&drawing.groups).any(|&rect| !disjoint(label, rect) && !inside(label, rect));
-            if on_node || labels[index + 1..].iter().any(|&other| !disjoint(label, other)) {
-                found.push(format!("the label at ({}, {}) overlaps a node, a frame or a label", label.x, label.y));
-            }
-        }
-        found
     }
 
     #[test]
@@ -184,7 +92,10 @@ mod tests {
     fn spike_flowcharts_keep_the_level_c_invariants_but_the_known_ones() {
         let found: Vec<String> = spike()
             .into_iter()
-            .flat_map(|(name, source)| violations(&source).into_iter().map(move |found| format!("{name}: {found}")))
+            .flat_map(|(name, source)| {
+                let drawing = render(&source, WIDTH).unwrap();
+                violations(&Diagram::read(&source).unwrap(), &drawing).into_iter().map(move |found| format!("{name}: {found}"))
+            })
             .collect();
 
         assert_eq!(found, KNOWN_VIOLATIONS);

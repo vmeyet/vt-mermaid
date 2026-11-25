@@ -20,11 +20,17 @@ opt-level = 3
 mermaid-rs-renderer = { version = "0.3.1", default-features = false }
 vt-canvas = { path = "../vt-canvas" }
 
+[features]
+# Exact measures of a drawing for scoreboard/, read from its geometry; not part of the API.
+measure = []
+
 # serde_json reads the oracle's results for examples/agreement.rs; mermaid-text is what examples/compare.rs measures against.
 [dev-dependencies]
 insta = "1.49.0"
 mermaid-text = "0.58"
 serde_json = "1.0.154"
+# Turns the `measure` feature on for the scoreboard example, so `cargo clippy --all-targets` checks it.
+vt-mermaid = { path = ".", features = ["measure"] }
 
 [lints.rust]
 unsafe_code = "forbid"

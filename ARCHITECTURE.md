@@ -24,6 +24,8 @@ This page says how the code is laid out today; when a module or a boundary chang
 - Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), 250000 cells on the routing grid (`MAX_AREA`).
 - mermaid-rs-renderer never loads a font: it lays out a stand-in graph whose labels are `n`s, measured with its fast metrics, so the drawing is the same on every machine.
 - mermaid-rs-renderer may panic on input it misreads; the caller catches it, as mrk does with `mermaid::catch::caught`.
+- The `measure` feature adds `measure(source, max_width)`: crossings, bends, edge cells and level C violations, read from where each part went.
+  It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
 
 ## Flowcharts
 
@@ -38,6 +40,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 | `draw` | Cuts the grid to what was drawn and draws it on a `Canvas` |
 
 `label` cuts text into lines and `shape` sizes and draws a node.
+`measure`, built for tests and the `measure` feature only, counts what a drawing does and checks the level C invariants.
 
 - Text: a node's label breaks at `<br>` and wraps at spaces past 30 columns, a longer word is cut with `⋯`; an edge label or a group title is one line of at most 60 columns; quotes around a label are left out.
 - Shapes: rectangle, rounded (round, stadium, circle), diamond (`╱ ╲` corners), cylinder (a line under the top), subroutine (an inner line down each side); any other shape is a rectangle.
@@ -65,5 +68,5 @@ vt-mermaid depends on vt-canvas and vt-graph, and on `mermaid-rs-renderer` for p
 - [`corpus/`](corpus/README.md): Mermaid inputs harvested from the mermaid repo at a pinned release, one file per case, grouped by diagram kind.
 - [`oracle/`](oracle/README.md): a Node script that records what the pinned `mermaid` accepts (level A) and its flowchart and sequence dbs (level B), committed as JSON.
 - `examples/agreement.rs`: compares mermaid-rs-renderer's parser with the oracle per kind; a dev-only program, so the library's API never sees the dependency.
-- `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks (every node and label drawn whole, every edge joining both ends, nothing overlapping), but for the violations the test lists.
+- `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks of `measure` (every node and label drawn whole, every edge joining both ends, nothing overlapping), but for the violations the test lists.
 - `examples/compare.rs`: prints each spike flowchart drawn by mermaid-text, then by vt-mermaid; mermaid-text is a dev-dependency only.

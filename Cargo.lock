@@ -598,6 +598,7 @@ dependencies = [
  "mermaid-text",
  "serde_json",
  "vt-canvas",
+ "vt-mermaid",
 ]
 
 [[package]]

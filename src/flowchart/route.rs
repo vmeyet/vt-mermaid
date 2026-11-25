@@ -41,10 +41,19 @@ impl Route {
 
     /// The corners of the path: its ends and every cell where it turns.
     pub(super) fn corners(&self) -> Vec<Point> {
-        let turns = self.cells.windows(3).filter(|cells| step_direction(cells[0], cells[1]) != step_direction(cells[1], cells[2]));
         let first = self.cells.first().copied();
         let last = self.cells.last().copied().filter(|_| self.cells.len() > 1);
-        first.into_iter().chain(turns.map(|cells| cells[1])).chain(last).collect()
+        first.into_iter().chain(self.turns()).chain(last).collect()
+    }
+
+    /// How many times the path turns.
+    #[cfg(any(test, feature = "measure"))]
+    pub(super) fn bends(&self) -> usize {
+        self.turns().count()
+    }
+
+    fn turns(&self) -> impl Iterator<Item = Point> + '_ {
+        self.cells.windows(3).filter(|cells| step_direction(cells[0], cells[1]) != step_direction(cells[1], cells[2])).map(|cells| cells[1])
     }
 }
 
