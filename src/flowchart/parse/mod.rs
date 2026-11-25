@@ -1,7 +1,9 @@
 //! Flowcharts read as mermaid 12.3.0 reads them: its preparation of the text, its lexer, its grammar and its diagram
 //! db, rewritten by hand, so a flowchart means here what it means to mermaid.
 
+mod entity;
 mod lexer;
+mod link;
 mod prepare;
 mod unicode;
 
