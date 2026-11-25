@@ -38,12 +38,40 @@ pub(in crate::flowchart) enum Stroke {
 }
 
 impl Arrow {
+    /// Mermaid's name, as its db holds it.
+    #[cfg(test)]
+    pub(super) fn name(self) -> &'static str {
+        match self {
+            Self::Open => "arrow_open",
+            Self::Point => "arrow_point",
+            Self::Cross => "arrow_cross",
+            Self::Circle => "arrow_circle",
+            Self::DoublePoint => "double_arrow_point",
+            Self::DoubleCross => "double_arrow_cross",
+            Self::DoubleCircle => "double_arrow_circle",
+            Self::Invalid => "INVALID",
+        }
+    }
+
     fn doubled(self) -> Self {
         match self {
             Self::Point => Self::DoublePoint,
             Self::Cross => Self::DoubleCross,
             Self::Circle => Self::DoubleCircle,
             other => other,
+        }
+    }
+}
+
+impl Stroke {
+    #[cfg(test)]
+    pub(super) fn name(self) -> &'static str {
+        match self {
+            Self::Normal => "normal",
+            Self::Thick => "thick",
+            Self::Dotted => "dotted",
+            Self::Invisible => "invisible",
+            Self::Invalid => "INVALID",
         }
     }
 }
