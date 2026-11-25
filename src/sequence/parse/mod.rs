@@ -11,7 +11,9 @@ mod lexer;
 
 use std::fmt;
 
-pub(super) use db::Sequence;
+pub(super) use arrow::Arrow;
+pub(super) use db::{Item, Placement, Sequence};
+pub(super) use lexer::Block;
 
 use crate::error::{Error, MAX_MESSAGES, MAX_PARTICIPANTS, MAX_SOURCE_BYTES};
 use crate::source;
