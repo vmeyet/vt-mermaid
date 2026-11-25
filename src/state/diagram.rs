@@ -127,7 +127,7 @@ fn group(node: &parse::Node) -> Group {
     Group { id: node.id.clone(), title, parent: None, flow, kind }
 }
 
-/// A state is a rectangle with its descriptions as lines under its label; a note is rounded.
+/// A state is a rectangle, its descriptions under its label below a rule, as mermaid draws them; a note is rounded.
 fn node(node: &parse::Node, shape: Option<Kind>, order: usize, bar: u16) -> Node {
     let figure = match shape {
         Some(Kind::Start) => Figure::Marker(Marker::Dot),
@@ -137,9 +137,11 @@ fn node(node: &parse::Node, shape: Option<Kind>, order: usize, bar: u16) -> Node
         Some(Kind::Note) => Figure::Shape(Shape::Rounded),
         _ => Figure::Shape(Shape::Rectangle),
     };
-    let text = std::iter::once(&node.label).chain(&node.descriptions).map(|line| entity::decoded(line)).collect::<Vec<_>>().join("<br>");
+    let text = entity::decoded(&node.label);
     let label = if figure.shows_label() { Label::wrapped(&text) } else { Label::default() };
-    Node { id: node.id.clone(), text, label, compartments: Vec::new(), figure, group: None, order }
+    let descriptions: Vec<String> = node.descriptions.iter().flat_map(|line| Label::wrapped(&entity::decoded(line)).lines).collect();
+    let compartments = if descriptions.is_empty() || !figure.shows_label() { Vec::new() } else { vec![descriptions] };
+    Node { id: node.id.clone(), text, label, compartments, figure, group: None, order }
 }
 
 /// A bar has a cell for each edge on its busier side, two apart, and a cell past them at each end.
@@ -255,9 +257,12 @@ mod tests {
     }
 
     #[test]
-    fn descriptions_are_lines_under_the_label_and_entities_are_shown() {
+    fn descriptions_stand_under_the_label_and_entities_are_shown() {
         let diagram = read("stateDiagram-v2\nA : one #amp; two\nA : three\n");
 
-        assert_eq!(diagram.nodes[0].label.lines, ["one & two", "three"]);
+        assert_eq!(
+            (diagram.nodes[0].label.lines.as_slice(), diagram.nodes[0].compartments.as_slice()),
+            (["one & two".to_owned()].as_slice(), [vec!["three".to_owned()]].as_slice())
+        );
     }
 }

@@ -7,5 +7,6 @@ corpus/state/docs--syntax-stateDiagram--L299.mmd
 corpus/state/docs--syntax-stateDiagram--L466.mmd
 corpus/state/e2e--diagrams-state-diagram-pr-check-should-render-a-state-with-a-note-together-with-.mmd
 corpus/state/e2e--diagrams-state-diagram-v2-nightly-check-v2-should-handle-different-rendering-dir.mmd
+corpus/state/e2e--diagrams-state-diagram-v2-nightly-check-v2-should-render-a-states-with-descripti.mmd
 tests/state/order.mmd
 tests/state/player.mmd

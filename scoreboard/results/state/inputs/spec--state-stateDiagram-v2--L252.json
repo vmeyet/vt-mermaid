@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"parse error: line 12: unrecognised statement: 'Long State Name\" as long1'","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":44,"rows":39,"area":1716,"fits":true,"node_labels":6,"edge_labels":8,"arrows":9,"crossings":0,"bends":11},"score":94,"exact":{"crossings":0,"bends":14,"edge_cells":107,"beside_nodes":0,"violations":["edge 8 State3 → State3 label found no room"]}},
-      "100": {"status":"rendered","drawn":{"width":44,"rows":39,"area":1716,"fits":true,"node_labels":6,"edge_labels":8,"arrows":9,"crossings":0,"bends":11},"score":94,"exact":{"crossings":0,"bends":14,"edge_cells":107,"beside_nodes":0,"violations":["edge 8 State3 → State3 label found no room"]}}
+      "80": {"status":"rendered","drawn":{"width":44,"rows":40,"area":1760,"fits":true,"node_labels":6,"edge_labels":8,"arrows":9,"crossings":0,"bends":11},"score":94,"exact":{"crossings":0,"bends":14,"edge_cells":108,"beside_nodes":0,"violations":["edge 8 State3 → State3 label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":44,"rows":40,"area":1760,"fits":true,"node_labels":6,"edge_labels":8,"arrows":9,"crossings":0,"bends":11},"score":94,"exact":{"crossings":0,"bends":14,"edge_cells":108,"beside_nodes":0,"violations":["edge 8 State3 → State3 label found no room"]}}
     }
   }
 }

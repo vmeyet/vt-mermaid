@@ -150,7 +150,7 @@ Every pattern runs in one pass over the text: no regex, no backtracking on the s
 
 `render` then turns the db into the graph drawn (`diagram`) and draws it as a flowchart is drawn, with the same fit ladder:
 
-- A state is a rectangle, its descriptions as lines under its label; a start is a dot `⬤`, an end a ringed dot `◉`, a choice a diamond `⬥`, each on one cell, and a fork or a join a heavy bar with a cell for each edge of its busier side, two apart, five cells at the least.
+- A state is a rectangle, its descriptions under its label below a rule (a compartment, `Node::compartments`), as mermaid draws them; a start is a dot `⬤`, an end a ringed dot `◉`, a choice a diamond `⬥`, each on one cell, and a fork or a join a heavy bar with a cell for each edge of its busier side, two apart, five cells at the least.
   `●` and `◇` would be East Asian ambiguous; `⬤ ◉ ⬥` are one column wide everywhere.
 - A composite state is a frame with its title, flowing its own `direction`, top-down when it has none, as mermaid lays it out; a transition naming it ends on its frame.
 - Transitions point at their target; their labels are one line of at most 60 columns.

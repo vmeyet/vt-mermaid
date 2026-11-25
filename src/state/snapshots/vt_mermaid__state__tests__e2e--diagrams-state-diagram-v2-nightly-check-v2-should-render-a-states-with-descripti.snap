@@ -1,0 +1,23 @@
+---
+source: src/state/mod.rs
+expression: "rows(&render_with(&source, Settings::new(100)).unwrap()).join(\"\\n\")"
+---
+                ⬤                 
+                │                 
+                │                 
+                ▾                 
+┌────────────────────────────────┐
+│ This a single line description │
+└───────────────┬────────────────┘
+                │                 
+                │                 
+                ▾                 
+┌───────────────────────────────┐ 
+│ This a multi line description │ 
+├───────────────────────────────┤ 
+│ here comes the multi part     │ 
+└───────────────┬───────────────┘ 
+                │                 
+                │                 
+                ▾                 
+                ◉
