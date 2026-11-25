@@ -2,6 +2,7 @@
 //! a class diagram means here what it means to mermaid.
 
 mod lexer;
+mod member;
 
 use std::fmt;
 
