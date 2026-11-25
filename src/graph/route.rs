@@ -743,8 +743,9 @@ fn to_u16(value: usize) -> u16 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::flowchart::layout::{self, Fit};
-    use crate::flowchart::{draw, measure};
+    use crate::flowchart;
+    use crate::graph::layout::{self, Fit};
+    use crate::graph::{draw, measure};
 
     const TOP: Rect = Rect::new(2, 0, 7, 3);
     const BOTTOM: Rect = Rect::new(2, 8, 7, 3);
@@ -817,7 +818,7 @@ mod tests {
     }
 
     fn routed(source: &str) -> (Routed, Vec<String>) {
-        let diagram = Diagram::read(source).unwrap();
+        let diagram = flowchart::read(source).unwrap();
         let placement = layout::place(&diagram, Fit::Loose);
         let routed = route(&diagram, &placement).unwrap();
         let labels = vec![None; routed.routes.len()];
@@ -885,7 +886,7 @@ mod tests {
     fn an_edge_left_without_a_path_goes_first_on_another_try() {
         let source =
             include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression.mmd");
-        let diagram = Diagram::read(source).unwrap().turned_top_down();
+        let diagram = flowchart::read(source).unwrap().turned_top_down();
         let placement = layout::place(&diagram, Fit::Packed { columns: 50 });
         let joins = port::joins(&diagram, &placement);
         let empty = Grid::new(&diagram, &placement, &titles(&diagram, &placement, &joins));

@@ -6,10 +6,9 @@ use std::collections::HashSet;
 
 use vt_canvas::{Canvas, GlyphSet, Point, Rect};
 
+use super::Drawing;
 use super::diagram::{self, Diagram};
 use super::route::Route;
-use super::{Drawing, render};
-use crate::error::Error;
 
 /// How a drawing is laid out, counted on its own geometry.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,17 +25,15 @@ pub struct Measures {
     pub violations: Vec<String>,
 }
 
-/// Draws `source` as [`render`](crate::render) does, then measures the drawing.
-pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
-    let drawing = render(source, max_width)?;
-    let diagram = Diagram::read(source)?.wrapped(drawing.wrap);
-    Ok(Measures {
-        crossings: crossings(&drawing),
-        bends: bends(&drawing),
+/// The measures of `drawing`, `diagram` drawn as it was wrapped.
+pub(crate) fn measures(diagram: &Diagram, drawing: &Drawing) -> Measures {
+    Measures {
+        crossings: crossings(drawing),
+        bends: bends(drawing),
         edge_cells: drawing.routes.iter().flat_map(|route| &route.cells).collect::<HashSet<_>>().len(),
-        beside_nodes: beside_nodes(&diagram, &drawing),
-        violations: violations(&diagram, &drawing),
-    })
+        beside_nodes: beside_nodes(diagram, drawing),
+        violations: violations(diagram, drawing),
+    }
 }
 
 /// Cells one route runs straight through sideways and another up or down: routes sharing a trunk run the same way.
@@ -86,7 +83,7 @@ fn beside_nodes(diagram: &Diagram, drawing: &Drawing) -> usize {
     cells.len()
 }
 
-pub(super) fn rows(canvas: &Canvas) -> Vec<String> {
+pub(crate) fn rows(canvas: &Canvas) -> Vec<String> {
     canvas.rows(GlyphSet::Unicode).map(|runs| runs.into_iter().map(|run| run.text).collect()).collect()
 }
 
@@ -114,7 +111,7 @@ fn disjoint(first: Rect, second: Rect) -> bool {
 }
 
 /// Level C: every node and label drawn whole, every edge joining both its ends, nothing on top of anything else.
-pub(super) fn violations(diagram: &Diagram, drawing: &Drawing) -> Vec<String> {
+pub(crate) fn violations(diagram: &Diagram, drawing: &Drawing) -> Vec<String> {
     let rows = rows(&drawing.canvas);
     let rect = |end| match end {
         diagram::End::Node(index) => drawing.nodes[index],
@@ -185,6 +182,7 @@ mod tests {
     use std::path::Path;
 
     use super::*;
+    use crate::flowchart::measure;
 
     fn measured(path: &str) -> Measures {
         let source = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();

@@ -7,7 +7,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 ## Owns
 
 - Mermaid source to a text drawing, one diagram kind at a time; flowcharts and sequence diagrams today.
-- Laying a flowchart out in layers on the grid, then routing its edges on the grid.
+- Laying a graph (a flowchart) out in layers on the grid, then routing its edges on the grid.
 - Laying a sequence diagram out: each participant's column, then each event on rows of its own.
 - Handing chart kinds (xychart, pie, sankey…) to vt-graph.
 
@@ -50,19 +50,19 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 ## Flowcharts
 
-`render` runs seven steps, one module each under `src/flowchart/`.
+`render` runs seven steps, one module each: `parse` and `diagram` under `src/flowchart/`, the others under `src/graph/`, the layered layout, routing and drawing every kind drawn as a graph shares, with its fit ladder.
 
 | Module | Step |
 |---|---|
 | `parse` | Reads the source as mermaid 12.3.0 does, into its flowchart db: nodes, edges, subgraphs, classes and styles |
-| `diagram` | Turns the db into what is drawn: nodes, groups (subgraphs), edges and invisible links, with their text cut into lines |
+| `diagram` | Turns the db into the graph drawn (`graph::diagram`): nodes, groups (subgraphs), edges and invisible links, with their text cut into lines |
 | `layout` | Nodes and groups to cells, in layers; each group is laid out as one block of its parent, so its nodes stay inside its frame |
 | `port` | The side and the cell each edge best leaves and joins a block at, and the edges that share a trunk |
 | `route` | Each edge as a cheapest right-angled path on the grid |
 | `edge_label` | Where each edge's label goes |
 | `draw` | Cuts the grid to what was drawn and draws it on a `Canvas` |
 
-`shape` sizes and draws a node; the crate's `label`, shared with sequence diagrams, cuts text into lines.
+`graph::shape` sizes and draws a node, `flowchart::shape` maps mermaid's shape names to vt-canvas shapes; the crate's `label`, shared with sequence diagrams, cuts text into lines.
 `parse` is mermaid's own flowchart parser rewritten by hand, so a flowchart means here what it means to mermaid, in four steps:
 `prepare` does to the text what mermaid does before its lexer: the steps every kind shares, from `source` (line ends, the front matter, `%%{…}%%` directives, comment lines, entities marked), then the space after a `}`;
 `lexer` applies the rules of `flow.jison` in their order, the first that matches winning, each start condition a state on a stack;

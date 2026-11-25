@@ -263,12 +263,13 @@ fn spread_from(middle: i32, towards: &[u16], spread: Spread) -> Vec<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::flowchart::layout::{self, Fit};
+    use crate::flowchart;
+    use crate::graph::layout::{self, Fit};
 
     const BLOCK: Rect = Rect::new(10, 10, 9, 3);
 
     fn joins_of(source: &str, fit: Fit) -> Vec<Joins> {
-        let diagram = Diagram::read(source).unwrap();
+        let diagram = flowchart::read(source).unwrap();
         joins(&diagram, &layout::place(&diagram, fit))
     }
 
@@ -302,7 +303,7 @@ mod tests {
     #[test]
     fn labelled_edges_between_two_blocks_each_join_them_in_line_with_their_label() {
         let source = "flowchart TB\n  A[A first node wide enough for two labels] -->|the first label| B[Another node just as wide as the first]\n  A -->|the second label| B";
-        let diagram = Diagram::read(source).unwrap();
+        let diagram = flowchart::read(source).unwrap();
         let placement = layout::place(&diagram, Fit::Loose);
 
         let joins = joins(&diagram, &placement);

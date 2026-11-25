@@ -10,6 +10,7 @@
 
 mod error;
 mod flowchart;
+mod graph;
 mod label;
 mod sequence;
 mod settings;
@@ -23,13 +24,13 @@ pub use vt_canvas::{Canvas, GlyphSet, Role, Run};
 /// Exact measures of a flowchart drawing, for the scoreboard: not part of the API, behind the `measure` feature.
 #[cfg(feature = "measure")]
 #[doc(hidden)]
-pub use flowchart::measure::{Measures, measure};
+pub use {flowchart::measure, graph::measure::Measures};
 
 /// Reads a flowchart as `render` does, without laying it out, for the fuzzer: not part of the API, behind the `fuzz`
 /// feature.
 #[cfg(feature = "fuzz")]
 #[doc(hidden)]
-pub use flowchart::{Counts, read as read_flowchart};
+pub use flowchart::{Counts, counts as read_flowchart};
 
 /// Reads a sequence diagram as `render` does, without laying it out, for the fuzzer: not part of the API, behind the
 /// `fuzz` feature.

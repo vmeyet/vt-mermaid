@@ -321,9 +321,10 @@ fn to_cells(value: i32) -> u16 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::flowchart;
 
     fn placed(source: &str, fit: Fit) -> (Diagram, Placement) {
-        let diagram = Diagram::read(source).unwrap();
+        let diagram = flowchart::read(source).unwrap();
         let placement = place(&diagram, fit);
         (diagram, placement)
     }
