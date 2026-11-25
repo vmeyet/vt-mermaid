@@ -8,6 +8,7 @@
 //! # Ok::<(), vt_mermaid::Error>(())
 //! ```
 
+mod class;
 mod error;
 mod flowchart;
 mod graph;
