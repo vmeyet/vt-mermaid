@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 138 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":80,"rows":66,"area":5280,"fits":true,"node_labels":24,"edge_labels":0,"arrows":27,"crossings":13,"bends":102},"score":86,"exact":{"crossings":13,"bends":30,"edge_cells":485,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":92,"rows":66,"area":6072,"fits":true,"node_labels":24,"edge_labels":0,"arrows":27,"crossings":14,"bends":104},"score":86,"exact":{"crossings":14,"bends":32,"edge_cells":572,"violations":[]}}
+      "80": {"status":"rendered","drawn":{"width":80,"rows":61,"area":4880,"fits":true,"node_labels":24,"edge_labels":0,"arrows":27,"crossings":13,"bends":102},"score":86,"exact":{"crossings":13,"bends":30,"edge_cells":485,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":92,"rows":61,"area":5612,"fits":true,"node_labels":24,"edge_labels":0,"arrows":27,"crossings":14,"bends":104},"score":86,"exact":{"crossings":14,"bends":32,"edge_cells":572,"violations":[]}}
     }
   }
 }

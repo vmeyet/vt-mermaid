@@ -10,6 +10,7 @@ use super::attributes;
 use super::invisible::{self, Link};
 use super::label::Label;
 use super::shape;
+use super::source;
 use crate::error::{Error, MAX_EDGES, MAX_NODES};
 
 /// Pixels of a column once mmdr measures a stand-in label: `n` is 0.512 em at its 16 px measuring size.
@@ -133,7 +134,7 @@ impl Diagram {
 
 /// Rewrites what mmdr misreads before it reads the source, then finds the nodes each invisible link joins.
 fn parse(source: &str) -> Result<Parsed, Error> {
-    let rewritten = attributes::rewrite(source);
+    let rewritten = attributes::rewrite(&source::with_direction(source));
     let split = invisible::split(&rewritten.source);
     let graph = mmdr::parse_mermaid(&split.source).map_err(|error| Error::Invalid { reason: error.to_string() })?.graph;
     check_bounds(&graph, split.links.len())?;
@@ -514,6 +515,13 @@ mod tests {
         assert_eq!(ids(&diagram), ["A", "B", "C", "D", "E"]);
         assert_eq!(node(&diagram, "B").label.lines, ["Bee"]);
         assert_eq!(diagram.edges.iter().map(|edge| (diagram.name(edge.from), diagram.name(edge.to))).collect::<Vec<_>>(), [("C", "D")]);
+    }
+
+    #[test]
+    fn a_header_without_a_direction_is_not_a_node() {
+        let diagram = Diagram::read("flowchart\n  A --> B").unwrap();
+
+        assert_eq!(ids(&diagram), ["A", "B"]);
     }
 
     #[test]

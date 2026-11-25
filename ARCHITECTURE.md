@@ -50,7 +50,8 @@ This page says how the code is laid out today; when a module or a boundary chang
 | `draw` | Cuts the grid to what was drawn and draws it on a `Canvas` |
 
 `label` cuts text into lines and `shape` sizes and draws a node.
-Two modules rewrite what mmdr 0.3.1 misreads before it reads the source, with `source` reading its syntax outside quotes, brackets and the front matter:
+`diagram` rewrites what mmdr 0.3.1 misreads before it reads the source, in one place, with `source` reading its syntax outside quotes, brackets and the front matter:
+`source` adds ` TD` to a header that names no direction (`flowchart`, `graph`), which mmdr reads as a node; `flowchart-elk` too, though mmdr reads it as two nodes either way;
 `attributes` turns a node's block (`A@{ shape: hex, label: "Text" }`), which mmdr reads as a node named `A@`, into its label in brackets and keeps the shape it names, and leaves out an edge's or a group's block with its id;
 `invisible` cuts invisible links (`A ~~~ B`) out, as mmdr keeps `A` and drops the rest of the statement.
 `measure`, built for tests and the `measure` feature only, counts what a drawing does and checks the level C invariants.
