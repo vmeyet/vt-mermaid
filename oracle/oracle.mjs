@@ -1,4 +1,4 @@
-// Parses every corpus input with mermaid and writes what it accepts (level A) and, for flowchart and sequence,
+// Parses every corpus input with mermaid and writes what it accepts (level A) and, for flowchart, sequence and state,
 // the diagram db (level B) to oracle/results/. It only parses: nothing is rendered, fetched or written elsewhere.
 // Usage: node oracle/oracle.mjs <corpus-dir> <results-dir>
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -13,7 +13,7 @@ if (!corpus || !results) {
   process.exit(2);
 }
 
-const MEANINGS = { flowchart: flowchartMeaning, sequence: sequenceMeaning };
+const MEANINGS = { flowchart: flowchartMeaning, sequence: sequenceMeaning, state: stateMeaning };
 const parse = {};
 const meanings = Object.fromEntries(Object.keys(MEANINGS).map((kind) => [kind, {}]));
 for (const path of corpusFiles()) {
@@ -71,6 +71,32 @@ function sequenceMeaning(db) {
       activate: activate ?? false,
     })),
     boxes: db.getBoxes().map(({ name, actorKeys }) => ({ name: name ?? null, actors: actorKeys })),
+  };
+}
+
+// The nodes and edges mermaid's state renderer is handed. The region after a composite's last `--` gets a random id
+// (`generateId`), renamed `id-<n>` wherever it appears, in the order it appears, so a run is deterministic.
+function stateMeaning(db) {
+  const { nodes, edges, direction } = db.getData();
+  const generated = new Map();
+  const stable = (text) =>
+    text?.replace(/\bid-[0-9a-z]+-\d+/g, (id) => {
+      if (!generated.has(id)) generated.set(id, `id-${generated.size + 1}`);
+      return generated.get(id);
+    }) ?? null;
+  return {
+    direction,
+    nodes: nodes.map(({ id, shape, label, description, parentId, isGroup, dir, position }) => ({
+      id: stable(id),
+      shape,
+      label: typeof label === 'string' ? stable(label) : null,
+      description: Array.isArray(description) ? description : [],
+      parent: stable(parentId),
+      group: isGroup ?? false,
+      dir: isGroup ? (dir ?? null) : null,
+      position: position ?? null,
+    })),
+    edges: edges.map(({ start, end, label, arrowhead }) => ({ start: stable(start), end: stable(end), label: label ?? '', arrowhead })),
   };
 }
 
