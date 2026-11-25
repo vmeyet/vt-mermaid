@@ -38,7 +38,7 @@ This page says how the code is laid out today; when a module or a boundary chang
   The library has no clock, so a deadline belongs to the caller; none of the inputs above needs one.
 - No font is ever loaded: a node is as wide as its label's columns, so the drawing is the same on every machine.
 - Ten minutes of fuzzing the parser alone, 1.8 million inputs, found no panic and no input that took a second.
-  Ten minutes of the sequence parser alone, 9.2 million inputs, and twenty of `render` seeded with sequence diagrams, 4.6 million, found none either.
+  Ten minutes of the sequence parser alone, 9.2 million inputs, and twenty of `render` seeded with sequence diagrams, 4.9 million, found none either.
 - The `measure` feature adds `measure(source, max_width)`: crossings, bends, edge cells, cells beside a node and level C violations, read from where each part went.
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
 - The `fuzz` feature adds `read_flowchart(source)` and `read_sequence(source)`, each parser alone within the limits, for `fuzz/`; hidden and not part of the API either.

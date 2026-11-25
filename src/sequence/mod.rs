@@ -150,6 +150,14 @@ mod tests {
     }
 
     #[test]
+    fn the_label_of_a_message_to_itself_starts_every_line_by_the_loop() {
+        let drawn = rows(&render("sequenceDiagram\n  A->>A: one two three<br>four", 40).unwrap(), GlyphSet::Unicode);
+
+        let starts: Vec<usize> = ["one", "four"].iter().map(|word| drawn.iter().find_map(|row| row.find(word)).unwrap()).collect();
+        assert_eq!(starts[0], starts[1], "{drawn:#?}");
+    }
+
+    #[test]
     fn a_lifeline_passes_behind_a_message_going_over_it() {
         let drawn =
             rows(&render("sequenceDiagram\n  participant A\n  participant B\n  participant C\n  A->>C: x", 40).unwrap(), GlyphSet::Unicode);

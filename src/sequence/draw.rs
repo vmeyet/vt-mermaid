@@ -5,7 +5,7 @@
 use vt_canvas::{Canvas, Corner, Direction, Frame, LineKind, Point, Rect, Role, Shape};
 
 use super::diagram::Figure;
-use super::layout::{Area, Frame as Block, Head, Layout, Lifeline, Message};
+use super::layout::{Area, Cell, Frame as Block, Head, Layout, Lifeline, Message};
 use super::parse::Tip;
 use crate::error::Error;
 use crate::label::Label;
@@ -123,6 +123,14 @@ impl Pen {
         }
     }
 
+    /// Each line of `label` from `at`, cut with an ellipsis to the label's width.
+    fn left_aligned(&mut self, label: &Label, at: Cell, role: Role) {
+        for (row, line) in (at.y..).zip(&label.lines) {
+            let start = self.point(at.x, row);
+            self.canvas.text_cut(start, line, label.width, role);
+        }
+    }
+
     /// Light, heavy where the participant is active; an activation of one row still shows on two.
     fn lifeline(&mut self, lifeline: &Lifeline) {
         if lifeline.bottom <= lifeline.top {
@@ -167,7 +175,7 @@ impl Pen {
             self.canvas.path(&points, kind, Role::Edge).unwrap_or_default();
             self.tip(message.tip, (start, row + 1), Direction::Left);
             self.tip(message.back_tip, (start, row), Direction::Left);
-            self.centred(&message.label, message.label_at.x, message.label_at.y, i32::from(message.label.width), Role::Label);
+            self.left_aligned(&message.label, message.label_at, Role::Label);
             return;
         }
         let (forward, back) = if end >= start { (Direction::Right, Direction::Left) } else { (Direction::Left, Direction::Right) };
