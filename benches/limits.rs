@@ -36,7 +36,7 @@ fn nodes_at_the_limit() -> Result<Canvas, Error> {
     render(&format!("flowchart TD\n{nodes}{edges}"))
 }
 
-/// The edge limit on 20 nodes, every node joined to five others: mmdr's edge cleanup grows with edges, not nodes.
+/// The edge limit on 20 nodes, every node joined to five others: the grid is small and every edge crosses others.
 #[divan::bench(sample_count = 3, sample_size = 1)]
 fn edges_at_the_limit() -> Result<Canvas, Error> {
     render(&dense(20))
@@ -49,10 +49,19 @@ fn area_at_the_limit() -> Result<Canvas, Error> {
 }
 
 /// The slowest input fuzzing found, a mutation of `corpus/flowchart/e2e--platform-dev-diagrams-performance-flowcharts-medium3.mmd`:
-/// 19 subgraphs and 107 edges, refused by the area limit once mmdr has laid it out.
+/// 19 subgraphs and 107 edges, too dense to fit until it is packed, so it is laid out and routed twelve times.
 #[divan::bench(sample_count = 1, sample_size = 1)]
 fn found_by_fuzzing() -> Result<Canvas, Error> {
     render(include_str!("inputs/fuzzed-subgraphs.mmd"))
+}
+
+/// The edge limit as a chain of 100 nodes and 51 edges from its first node to its last: the most layers a link
+/// passes, about 5000 places kept for links, on a grid 600 rows tall.
+#[divan::bench(sample_count = 3, sample_size = 1)]
+fn long_links_at_the_limit() -> Result<Canvas, Error> {
+    let chain: String = (1..100).map(|index| format!("  n{} --> n{index}\n", index - 1)).collect();
+    let long: String = "  n0 --> n99\n".repeat(MAX_EDGES - 99);
+    render(&format!("flowchart TD\n{chain}{long}"))
 }
 
 fn at_the_length_limit(body: &str) -> String {
