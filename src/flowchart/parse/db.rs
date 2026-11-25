@@ -2,6 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use super::entity;
 use super::link::Link;
 use super::prepare::Config;
 use super::shape_data::{self, SHAPES, Value};
@@ -35,6 +36,13 @@ pub(in crate::flowchart) struct Node {
 pub(in crate::flowchart) struct Text {
     pub(in crate::flowchart) value: String,
     pub(in crate::flowchart) kind: TextKind,
+}
+
+impl Text {
+    /// The label as mermaid shows it, entities decoded.
+    pub(in crate::flowchart) fn shown(&self) -> String {
+        entity::decoded(&self.value)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

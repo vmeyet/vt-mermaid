@@ -1,18 +1,15 @@
-//! The flowchart as mermaid-rs-renderer parses it: the only module that sees the crate.
+//! The flowchart as the parser reads it, turned into what is drawn: nodes, groups, edges and invisible links.
 
-use std::cmp::Reverse;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::HashSet;
 
-use mermaid_rs_renderer::{self as mmdr, DiagramKind, EdgeStyle, Graph, NodeShape};
 use vt_canvas::{Direction, LineKind, Shape};
 
-use super::attributes;
-use super::invisible::{self, Link};
 use super::label::Label;
-use super::source;
-use crate::error::{Error, MAX_EDGES, MAX_NODES};
+use super::parse::{self, Arrow, Flowchart, Limits, Stroke};
+use super::shape;
+use crate::error::Error;
 
-/// What mmdr knows of a flowchart, its text already cut into lines.
+/// A flowchart as the parser reads it, its text already cut into lines.
 #[derive(Debug, Clone)]
 pub(super) struct Diagram {
     pub(super) nodes: Vec<Node>,
@@ -67,25 +64,10 @@ pub(super) struct Invisible {
     pub(super) to: End,
 }
 
-/// mmdr's graph, the invisible links it cannot read, which shape the layout and are never drawn, and the shapes
-/// attribute blocks name, which it cannot read either.
-#[derive(Debug, Clone)]
-struct Parsed {
-    graph: Graph,
-    invisible: Vec<InvisibleLink>,
-    shapes: HashMap<String, Shape>,
-}
-
-#[derive(Debug, Clone)]
-struct InvisibleLink {
-    from: String,
-    to: String,
-}
-
 impl Diagram {
-    /// Parses `source`, refusing anything but a flowchart within [`MAX_NODES`] and [`MAX_EDGES`].
+    /// Reads `source`, refusing anything but a flowchart within the limits `render` draws.
     pub(super) fn read(source: &str) -> Result<Self, Error> {
-        Ok(Self::new(&parse(source)?))
+        Ok(Self::new(&parse::parse(source, Limits::DRAWN)?))
     }
 
     /// Its ranks and those of its groups going down where they go sideways.
@@ -101,18 +83,33 @@ impl Diagram {
         sideways(self.flow) || self.groups.iter().any(|group| sideways(group.flow))
     }
 
-    fn new(parsed: &Parsed) -> Self {
-        let graph = &parsed.graph;
-        let nodes = nodes(graph, &labels(parsed));
-        let groups = groups(graph, &nodes);
-        let nodes = with_innermost_groups(nodes, graph, &groups);
-        let ends = Ends { graph, nodes: &nodes, groups: &groups };
-        let invisible = parsed
-            .invisible
+    /// A node named like a subgraph is that subgraph, as mermaid merges them.
+    fn new(flowchart: &Flowchart) -> Self {
+        let mut subgraphs: Vec<&parse::Subgraph> = flowchart.subgraphs.iter().collect();
+        subgraphs.sort_by_key(|subgraph| subgraph.opened);
+        let flow = direction(flowchart.direction);
+        let groups = groups(&subgraphs, flow);
+        let named_groups: HashSet<&str> = groups.iter().map(|group| group.id.as_str()).collect();
+        let nodes: Vec<Node> = flowchart
+            .nodes
             .iter()
-            .filter_map(|link| Some(Invisible { from: ends.named(&link.from)?, to: ends.named(&link.to)? }))
+            .filter(|node| !named_groups.contains(node.id.as_str()))
+            .enumerate()
+            .map(|(order, node)| Node {
+                id: node.id.clone(),
+                label: Label::wrapped(&node.text.shown()),
+                shape: shape::named(node.shape.as_deref()),
+                group: innermost(&subgraphs, &groups, &node.id),
+                order,
+            })
             .collect();
-        Self { edges: edges(&ends), invisible, flow: direction(graph.direction), nodes, groups }
+        let ends = Ends { nodes: &nodes, groups: &groups };
+        let links: Vec<(End, End, &parse::Edge)> =
+            flowchart.edges.iter().filter_map(|edge| Some((ends.named(&edge.start)?, ends.named(&edge.end)?, edge))).collect();
+        let (hidden, drawn): (Vec<_>, Vec<_>) = links.into_iter().partition(|(_, _, edge)| edge.link.stroke == Stroke::Invisible);
+        let edges = drawn.into_iter().map(|(from, to, edge)| self::edge(from, to, edge)).collect();
+        let invisible = hidden.into_iter().map(|(from, to, _)| Invisible { from, to }).collect();
+        Self { nodes, groups, edges, invisible, flow }
     }
 
     /// The direction ranks go in the group holding `end`.
@@ -155,150 +152,32 @@ impl Diagram {
     }
 }
 
-/// Each node's label cut into lines and its shape, the one its attribute block names first.
-fn labels(parsed: &Parsed) -> HashMap<&str, (Label, Shape)> {
-    let shape = |id: &str, node: &mmdr::Node| parsed.shapes.get(id).copied().unwrap_or_else(|| shape_of(node.shape));
-    parsed.graph.nodes.iter().map(|(id, node)| (id.as_str(), (Label::wrapped(&node.label), shape(id, node)))).collect()
-}
-
-/// Every node's id: the graph's own and the ends edges name without declaring.
-fn ids(graph: &Graph) -> BTreeSet<&str> {
-    let ends = graph.edges.iter().flat_map(|edge| [&edge.from, &edge.to]);
-    graph.nodes.keys().chain(ends).map(String::as_str).collect()
-}
-
-/// Rewrites what mmdr misreads before it reads the source, then finds the nodes each invisible link joins.
-fn parse(source: &str) -> Result<Parsed, Error> {
-    let rewritten = attributes::rewrite(&source::with_direction(source));
-    let split = invisible::split(&rewritten.source);
-    let graph = mmdr::parse_mermaid(&split.source).map_err(|error| Error::Invalid { reason: error.to_string() })?.graph;
-    check_bounds(&graph, split.links.len())?;
-    let invisible = split
-        .links
+/// A group's parent is the group listing its id; of two groups listing each other, as a repeated id can make them,
+/// the first loses its parent. A group flows its own way, else its parent's.
+fn groups(subgraphs: &[&parse::Subgraph], flow: Direction) -> Vec<Group> {
+    let parents = without_cycles(
+        subgraphs
+            .iter()
+            .enumerate()
+            .map(|(index, subgraph)| (0..subgraphs.len()).find(|&outer| outer != index && subgraphs[outer].nodes.contains(&subgraph.id)))
+            .collect(),
+    );
+    let flow_of = |start: usize| {
+        let mut chain = std::iter::successors(Some(start), |&index| parents[index]).take(parents.len() + 1);
+        chain.find_map(|index| subgraphs[index].direction.map(direction)).unwrap_or(flow)
+    };
+    subgraphs
         .iter()
-        .filter_map(ends)
-        .filter(|link| graph.nodes.contains_key(&link.from) && graph.nodes.contains_key(&link.to))
-        .collect();
-    Ok(Parsed { graph, invisible, shapes: rewritten.shapes })
-}
-
-/// The last node of the statement before the link and the first node of the one after, as mmdr reads each alone.
-fn ends(link: &Link) -> Option<InvisibleLink> {
-    let statement = |text: &str| mmdr::parse_mermaid(&format!("flowchart TD\n{text}")).ok().map(|parsed| parsed.graph);
-    let (before, after) = (statement(&link.before)?, statement(&link.after)?);
-    let from = before.edges.last().map(|edge| edge.to.clone()).or_else(|| before.nodes.keys().next().cloned())?;
-    let to = after.edges.first().map(|edge| edge.from.clone()).or_else(|| after.nodes.keys().next().cloned())?;
-    Some(InvisibleLink { from, to })
-}
-
-/// Invisible links count as edges: the layout ranks their ends as it does an edge's.
-fn check_bounds(graph: &Graph, invisible: usize) -> Result<(), Error> {
-    if graph.kind != DiagramKind::Flowchart {
-        return Err(Error::Unsupported);
-    }
-    let nodes = graph.nodes.len() + graph.subgraphs.len();
-    if nodes > MAX_NODES {
-        return Err(Error::TooManyNodes { nodes });
-    }
-    let edges = graph.edges.len() + invisible;
-    if edges > MAX_EDGES {
-        return Err(Error::TooManyEdges { edges });
-    }
-    Ok(())
-}
-
-/// mmdr reads both `((text))` and `(((text)))` as a double circle; the single circle is the one people write.
-fn shape_of(shape: NodeShape) -> Shape {
-    match shape {
-        NodeShape::RoundRect => Shape::Rounded,
-        NodeShape::Stadium => Shape::Stadium,
-        NodeShape::Circle | NodeShape::DoubleCircle => Shape::Circle,
-        NodeShape::Subroutine => Shape::Subroutine,
-        NodeShape::Cylinder => Shape::Cylinder,
-        NodeShape::Diamond => Shape::Diamond,
-        NodeShape::Hexagon => Shape::Hexagon,
-        NodeShape::Parallelogram => Shape::LeanRight,
-        NodeShape::ParallelogramAlt => Shape::LeanLeft,
-        NodeShape::Trapezoid => Shape::Trapezoid,
-        NodeShape::TrapezoidAlt => Shape::InvertedTrapezoid,
-        NodeShape::Asymmetric => Shape::Asymmetric,
-        _ => Shape::Rectangle,
-    }
-}
-
-fn direction(direction: mmdr::Direction) -> Direction {
-    match direction {
-        mmdr::Direction::TopDown => Direction::Down,
-        mmdr::Direction::BottomTop => Direction::Up,
-        mmdr::Direction::LeftRight => Direction::Right,
-        mmdr::Direction::RightLeft => Direction::Left,
-    }
-}
-
-/// A node mmdr added for an edge end is a box named after its id.
-fn label_and_shape(labels: &HashMap<&str, (Label, Shape)>, id: &str) -> (Label, Shape) {
-    labels.get(id).cloned().unwrap_or_else(|| (Label::wrapped(id), Shape::Rectangle))
-}
-
-/// The nodes in the order of their ids, but for those that only stand for a group an edge names.
-fn nodes(graph: &Graph, labels: &HashMap<&str, (Label, Shape)>) -> Vec<Node> {
-    let ids = ids(graph);
-    let anchors: HashSet<&str> = graph.subgraphs.iter().filter_map(|subgraph| anchor(subgraph, &ids)).collect();
-    ids.iter()
-        .filter(|id| !anchors.contains(*id))
-        .map(|&id| {
-            let (label, shape) = label_and_shape(labels, id);
-            let order = graph.node_order.get(id).copied().unwrap_or(usize::MAX);
-            Node { id: id.to_owned(), label, shape, group: None, order }
+        .enumerate()
+        .map(|(index, subgraph)| Group {
+            id: subgraph.id.clone(),
+            title: Label::single_line(&subgraph.title.shown()),
+            parent: parents[index],
+            flow: flow_of(index),
         })
         .collect()
 }
 
-/// The name of a subgraph an edge ends on, which is no node: its id first, then its title, unless it holds a node
-/// of that name.
-fn anchor<'a>(subgraph: &'a mmdr::Subgraph, ids: &BTreeSet<&str>) -> Option<&'a str> {
-    [subgraph.id.as_deref(), Some(subgraph.label.as_str())]
-        .into_iter()
-        .flatten()
-        .find(|id| ids.contains(*id) && !subgraph.nodes.iter().any(|member| member == id))
-}
-
-/// A group's parent is the smallest other group holding all its nodes, and more of them or its name; of two groups
-/// holding the same nodes, the one the source opens first holds the other.
-fn groups(graph: &Graph, nodes: &[Node]) -> Vec<Group> {
-    let visible: HashSet<&str> = nodes.iter().map(|node| node.id.as_str()).collect();
-    let members: Vec<HashSet<&str>> = graph
-        .subgraphs
-        .iter()
-        .map(|subgraph| subgraph.nodes.iter().map(String::as_str).filter(|id| visible.contains(id)).collect())
-        .collect();
-    let ids: Vec<String> = graph.subgraphs.iter().map(|subgraph| subgraph.id.clone().unwrap_or_else(|| subgraph.label.clone())).collect();
-    let holds = |outer: usize, inner: usize| {
-        outer != inner
-            && members[inner].is_subset(&members[outer])
-            && (members[inner].len() < members[outer].len()
-                || graph.subgraphs[outer].nodes.contains(&ids[inner])
-                || (outer < inner && !members[inner].is_empty()))
-    };
-    let parents = without_cycles(
-        (0..graph.subgraphs.len())
-            .map(|inner| {
-                (0..graph.subgraphs.len()).filter(|&outer| holds(outer, inner)).min_by_key(|&outer| (members[outer].len(), Reverse(outer)))
-            })
-            .collect(),
-    );
-    let flows = flows(graph, &parents);
-    graph
-        .subgraphs
-        .iter()
-        .zip(ids)
-        .enumerate()
-        .map(|(index, (subgraph, id))| Group { id, title: Label::single_line(&subgraph.label), parent: parents[index], flow: flows[index] })
-        .collect()
-}
-
-/// Two subgraphs sharing a name can each hold the other; a group in a cycle would never be placed, so the first of
-/// each cycle loses its parent.
 fn without_cycles(parents: Vec<Option<usize>>) -> Vec<Option<usize>> {
     let mut parents = parents;
     for start in 0..parents.len() {
@@ -310,84 +189,55 @@ fn without_cycles(parents: Vec<Option<usize>>) -> Vec<Option<usize>> {
     parents
 }
 
-fn flows(graph: &Graph, parents: &[Option<usize>]) -> Vec<Direction> {
-    let flow_of = |start: usize| {
-        let mut group = Some(start);
-        let mut hops = 0;
-        while let Some(index) = group
-            && hops <= parents.len()
-        {
-            if let Some(own) = graph.subgraphs[index].direction {
-                return direction(own);
-            }
-            group = parents[index];
-            hops += 1;
-        }
-        direction(graph.direction)
-    };
-    (0..parents.len()).map(flow_of).collect()
-}
-
-/// The deepest group listing a node holds it.
-fn with_innermost_groups(nodes: Vec<Node>, graph: &Graph, groups: &[Group]) -> Vec<Node> {
+/// The deepest group listing the node: mermaid lists a node in one subgraph, but a repeated id can list it twice.
+fn innermost(subgraphs: &[&parse::Subgraph], groups: &[Group], id: &str) -> Option<usize> {
     let depth = |group: usize| std::iter::successors(Some(group), |&index| groups[index].parent).take(groups.len() + 1).count();
-    nodes
-        .into_iter()
-        .map(|node| {
-            let group =
-                (0..groups.len()).filter(|&index| graph.subgraphs[index].nodes.contains(&node.id)).max_by_key(|&index| depth(index));
-            Node { group, ..node }
-        })
-        .collect()
+    (0..groups.len()).filter(|&group| subgraphs[group].nodes.iter().any(|member| member == id)).max_by_key(|&group| depth(group))
 }
 
-/// What an edge's end may name: a node, a group's id or its title.
+fn direction(direction: parse::Direction) -> Direction {
+    match direction {
+        parse::Direction::TB | parse::Direction::TD => Direction::Down,
+        parse::Direction::BT => Direction::Up,
+        parse::Direction::LR => Direction::Right,
+        parse::Direction::RL => Direction::Left,
+    }
+}
+
+/// What an edge's end names: a node or a group.
 #[derive(Debug, Clone, Copy)]
 struct Ends<'a> {
-    graph: &'a Graph,
     nodes: &'a [Node],
     groups: &'a [Group],
 }
 
 impl Ends<'_> {
     fn named(&self, id: &str) -> Option<End> {
-        self.nodes
-            .iter()
-            .position(|node| node.id == id)
-            .map(End::Node)
-            .or_else(|| self.groups.iter().position(|group| group.id == id).map(End::Group))
-            .or_else(|| self.graph.subgraphs.iter().position(|subgraph| subgraph.label == id).map(End::Group))
+        let node = self.nodes.iter().position(|node| node.id == id).map(End::Node);
+        node.or_else(|| self.groups.iter().position(|group| group.id == id).map(End::Group))
     }
 }
 
-fn edges(ends: &Ends<'_>) -> Vec<Edge> {
-    ends.graph
-        .edges
-        .iter()
-        .filter_map(|edge| {
-            Some(Edge {
-                from: ends.named(&edge.from)?,
-                to: ends.named(&edge.to)?,
-                label: edge.label.as_deref().map(Label::single_line),
-                kind: match edge.style {
-                    EdgeStyle::Solid => LineKind::Light,
-                    EdgeStyle::Dotted => LineKind::Dashed,
-                    EdgeStyle::Thick => LineKind::Heavy,
-                },
-                arrow_start: edge.arrow_start,
-                arrow_end: edge.arrow_end,
-            })
-        })
-        .collect()
+/// Only a pointed head draws an arrow: an open, circle or cross end draws none.
+fn edge(from: End, to: End, edge: &parse::Edge) -> Edge {
+    let shown = edge.text.shown();
+    Edge {
+        from,
+        to,
+        label: (!shown.is_empty()).then(|| Label::single_line(&shown)),
+        kind: match edge.link.stroke {
+            Stroke::Thick => LineKind::Heavy,
+            Stroke::Dotted => LineKind::Dashed,
+            Stroke::Normal | Stroke::Invisible | Stroke::Invalid => LineKind::Light,
+        },
+        arrow_start: edge.link.arrow == Arrow::DoublePoint,
+        arrow_end: matches!(edge.link.arrow, Arrow::Point | Arrow::DoublePoint),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn graph(source: &str) -> Graph {
-        mmdr::parse_mermaid(source).unwrap().graph
-    }
 
     fn node<'a>(diagram: &'a Diagram, id: &str) -> &'a Node {
         diagram.nodes.iter().find(|node| node.id == id).unwrap()
@@ -486,20 +336,6 @@ mod tests {
     }
 
     #[test]
-    fn invisible_links_at_the_edge_limit_are_accepted() {
-        let source = format!("flowchart LR\n{}", "  A ~~~ B\n".repeat(MAX_EDGES));
-
-        assert_eq!(parse(&source).map(|parsed| parsed.invisible.len()).ok(), Some(MAX_EDGES));
-    }
-
-    #[test]
-    fn invisible_links_count_towards_the_edge_limit() {
-        let source = format!("flowchart LR\n  A --> B\n{}", "  A ~~~ B\n".repeat(MAX_EDGES));
-
-        assert!(matches!(parse(&source), Err(Error::TooManyEdges { edges }) if edges == MAX_EDGES + 1));
-    }
-
-    #[test]
     fn an_attribute_block_gives_its_node_a_shape_and_a_label() {
         let diagram = Diagram::read("flowchart LR\n  A@{ shape: lean-r, label: \"In\" } --> B@{ shape: dbl-circ }").unwrap();
 
@@ -522,7 +358,7 @@ mod tests {
     fn nodes_know_the_order_the_source_names_them_in() {
         let diagram = Diagram::read("flowchart LR\n  Z --> A --> M").unwrap();
 
-        assert_eq!(diagram.nodes.iter().map(|node| (node.id.as_str(), node.order)).collect::<Vec<_>>(), [("A", 1), ("M", 2), ("Z", 0)]);
+        assert_eq!(diagram.nodes.iter().map(|node| (node.id.as_str(), node.order)).collect::<Vec<_>>(), [("Z", 0), ("A", 1), ("M", 2)]);
     }
 
     #[test]
@@ -536,6 +372,30 @@ mod tests {
     }
 
     #[test]
+    fn a_subgraph_whose_id_an_edge_names_inside_another_moves_into_it_as_mermaid_draws_it() {
+        let diagram = Diagram::read("flowchart TB\n  subgraph B\n    C\n  end\n  subgraph A\n    D --> B\n  end").unwrap();
+
+        let parents: Vec<(&str, Option<usize>)> = diagram.groups.iter().map(|group| (group.id.as_str(), group.parent)).collect();
+        assert_eq!(parents, [("B", Some(1)), ("A", None)]);
+    }
+
+    #[test]
+    fn a_double_circle_and_a_circle_keep_their_shapes() {
+        let diagram = Diagram::read("flowchart LR\n  A(((one))) --> B((two)) --o C --x D").unwrap();
+
+        assert_eq!((node(&diagram, "A").shape, node(&diagram, "B").shape), (Shape::DoubleCircle, Shape::Circle));
+        assert_eq!(diagram.edges.iter().map(|edge| edge.arrow_end).collect::<Vec<_>>(), [true, false, false]);
+    }
+
+    #[test]
+    fn entities_in_labels_are_shown_as_their_characters() {
+        let diagram = Diagram::read("flowchart LR\n  A[\"#quot;hi#quot; &amp; #35;1\"] -- &lt;go&gt; --> B").unwrap();
+
+        assert_eq!(node(&diagram, "A").label.lines, ["\"hi\" & #1"]);
+        assert_eq!(diagram.edges[0].label.as_ref().map(|label| label.lines.clone()), Some(vec!["<go>".to_owned()]));
+    }
+
+    #[test]
     fn a_diagram_of_another_kind_is_unsupported() {
         assert!(matches!(Diagram::read("pie\n  \"a\" : 1"), Err(Error::Unsupported)));
     }
@@ -543,33 +403,5 @@ mod tests {
     #[test]
     fn text_without_a_diagram_header_is_invalid() {
         assert!(matches!(Diagram::read("not a diagram"), Err(Error::Invalid { .. })));
-    }
-
-    #[test]
-    fn a_flowchart_at_the_node_limit_is_accepted() {
-        let source = format!("flowchart LR\n{}", (0..MAX_NODES).map(|index| format!("  n{index}\n")).collect::<String>());
-
-        assert_eq!(check_bounds(&graph(&source), 0), Ok(()));
-    }
-
-    #[test]
-    fn a_flowchart_over_the_node_limit_is_refused() {
-        let source = format!("flowchart LR\n{}", (0..=MAX_NODES).map(|index| format!("  n{index}\n")).collect::<String>());
-
-        assert_eq!(check_bounds(&graph(&source), 0), Err(Error::TooManyNodes { nodes: MAX_NODES + 1 }));
-    }
-
-    #[test]
-    fn a_flowchart_at_the_edge_limit_is_accepted() {
-        let source = format!("flowchart LR\n{}", "  A --> B\n".repeat(MAX_EDGES));
-
-        assert_eq!(check_bounds(&graph(&source), 0), Ok(()));
-    }
-
-    #[test]
-    fn a_flowchart_over_the_edge_limit_is_refused() {
-        let source = format!("flowchart LR\n{}", "  A --> B\n".repeat(MAX_EDGES + 1));
-
-        assert_eq!(check_bounds(&graph(&source), 0), Err(Error::TooManyEdges { edges: MAX_EDGES + 1 }));
     }
 }

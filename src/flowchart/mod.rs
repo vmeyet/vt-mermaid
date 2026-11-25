@@ -1,24 +1,26 @@
 //! Flowcharts: laid out in layers on the grid, edges routed on it, then drawn.
 
+#[cfg_attr(not(test), expect(dead_code, reason = "the parser replaces it; deleted next"))]
 mod attributes;
 mod diagram;
 mod draw;
 mod edge_label;
+#[cfg_attr(not(test), expect(dead_code, reason = "the parser replaces it; deleted next"))]
 mod invisible;
 mod label;
 mod layout;
 #[cfg(any(test, feature = "measure"))]
 pub(crate) mod measure;
-#[cfg_attr(not(test), expect(dead_code, reason = "flowcharts switch to this parser once it agrees with mermaid"))]
 mod parse;
 mod port;
 mod route;
 mod shape;
+#[cfg_attr(not(test), expect(dead_code, reason = "the parser replaces it; deleted next"))]
 mod source;
 
 use vt_canvas::{Canvas, Rect};
 
-use crate::error::{Error, MAX_AREA, MAX_SOURCE_BYTES};
+use crate::error::{Error, MAX_AREA};
 use diagram::Diagram;
 use layout::{Fit, MARGIN, Placement};
 use route::Route;
@@ -42,9 +44,6 @@ const PACKED: [i32; 3] = [8, 6, 4];
 /// then with its wide ranks folded narrower and narrower, then packed without room for the links passing a rank;
 /// each time as written, then turned top-down when it flows sideways.
 pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
-    if source.len() > MAX_SOURCE_BYTES {
-        return Err(Error::TooLong { bytes: source.len() });
-    }
     let written = Diagram::read(source)?;
     let turned = written.flows_sideways().then(|| written.turned_top_down());
     let columns = |eighths: i32| i32::from(max_width) * eighths / 8;
@@ -93,6 +92,7 @@ mod tests {
 
     use super::measure::{rows, violations};
     use super::*;
+    use crate::error::MAX_SOURCE_BYTES;
 
     /// Wide enough for every spike flowchart: the comparison with mermaid-text judges the width.
     const WIDTH: u16 = 400;
@@ -155,22 +155,24 @@ mod tests {
         assert_eq!(check_area(MAX_AREA / 100 + 1, 100), Err(Error::TooLarge { width: MAX_AREA / 100 + 1, height: 100 }));
     }
 
-    /// Found by fuzzing: each one failed an assertion mmdr's layout only checked in debug builds.
+    /// Found by fuzzing, written as mermaid reads them: each one failed an assertion mmdr's layout only checked in debug
+    /// builds.
     #[test]
     fn sources_that_broke_the_layout_before_are_still_drawn() {
-        let sources = ["graph T\nsubgraph \"1.fir\na\n end\nsubgraph 2. second\nd", "h-/\nA B;subgraph ol styl a brokken;cc"];
+        let sources =
+            ["graph TD\nsubgraph \"1.fir\"\na\n end\nsubgraph 2. second\nd\nend", "graph TD\nA;B;subgraph ol styl a brokken;cc\nend"];
 
         for source in sources {
             assert!(render(source, WIDTH).is_ok(), "{source:?}");
         }
     }
 
-    /// Found by fuzzing: each subgraph holds the other, so neither was placed.
+    /// Found by fuzzing: a subgraph opened again inside itself held itself, so it was never placed.
     #[test]
-    fn subgraphs_sharing_a_name_are_both_drawn() {
-        let drawing = render("flowchart\nsubgraph Si\nsubgraph Si\nSi", WIDTH).unwrap();
+    fn a_subgraph_repeated_inside_itself_is_one_group() {
+        let drawing = render("flowchart\nsubgraph Si\nsubgraph Si\nSi\nend\nend", WIDTH).unwrap();
 
-        assert_eq!(drawing.groups.len(), 2);
+        assert_eq!(drawing.groups.len(), 1);
         assert!(drawing.groups.iter().all(|group| group.width > 0 && group.height > 0), "{:?}", drawing.groups);
     }
 

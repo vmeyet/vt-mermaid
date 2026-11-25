@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":""}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the diagram does not parse: unknown or missing Mermaid diagram header"},
-      "100": {"status":"refused","reason":"the diagram does not parse: unknown or missing Mermaid diagram header"}
+      "80": {"status":"refused","reason":""},
+      "100": {"status":"refused","reason":""}
     }
   }
 }

@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 127 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the flowchart has 284 edges, over the 150 limit","score":0},
-      "100": {"status":"refused","reason":"the flowchart has 284 edges, over the 150 limit","score":0}
+      "80": {"status":"rendered","drawn":{"width":45,"rows":59,"area":2655,"fits":true,"node_labels":15,"edge_labels":0,"arrows":19,"crossings":2,"bends":75},"score":90,"exact":{"crossings":2,"bends":15,"edge_cells":233,"violations":["node sid-03A2C3AC-5337-48A5-B154-BB3FD0EC8DAD has 1 label lines not drawn whole","node sid-8C3F2F1D-F014-4F99-B966-095DC1A2BD93 has 1 label lines not drawn whole"]}},
+      "100": {"status":"rendered","drawn":{"width":45,"rows":59,"area":2655,"fits":true,"node_labels":15,"edge_labels":0,"arrows":19,"crossings":2,"bends":75},"score":90,"exact":{"crossings":2,"bends":15,"edge_cells":233,"violations":["node sid-03A2C3AC-5337-48A5-B154-BB3FD0EC8DAD has 1 label lines not drawn whole","node sid-8C3F2F1D-F014-4F99-B966-095DC1A2BD93 has 1 label lines not drawn whole"]}}
     }
   }
 }

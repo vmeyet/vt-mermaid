@@ -24,10 +24,7 @@ test = false
 doc = false
 bench = false
 
-# Overflow and debug checks on vt-mermaid's code; mmdr's debug assertions grade its own layout, as in the library's dev profile.
+# Overflow and debug checks on vt-mermaid's code.
 [profile.release]
 debug-assertions = true
 overflow-checks = true
-
-[profile.release.package.mermaid-rs-renderer]
-debug-assertions = false

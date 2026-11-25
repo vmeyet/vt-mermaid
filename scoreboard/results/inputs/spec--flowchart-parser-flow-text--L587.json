@@ -14,8 +14,8 @@
       "100": {"status":"rendered","drawn":{"width":55,"rows":13,"area":715,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0}}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":31,"rows":10,"area":310,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":31,"rows":10,"area":310,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}}
+      "80": {"status":"refused","reason":"the diagram does not parse: unexpected `string` on line 1"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unexpected `string` on line 1"}
     }
   }
 }

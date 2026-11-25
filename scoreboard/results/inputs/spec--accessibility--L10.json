@@ -14,8 +14,8 @@
       "100": {"status":"refused","reason":"unsupported diagram type: 'graphics-document'"}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":12,"rows":9,"area":108,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":12,"rows":9,"area":108,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}}
+      "80": {"status":"refused","reason":"the diagram does not parse: unexpected `graphics-document` on line 1"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unexpected `graphics-document` on line 1"}
     }
   }
 }

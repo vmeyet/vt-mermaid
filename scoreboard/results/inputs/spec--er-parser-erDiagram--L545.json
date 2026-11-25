@@ -14,8 +14,8 @@
       "100": {"status":"refused","reason":"parse error: unknown direction 'title'"}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":""},
-      "100": {"status":"refused","reason":""}
+      "80": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 1"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 1"}
     }
   }
 }

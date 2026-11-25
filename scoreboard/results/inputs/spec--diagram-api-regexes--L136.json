@@ -14,8 +14,8 @@
       "100": {"status":"rendered","drawn":{"width":32,"rows":3,"area":96,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0}}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":""},
-      "100": {"status":"refused","reason":""}
+      "80": {"status":"refused","reason":"the diagram does not parse: unexpected `"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unexpected `"}
     }
   }
 }

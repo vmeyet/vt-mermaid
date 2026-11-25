@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"unsupported diagram type: 'flowchart-elk'"}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":13,"rows":9,"area":117,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":13,"rows":9,"area":117,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}}
+      "80": {"status":"refused","reason":""},
+      "100": {"status":"refused","reason":""}
     }
   }
 }

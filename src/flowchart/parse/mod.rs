@@ -14,8 +14,9 @@ mod unicode;
 
 use std::fmt;
 
-pub(super) use db::Flowchart;
+pub(super) use db::{Edge, Flowchart, Subgraph};
 pub(super) use lexer::Direction;
+pub(super) use link::{Arrow, Stroke};
 
 use crate::error::{Error, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
 

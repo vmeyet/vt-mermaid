@@ -25,8 +25,6 @@ name = "corpus"
 harness = false
 
 [dependencies]
-# Parses the diagram; vt-mermaid lays it out itself.
-mermaid-rs-renderer = { version = "0.3.1", default-features = false }
 vt-canvas = { path = "../vt-canvas" }
 
 [features]
@@ -34,10 +32,12 @@ vt-canvas = { path = "../vt-canvas" }
 measure = []
 
 # serde_json reads the oracle's results for examples/agreement.rs and scoreboard/, serde reads them into structs and writes the scoreboard's;
-# mermaid-text is what examples/compare.rs and scoreboard/ measure against, pinned so the scoreboard compares one version; divan runs benches/limits.rs.
+# mermaid-text is what examples/compare.rs and scoreboard/ measure against, pinned so the scoreboard compares one version; divan runs benches/limits.rs;
+# mermaid-rs-renderer is the parser examples/agreement.rs compares with the oracle for every diagram kind.
 [dev-dependencies]
 divan = "0.1.21"
 insta = "1.49.0"
+mermaid-rs-renderer = { version = "0.3.1", default-features = false }
 mermaid-text = "=0.58.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"

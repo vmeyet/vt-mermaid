@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 2535 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the flowchart has 171 edges, over the 150 limit","score":0},
-      "100": {"status":"refused","reason":"the flowchart has 171 edges, over the 150 limit","score":0}
+      "80": {"status":"refused","reason":"the flowchart has 151 edges, over the 150 limit","score":0},
+      "100": {"status":"refused","reason":"the flowchart has 151 edges, over the 150 limit","score":0}
     }
   }
 }

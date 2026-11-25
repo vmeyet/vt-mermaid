@@ -22,7 +22,7 @@ fn cached() -> Result<Canvas, Error> {
     render(include_str!("../tests/spike/cached.mmd"))
 }
 
-/// 64 KiB of edges: the parser reads it all before the node limit refuses it.
+/// 64 KiB of edges: the parser lexes it all, then refuses it at the node limit.
 #[divan::bench(sample_count = 10)]
 fn source_at_the_limit() -> Result<Canvas, Error> {
     render(&at_the_length_limit(&(0..).map(|index| format!("  n{index} --> n{}\n", index + 1)).take(5_000).collect::<String>()))
@@ -48,8 +48,8 @@ fn area_at_the_limit() -> Result<Canvas, Error> {
     render(&tall_tree())
 }
 
-/// The slowest input fuzzing found, a mutation of `corpus/flowchart/e2e--platform-dev-diagrams-performance-flowcharts-medium3.mmd`:
-/// 19 subgraphs and 107 edges, too dense to fit until it is packed, so it is laid out and routed twelve times.
+/// The slowest input fuzzing found, a mutation of `corpus/flowchart/e2e--platform-dev-diagrams-performance-flowcharts-medium3.mmd`
+/// mended where it broke mermaid's grammar: 19 subgraphs and 149 edges.
 #[divan::bench(sample_count = 1, sample_size = 1)]
 fn found_by_fuzzing() -> Result<Canvas, Error> {
     render(include_str!("inputs/fuzzed-subgraphs.mmd"))

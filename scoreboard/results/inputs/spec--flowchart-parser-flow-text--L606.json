@@ -14,8 +14,8 @@
       "100": {"status":"rendered","drawn":{"width":19,"rows":11,"area":209,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0}}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":17,"rows":9,"area":153,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":17,"rows":9,"area":153,"fits":true,"node_labels":0,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}}
+      "80": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 1"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 1"}
     }
   }
 }

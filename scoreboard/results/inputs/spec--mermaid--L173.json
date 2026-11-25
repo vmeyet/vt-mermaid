@@ -14,8 +14,8 @@
       "100": {"status":"refused","reason":"parse error: unknown direction 'TQ'"}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":5,"rows":9,"area":45,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":["edge 0 A → B label found no room"]}},
-      "100": {"status":"rendered","drawn":{"width":5,"rows":9,"area":45,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":["edge 0 A → B label found no room"]}}
+      "80": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 1"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unrecognized text on line 1"}
     }
   }
 }

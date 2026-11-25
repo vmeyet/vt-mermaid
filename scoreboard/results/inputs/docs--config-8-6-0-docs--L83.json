@@ -14,8 +14,8 @@
       "100": {"status":"rendered","drawn":{"width":68,"rows":9,"area":612,"fits":true,"node_labels":0,"edge_labels":0,"arrows":6,"crossings":0,"bends":2}}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the diagram does not parse: invalid flowchart edge syntax: g-->"},
-      "100": {"status":"refused","reason":"the diagram does not parse: invalid flowchart edge syntax: g-->"}
+      "80": {"status":"refused","reason":"the diagram does not parse: unexpected the end on line 10"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unexpected the end on line 10"}
     }
   }
 }

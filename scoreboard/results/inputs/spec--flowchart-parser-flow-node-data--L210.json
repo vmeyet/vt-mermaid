@@ -14,8 +14,8 @@
       "100": {"status":"rendered","drawn":{"width":32,"rows":3,"area":96,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0}}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":5,"rows":3,"area":15,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":0,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":5,"rows":3,"area":15,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":0,"violations":[]}}
+      "80": {"status":"refused","reason":"the diagram does not parse: no such shape: rect_left_inv_arrow"},
+      "100": {"status":"refused","reason":"the diagram does not parse: no such shape: rect_left_inv_arrow"}
     }
   }
 }

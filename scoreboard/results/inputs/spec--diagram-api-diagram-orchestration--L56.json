@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"unsupported diagram type: 'flowchart-elk'","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":22,"rows":9,"area":198,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":22,"rows":9,"area":198,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"violations":[]}}
+      "80": {"status":"rendered","drawn":{"width":5,"rows":9,"area":45,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":5,"rows":9,"area":45,"fits":true,"node_labels":2,"edge_labels":0,"arrows":1,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":4,"violations":[]}}
     }
   }
 }
