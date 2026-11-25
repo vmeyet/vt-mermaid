@@ -3,6 +3,7 @@
 
 mod db;
 mod entity;
+mod grammar;
 mod lexer;
 mod link;
 mod prepare;
@@ -11,9 +12,44 @@ mod unicode;
 
 use std::fmt;
 
+pub(super) use db::Flowchart;
 pub(super) use lexer::Direction;
 
 use crate::error::Error;
+
+/// Headers of the diagram kinds mermaid knows besides flowcharts, each a prefix of the word a source starts with.
+const OTHER_KINDS: [&str; 30] = [
+    "sequenceDiagram",
+    "classDiagram",
+    "stateDiagram",
+    "erDiagram",
+    "journey",
+    "gantt",
+    "pie",
+    "quadrantChart",
+    "requirementDiagram",
+    "gitGraph",
+    "C4Context",
+    "C4Container",
+    "C4Component",
+    "C4Dynamic",
+    "C4Deployment",
+    "mindmap",
+    "timeline",
+    "zenuml",
+    "sankey",
+    "xychart",
+    "block",
+    "packet",
+    "kanban",
+    "architecture",
+    "radar",
+    "treemap",
+    "info",
+    "swimlane",
+    "venn",
+    "ishikawa",
+];
 
 /// Longest source, most nodes, subgraphs included, and most edges read before the flowchart is refused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -27,8 +63,12 @@ pub(super) struct Limits {
 /// matter, directives and comment lines are left out.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum Invalid {
+    /// The source opens no diagram mermaid knows.
+    NoDiagram,
     /// No rule of the lexer reads the text at that line.
     Unrecognized { line: usize },
+    /// The grammar allows no such token there.
+    Unexpected { line: usize, found: String },
     /// A block names a shape mermaid does not have.
     Shape { name: String },
     /// A block is not the YAML mermaid reads.
@@ -46,12 +86,28 @@ impl From<Invalid> for Error {
 impl fmt::Display for Invalid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::NoDiagram => write!(f, "no diagram type matches the text"),
             Self::Unrecognized { line } => write!(f, "unrecognized text on line {line}"),
+            Self::Unexpected { line, found } => write!(f, "unexpected {found} on line {line}"),
             Self::Shape { name } => write!(f, "no such shape: {name}"),
             Self::ShapeData => write!(f, "a node's @{{ }} block is not valid YAML"),
             Self::LinkStyle { index } => write!(f, "linkStyle {index} names no edge"),
         }
     }
+}
+
+/// The flowchart in `source`, refused as mermaid refuses it or once it holds more than `limits` allow.
+pub(super) fn parse(source: &str, limits: Limits) -> Result<Flowchart, Error> {
+    if source.len() > limits.bytes {
+        return Err(Error::TooLong { bytes: source.len() });
+    }
+    let prepared = prepare::prepare(source);
+    let text = prepared.text;
+    if !text.starts_with("graph") && !text.starts_with("flowchart") {
+        return Err(if OTHER_KINDS.iter().any(|kind| text.starts_with(kind)) { Error::Unsupported } else { Invalid::NoDiagram.into() });
+    }
+    let tokens = lexer::tokens(&text)?;
+    grammar::parse(&text, &tokens, limits, prepared.inherits_direction)
 }
 
 /// A character of a JavaScript regex `\s`, the space mermaid's patterns mean.
