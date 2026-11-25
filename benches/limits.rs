@@ -1,4 +1,4 @@
-//! How long `render` takes on a typical flowchart, sequence diagram and state diagram and on inputs built at each limit:
+//! How long `render` takes on a typical flowchart, sequence, state and class diagram and on inputs built at each limit:
 //! `cargo bench --bench limits`.
 
 use divan::black_box;
@@ -122,6 +122,27 @@ fn state_source_at_the_limit() -> Result<Canvas, Error> {
     let line = "  Idle --> Busy : start work\n";
     let header = "stateDiagram-v2\n";
     render(&format!("{header}{}", line.repeat((MAX_SOURCE_BYTES - header.len()) / line.len())))
+}
+
+#[divan::bench]
+fn library() -> Result<Canvas, Error> {
+    render(include_str!("../tests/class/library.mmd"))
+}
+
+/// The node and edge limits: 200 classes with a member each, 150 of them inheriting from the first ten in turn.
+#[divan::bench(sample_count = 3, sample_size = 1)]
+fn class_at_the_limits() -> Result<Canvas, Error> {
+    let classes: String = (0..MAX_NODES).map(|index| format!("  class C{index} {{\n    +int field{index}\n  }}\n")).collect();
+    let relations: String = (0..MAX_EDGES).map(|index| format!("  C{} <|-- C{}\n", index % 10, index + 10)).collect();
+    render(&format!("classDiagram\n{classes}{relations}"))
+}
+
+/// 64 KiB of attributes in one class: one box nearly 3000 rows tall.
+#[divan::bench(sample_count = 10)]
+fn class_source_at_the_limit() -> Result<Canvas, Error> {
+    let end = "\n  }\n";
+    let source = format!("classDiagram\n  class Huge {{\n{}", "    +String attribute\n".repeat(4_000));
+    render(&format!("{}{end}", source.chars().take(MAX_SOURCE_BYTES - end.len()).collect::<String>()))
 }
 
 fn across(messages: usize) -> String {

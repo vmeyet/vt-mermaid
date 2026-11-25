@@ -1,4 +1,4 @@
-//! Times `render` on every flowchart, sequence diagram and state diagram of the corpus and prints the spread of each kind:
+//! Times `render` on every flowchart, sequence, state and class diagram of the corpus and prints the spread of each kind:
 //! `cargo bench --bench corpus`.
 //!
 //! divan times one input at a time; this sweep answers how long a diagram takes across real inputs, and which one
@@ -19,7 +19,9 @@ fn main() -> std::io::Result<()> {
     if !std::env::args().any(|arg| arg == "--bench") {
         return Ok(());
     }
-    for (kind, plural) in [("flowchart", "flowcharts"), ("sequence", "sequence diagrams"), ("state", "state diagrams")] {
+    for (kind, plural) in
+        [("flowchart", "flowcharts"), ("sequence", "sequence diagrams"), ("state", "state diagrams"), ("class", "class diagrams")]
+    {
         let mut timings: Vec<(Duration, PathBuf, &'static str)> =
             diagrams(kind)?.into_iter().map(|(path, source)| timed(&source, path)).collect();
         timings.sort_by_key(|&(elapsed, ..)| elapsed);
