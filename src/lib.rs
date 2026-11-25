@@ -13,7 +13,7 @@ mod flowchart;
 mod sequence;
 mod source;
 
-pub use error::{Error, MAX_AREA, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
+pub use error::{Error, MAX_AREA, MAX_EDGES, MAX_MESSAGES, MAX_NODES, MAX_PARTICIPANTS, MAX_SOURCE_BYTES};
 pub use vt_canvas::{Canvas, GlyphSet, Role, Run};
 
 /// Exact measures of a flowchart drawing, for the scoreboard: not part of the API, behind the `measure` feature.
@@ -26,6 +26,12 @@ pub use flowchart::measure::{Measures, measure};
 #[cfg(feature = "fuzz")]
 #[doc(hidden)]
 pub use flowchart::{Counts, read as read_flowchart};
+
+/// Reads a sequence diagram as `render` does, without laying it out, for the fuzzer: not part of the API, behind the
+/// `fuzz` feature.
+#[cfg(feature = "fuzz")]
+#[doc(hidden)]
+pub use sequence::{Counts as SequenceCounts, read as read_sequence};
 
 /// Draws the diagram in `source` no wider than `max_width` columns.
 pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {

@@ -8,6 +8,10 @@ pub const MAX_NODES: usize = 200;
 pub const MAX_EDGES: usize = 150;
 /// Most cells of the grid edges are routed on, margins included.
 pub const MAX_AREA: usize = 250_000;
+/// Most participants a sequence diagram may have.
+pub const MAX_PARTICIPANTS: usize = 50;
+/// Most messages a sequence diagram may have, notes, activations and the starts, sections and ends of blocks included.
+pub const MAX_MESSAGES: usize = 1_000;
 
 /// Why a diagram was not drawn.
 #[non_exhaustive]
@@ -34,6 +38,16 @@ pub enum Error {
     TooManyEdges {
         /// How many it has.
         edges: usize,
+    },
+    /// The sequence diagram has more than [`MAX_PARTICIPANTS`] participants.
+    TooManyParticipants {
+        /// How many it has.
+        participants: usize,
+    },
+    /// The sequence diagram has more than [`MAX_MESSAGES`] messages.
+    TooManyMessages {
+        /// How many it has.
+        messages: usize,
     },
     /// The drawing would cover more than [`MAX_AREA`] cells.
     TooLarge {
@@ -66,6 +80,10 @@ impl fmt::Display for Error {
             Self::Unsupported => write!(f, "this kind of diagram is not drawn as text yet"),
             Self::TooManyNodes { nodes } => write!(f, "the flowchart has {nodes} nodes, over the {MAX_NODES} limit"),
             Self::TooManyEdges { edges } => write!(f, "the flowchart has {edges} edges, over the {MAX_EDGES} limit"),
+            Self::TooManyParticipants { participants } => {
+                write!(f, "the sequence diagram has {participants} participants, over the {MAX_PARTICIPANTS} limit")
+            }
+            Self::TooManyMessages { messages } => write!(f, "the sequence diagram has {messages} messages, over the {MAX_MESSAGES} limit"),
             Self::TooLarge { width, height } => write!(f, "a {width}x{height} drawing is over the {MAX_AREA} cell limit"),
             Self::TooWide { width, max_width } => write!(f, "the drawing needs {width} columns, more than the {max_width} allowed"),
             Self::Unroutable { from, to } => write!(f, "no path joins {from} to {to}"),

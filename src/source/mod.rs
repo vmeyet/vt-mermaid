@@ -5,7 +5,7 @@ pub(crate) mod entity;
 mod prepare;
 pub(crate) mod yaml;
 
-pub(crate) use prepare::{last_line_break, prepare};
+pub(crate) use prepare::{is_word, last_line_break, prepare};
 
 use prepare::without_any_comments;
 
