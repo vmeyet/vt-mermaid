@@ -129,6 +129,12 @@ Tried against mermaid itself on 50000 inputs mutated from the corpus, it differs
 - Arrows: solid `─` or dotted `╌`; a filled, open or half arrow head draws `▸`, an open one (`->`) none, a cross (`-x`) `╳`, and a two-way message has a head at each end; a half arrow written head first (`/|-`) points back at the sender.
 - Boxes of participants frame their heads, with the box's name, and their feet; block frames are square, notes rounded, and `rect` dashed without a title.
 
+## State diagrams
+
+`parse` is mermaid's own state parser rewritten by hand, its lexer first: the rules of `stateDiagram.jison` in their order, case-insensitive, the first that matches winning, each start condition a state on a stack.
+The rules looking past the token at hand (a `direction` or a `<<fork>>` later on the line, a `{` after two words) read an index of the text built once, so a long line is never scanned again for each token on it.
+Drawing comes next: `render` refuses a state diagram mermaid reads as `Error::Unsupported`.
+
 ## Dependency direction
 
 ```

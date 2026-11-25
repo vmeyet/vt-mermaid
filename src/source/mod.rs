@@ -16,12 +16,12 @@ use crate::error::{Error, MAX_SOURCE_BYTES};
 pub(crate) enum Kind {
     Flowchart,
     Sequence,
+    State,
 }
 
 /// Headers of the diagram kinds mermaid knows but none drawn here, each a prefix of the word a source starts with.
-const OTHER_KINDS: [&str; 29] = [
+const OTHER_KINDS: [&str; 28] = [
     "classDiagram",
-    "stateDiagram",
     "erDiagram",
     "journey",
     "gantt",
@@ -63,6 +63,8 @@ impl Kind {
             Ok(Self::Flowchart)
         } else if opens_with(&text, "sequenceDiagram") {
             Ok(Self::Sequence)
+        } else if opens_with(&text, "stateDiagram") {
+            Ok(Self::State)
         } else if OTHER_KINDS.iter().any(|kind| opens_with(&text, kind)) {
             Err(Error::Unsupported)
         } else {

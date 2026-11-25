@@ -14,6 +14,7 @@ mod label;
 mod sequence;
 mod settings;
 mod source;
+mod state;
 
 pub use error::{Error, MAX_AREA, MAX_EDGES, MAX_MESSAGES, MAX_NODES, MAX_PARTICIPANTS, MAX_SOURCE_BYTES};
 pub use settings::{LongWords, Settings};
@@ -55,5 +56,6 @@ pub fn render_with(source: &str, settings: Settings) -> Result<Canvas, Error> {
     match source::Kind::of(source)? {
         source::Kind::Flowchart => flowchart::render_with(source, settings).map(|drawing| drawing.canvas),
         source::Kind::Sequence => sequence::render_with(source, settings),
+        source::Kind::State => state::render(source),
     }
 }
