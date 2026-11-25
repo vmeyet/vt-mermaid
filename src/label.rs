@@ -2,6 +2,8 @@
 
 use vt_canvas::width;
 
+use crate::settings::LongWords;
+
 /// Widest line of a wrapped label: longer text wraps at spaces, a longer word goes on as many lines as it takes.
 const MAX_WRAPPED_COLUMNS: usize = 30;
 /// Widest one-line label: an edge's or a group's.
@@ -18,6 +20,21 @@ pub(crate) struct Label {
     pub(crate) width: u16,
 }
 
+/// How a node's text is cut into lines.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Wrap {
+    /// Columns of the widest line.
+    pub(crate) columns: usize,
+    pub(crate) long_words: LongWords,
+}
+
+impl Wrap {
+    /// Lines as wide as a label gets, [`MAX_WRAPPED_COLUMNS`].
+    pub(crate) const fn wide(long_words: LongWords) -> Self {
+        Self { columns: MAX_WRAPPED_COLUMNS, long_words }
+    }
+}
+
 impl Label {
     /// Lines break where the source asks (`<br>`), wrap at spaces past [`MAX_WRAPPED_COLUMNS`] and inside a word
     /// longer than that.
@@ -30,6 +47,16 @@ impl Label {
         let max_width = max_width.max(1);
         let lines: Vec<String> = explicit_lines(text).iter().flat_map(|line| wrap(line, max_width)).collect();
         Self::new(lines, max_width)
+    }
+
+    /// Lines break where the source asks and wrap at spaces past the columns of `wrap`; a word longer than
+    /// [`MAX_WRAPPED_COLUMNS`] is broken over lines, or keeps one line the drawing cuts, as `wrap` says.
+    pub(crate) fn wrapped_as(text: &str, wrap: Wrap) -> Self {
+        let whole = |word: &str| vec![word.to_owned()];
+        let broken = |word: &str| if wrap.long_words == LongWords::Break { pieces(word, MAX_WRAPPED_COLUMNS) } else { whole(word) };
+        let lines: Vec<String> =
+            explicit_lines(text).iter().flat_map(|line| filled(line.split(' ').flat_map(broken), wrap.columns)).collect();
+        Self::new(lines, MAX_WRAPPED_COLUMNS)
     }
 
     /// One line: the source's line breaks become spaces.
@@ -58,8 +85,13 @@ fn explicit_lines(text: &str) -> Vec<String> {
 }
 
 fn wrap(line: &str, max_width: usize) -> Vec<String> {
+    filled(line.split(' ').flat_map(|word| pieces(word, max_width)), max_width)
+}
+
+/// The pieces on lines of at most `max_width` columns, a space between two on a line; a piece wider has its own.
+fn filled(pieces: impl Iterator<Item = String>, max_width: usize) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
-    for piece in line.split(' ').flat_map(|word| pieces(word, max_width)) {
+    for piece in pieces {
         match lines.last_mut() {
             Some(last) if width(last) + 1 + width(&piece) <= max_width => {
                 last.push(' ');
@@ -130,6 +162,14 @@ mod tests {
     #[test]
     fn a_label_wraps_to_the_width_asked() {
         assert_eq!(Label::wrapped_to("one two three", 7).lines, ["one two", "three"]);
+    }
+
+    #[test]
+    fn a_long_word_cut_keeps_one_line_as_wide_as_the_limit() {
+        let label = Label::wrapped_as("see state-diagram-new-arrow-florbs-and-more now", Wrap::wide(LongWords::Cut));
+
+        assert_eq!(label.lines, ["see", "state-diagram-new-arrow-florbs-and-more", "now"]);
+        assert_eq!(label.width, 30);
     }
 
     #[test]

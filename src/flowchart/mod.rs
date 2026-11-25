@@ -14,6 +14,8 @@ mod shape;
 use vt_canvas::{Canvas, Rect};
 
 use crate::error::{Error, MAX_AREA};
+use crate::label::Wrap;
+use crate::settings::{LongWords, Settings};
 use diagram::Diagram;
 use layout::{Fit, MARGIN, Placement};
 use route::Route;
@@ -36,8 +38,10 @@ const PACKED: [i32; 3] = [8, 6, 4];
 /// Draws `source` in the first form that fits `max_width` and whose edges find a path: laid out loose, then tight,
 /// then with its wide ranks folded narrower and narrower, then packed without room for the links passing a rank;
 /// each time as written, then turned top-down when it flows sideways.
-pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
-    let written = Diagram::read(source)?;
+pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Drawing, Error> {
+    let max_width = settings.max_width;
+    let read = Diagram::read(source)?;
+    let written = if settings.long_words == LongWords::Break { read } else { read.wrapped(Wrap::wide(settings.long_words)) };
     let turned = written.flows_sideways().then(|| written.turned_top_down());
     let columns = |eighths: i32| i32::from(max_width) * eighths / 8;
     let folded = FOLDED.map(|eighths| Fit::Folded { columns: columns(eighths) });
@@ -52,6 +56,12 @@ pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
         drawing = drawn(diagram, layout::place(diagram, fit), max_width);
     }
     drawing
+}
+
+/// Draws `source` as [`render_with`] does, long words broken.
+#[cfg(any(test, feature = "measure"))]
+pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
+    render_with(source, Settings::new(max_width))
 }
 
 /// How much a flowchart holds once read.
@@ -270,6 +280,20 @@ mod tests {
         assert!(may_fit_tighter(&Err(no_path)));
         assert!(!may_fit_tighter(&Err(Error::TooLarge { width: 60, height: 5_000 })));
         assert!(!may_fit_tighter(&render("flowchart LR\n  A --> B", WIDTH)));
+    }
+
+    #[test]
+    fn a_long_word_is_broken_over_lines_unless_the_settings_cut_it() {
+        let source = "flowchart LR\n  A[see state-diagram-new-arrow-florbs-and-more now]";
+
+        let broken = render(source, WIDTH).unwrap();
+        let cut = render_with(source, Settings::new(WIDTH).long_words(LongWords::Cut)).unwrap();
+
+        assert_eq!(rows(&broken.canvas)[1..3], ["│ see state-diagram-new-arrow- │", "│     florbs-and-more now      │"]);
+        assert_eq!(
+            rows(&cut.canvas)[1..4],
+            ["│              see               │", "│ state-diagram-new-arrow-florb⋯ │", "│              now               │"]
+        );
     }
 
     #[test]

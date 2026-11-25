@@ -7,7 +7,7 @@ use vt_canvas::{Direction, LineKind, Shape};
 use super::parse::{self, Arrow, Flowchart, Limits, Stroke};
 use super::shape;
 use crate::error::Error;
-use crate::label::Label;
+use crate::label::{Label, Wrap};
 
 /// A flowchart as the parser reads it, its text already cut into lines.
 #[derive(Debug, Clone)]
@@ -23,6 +23,8 @@ pub(super) struct Diagram {
 #[derive(Debug, Clone)]
 pub(super) struct Node {
     pub(super) id: String,
+    /// Its text as the source gives it, before it is cut into lines.
+    text: String,
     pub(super) label: Label,
     pub(super) shape: Shape,
     /// The innermost group holding it.
@@ -70,6 +72,12 @@ impl Diagram {
         Ok(Self::new(&parse::parse(source, Limits::DRAWN)?))
     }
 
+    /// Its nodes' text cut into lines again, as `wrap` says.
+    pub(super) fn wrapped(&self, wrap: Wrap) -> Self {
+        let nodes = self.nodes.iter().map(|node| Node { label: Label::wrapped_as(&node.text, wrap), ..node.clone() }).collect();
+        Self { nodes, ..self.clone() }
+    }
+
     /// Its ranks and those of its groups going down where they go sideways.
     pub(super) fn turned_top_down(&self) -> Self {
         let turned = |flow: Direction| if matches!(flow, Direction::Left | Direction::Right) { Direction::Down } else { flow };
@@ -97,6 +105,7 @@ impl Diagram {
             .enumerate()
             .map(|(order, node)| Node {
                 id: node.id.clone(),
+                text: node.text.shown(),
                 label: Label::wrapped(&node.text.shown()),
                 shape: shape::named(node.shape.as_deref()),
                 group: innermost(&subgraphs, &groups, &node.id),

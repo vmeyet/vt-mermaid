@@ -19,6 +19,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 ## Contract
 
 - `render(source, max_width)` returns the drawing as a `Canvas`, at most `max_width` columns wide.
+  `render_with(source, settings)` does the same as `Settings` say: `max_width`, and `long_words`, `Break` unless set.
   A flowchart too wide, or with an edge left without a path, is laid out again until it fits: tight, then with the ranks going down folded to 8, 7, 6, 5 and 4 eighths of the width, then packed to 8, 6 and 4 eighths without room for the links passing a rank; each as written, then turned top-down when it or one of its groups flows sideways.
   That is at most twenty placements, each routed only when its blocks fit; one still too wide is `Error::TooWide`, so the caller can fall back.
 - Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`); a sequence diagram has at most 50 participants (`MAX_PARTICIPANTS`) and 1000 messages (`MAX_MESSAGES`), notes, activations and the starts, sections and ends of blocks included.
@@ -66,7 +67,7 @@ Every pattern runs in one pass over the text: no regex, no backtracking on the s
 mermaid-rs-renderer's parser, which it replaces, accepts and refuses 908 of them as mermaid does, and reads the same nodes, edges and labels in 814 even through the pre-parse shim it needed.
 `measure`, built for tests and the `measure` feature only, counts what a drawing does and checks the level C invariants.
 
-- Text: a node's label breaks at `<br>` and at the line ends of a quoted or Markdown string, and wraps at spaces past 30 columns, a longer word is cut after the last of `. / - _ : , = &` in the second half of a line, else at 30 columns; an edge label or a group title is one line of at most 60 columns, cut with `⋯`; the parser leaves out the quotes and backticks around a label, a Markdown string's markup is drawn as written, and entities (`#quot;`, `&amp;`) are shown as the character they name.
+- Text: a node's label breaks at `<br>` and at the line ends of a quoted or Markdown string, and wraps at spaces past 30 columns, a longer word is broken after the last of `. / - _ : , = &` in the second half of a line, else at 30 columns, or with `LongWords::Cut` keeps one line cut with `⋯`; an edge label or a group title is one line of at most 60 columns, cut with `⋯`; the parser leaves out the quotes and backticks around a label, a Markdown string's markup is drawn as written, and entities (`#quot;`, `&amp;`) are shown as the character they name.
 - Invisible links (`~~~`): the layout ranks their ends as it does an edge's; they are never routed or drawn.
 - Shapes: vt-canvas draws each outline (`Canvas::shape`), so every glyph follows the glyph set.
   A shape a node's brackets or its `@{ shape: … }` block names maps to the closest one, `doc`, `flag` or any name without a close match to a rectangle; `((text))` is a circle, `(((text)))` a double circle; only a pointed head draws an arrow.
