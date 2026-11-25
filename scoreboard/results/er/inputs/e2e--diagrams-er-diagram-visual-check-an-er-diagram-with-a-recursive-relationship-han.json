@@ -1,0 +1,22 @@
+{
+  "input": "er/e2e--diagrams-er-diagram-visual-check-an-er-diagram-with-a-recursive-relationship-han.mmd",
+  "expected": {"node_labels":3,"edge_labels":3,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":32,"rows":10,"area":320,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":92},
+      "100": {"status":"rendered","drawn":{"width":32,"rows":10,"area":320,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":92}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":46,"rows":9,"area":414,"fits":true,"node_labels":3,"edge_labels":3,"arrows":0,"crossings":1,"bends":6},"score":93},
+      "100": {"status":"rendered","drawn":{"width":46,"rows":9,"area":414,"fits":true,"node_labels":3,"edge_labels":3,"arrows":0,"crossings":1,"bends":6},"score":93}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":62,"rows":4,"area":248,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":92},
+      "100": {"status":"rendered","drawn":{"width":62,"rows":4,"area":248,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":92}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":15,"rows":23,"area":345,"fits":true,"node_labels":3,"edge_labels":3,"arrows":0,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":23,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":15,"rows":23,"area":345,"fits":true,"node_labels":3,"edge_labels":3,"arrows":0,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":23,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

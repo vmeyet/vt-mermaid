@@ -1,0 +1,22 @@
+{
+  "input": "er/e2e--diagrams-er-diagram-visual-check-an-er-diagram-with-relationships-with-unicode-t-2.mmd",
+  "expected": {"node_labels":5,"edge_labels":1,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":28,"rows":15,"area":420,"fits":true,"node_labels":3,"edge_labels":0,"arrows":0,"crossings":0,"bends":8},"score":75},
+      "100": {"status":"rendered","drawn":{"width":28,"rows":15,"area":420,"fits":true,"node_labels":3,"edge_labels":0,"arrows":0,"crossings":0,"bends":8},"score":75}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":65,"rows":7,"area":455,"fits":true,"node_labels":5,"edge_labels":1,"arrows":0,"crossings":0,"bends":10},"score":100},
+      "100": {"status":"rendered","drawn":{"width":65,"rows":7,"area":455,"fits":true,"node_labels":5,"edge_labels":1,"arrows":0,"crossings":0,"bends":10},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"person[😀] {\"","score":0},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"person[😀] {\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":26,"rows":18,"area":468,"fits":true,"node_labels":5,"edge_labels":1,"arrows":0,"crossings":0,"bends":4},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"beside_nodes":0,"violations":["edge 0 person → a label is not drawn whole"]}},
+      "100": {"status":"rendered","drawn":{"width":26,"rows":18,"area":468,"fits":true,"node_labels":5,"edge_labels":1,"arrows":0,"crossings":0,"bends":4},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"beside_nodes":0,"violations":["edge 0 person → a label is not drawn whole"]}}
+    }
+  }
+}

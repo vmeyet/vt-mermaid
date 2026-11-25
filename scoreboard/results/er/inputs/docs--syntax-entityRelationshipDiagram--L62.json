@@ -1,0 +1,22 @@
+{
+  "input": "er/docs--syntax-entityRelationshipDiagram--L62.mmd",
+  "expected": {"node_labels":12,"edge_labels":3,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":45,"rows":16,"area":720,"fits":true,"node_labels":12,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":97},
+      "100": {"status":"rendered","drawn":{"width":45,"rows":16,"area":720,"fits":true,"node_labels":12,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":97}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":57,"rows":18,"area":1026,"fits":true,"node_labels":12,"edge_labels":3,"arrows":0,"crossings":0,"bends":6},"score":100},
+      "100": {"status":"rendered","drawn":{"width":57,"rows":18,"area":1026,"fits":true,"node_labels":12,"edge_labels":3,"arrows":0,"crossings":0,"bends":6},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":56,"rows":16,"area":896,"fits":true,"node_labels":12,"edge_labels":3,"arrows":0,"crossings":0,"bends":2},"score":100},
+      "100": {"status":"refused","reason":"rendered diagram is 115 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":39,"rows":32,"area":1248,"fits":true,"node_labels":12,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":24,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":39,"rows":32,"area":1248,"fits":true,"node_labels":12,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":24,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "input": "er/spec--er-parser-subgraph--L85.mmd",
+  "expected": {"node_labels":0,"edge_labels":0,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":""},
+      "100": {"status":"refused","reason":""}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse er diagram: line 2: er subgraphs are not supported\""},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse er diagram: line 2: er subgraphs are not supported\""}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"subgraph empty\""},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"subgraph empty\""}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":11,"rows":4,"area":44,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":0,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":11,"rows":4,"area":44,"fits":true,"node_labels":0,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"exact":{"crossings":0,"bends":0,"edge_cells":0,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

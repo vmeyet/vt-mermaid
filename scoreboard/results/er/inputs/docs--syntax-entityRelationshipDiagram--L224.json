@@ -1,0 +1,22 @@
+{
+  "input": "er/docs--syntax-entityRelationshipDiagram--L224.mmd",
+  "expected": {"node_labels":3,"edge_labels":2,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"","score":0},
+      "100": {"status":"refused","reason":"","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":39,"rows":8,"area":312,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":4},"score":100},
+      "100": {"status":"rendered","drawn":{"width":39,"rows":8,"area":312,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":4},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"CAR 1 to zero or more NAMED-DRIVER : allows\"","score":0},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"CAR 1 to zero or more NAMED-DRIVER : allows\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":21,"rows":13,"area":273,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":16,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":21,"rows":13,"area":273,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":16,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

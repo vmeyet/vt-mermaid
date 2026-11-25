@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::expected::{Expected, without_markup};
+use crate::expected::{Expected, Kind, without_markup};
 use crate::lines::{self, BOTTOM_LEFT, BOTTOM_RIGHT, CROSSINGS, Lines, TOP_LEFT, TOP_RIGHT};
 use crate::tool::{Run, Status};
 
@@ -47,9 +47,8 @@ pub(crate) struct Exact {
 }
 
 impl Metrics {
-    /// `heads` are the glyphs counted as arrowheads for the diagram's kind.
-    pub(crate) fn of(run: &Run, max_width: u16, expected: Option<&Expected>, exact: Option<Exact>, heads: &str) -> Self {
-        let drawn = (run.status == Status::Rendered).then(|| Drawn::of(&run.text, max_width, expected, heads));
+    pub(crate) fn of(run: &Run, max_width: u16, expected: Option<&Expected>, exact: Option<Exact>, kind: Kind) -> Self {
+        let drawn = (run.status == Status::Rendered).then(|| Drawn::of(&run.text, max_width, expected, kind));
         let reason = (run.status != Status::Rendered).then(|| reason(&run.text));
         let score =
             expected.filter(|expected| !expected.node_labels.is_empty()).map(|expected| drawn.map_or(0, |drawn| drawn.score(expected)));
@@ -58,7 +57,8 @@ impl Metrics {
 }
 
 impl Drawn {
-    fn of(text: &str, max_width: u16, expected: Option<&Expected>, heads: &str) -> Self {
+    fn of(text: &str, max_width: u16, expected: Option<&Expected>, kind: Kind) -> Self {
+        let heads = kind.heads();
         let rows = trimmed_rows(text);
         let grid: Vec<Vec<char>> = rows.iter().map(|row| row.chars().collect()).collect();
         let width = rows.iter().map(|row| vt_canvas::width(row)).max().unwrap_or(0);
@@ -76,7 +76,11 @@ impl Drawn {
             node_labels: expected.map_or(0, |expected| found(&expected.node_labels)),
             edge_labels: expected.map_or(0, |expected| found(&expected.edge_labels)),
             arrows: count(&all, heads) + lines.shared_arrows,
-            crossings: count(&all, CROSSINGS).saturating_sub(lines.trunk_crossings),
+            crossings: if kind.crossings_joined_all_round() {
+                lines::joined_crossings(&grid)
+            } else {
+                count(&all, CROSSINGS).saturating_sub(lines.trunk_crossings)
+            },
             bends: corners.saturating_sub(4 * boxes.len()),
         }
     }
@@ -121,7 +125,6 @@ fn count(text: &str, glyphs: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lines::ARROWS;
 
     fn expected(nodes: &[&str], arrows: usize) -> Expected {
         Expected { node_labels: nodes.iter().map(|label| vec![(*label).to_owned()]).collect(), edge_labels: Vec::new(), arrows }
@@ -131,7 +134,7 @@ mod tests {
     fn a_box_corners_are_not_bends_but_an_edge_corner_is() {
         let text = "┌───┐\n│ A ├─┐\n└───┘ │\n      ▾\n    ┌───┐\n    │ B │\n    └───┘\n";
 
-        let drawn = Drawn::of(text, 80, Some(&expected(&["A", "B"], 1)), ARROWS);
+        let drawn = Drawn::of(text, 80, Some(&expected(&["A", "B"], 1)), Kind::Flowchart);
 
         assert_eq!((drawn.bends, drawn.arrows, drawn.node_labels, drawn.rows, drawn.width), (1, 1, 2, 7, 9));
     }
@@ -140,7 +143,7 @@ mod tests {
     fn edges_merged_into_one_line_count_an_arrow_each_and_their_trunk_is_no_crossing() {
         let text = "┌───┐\n│ A ├───┐\n└───┘   │\n┌───┐   │  ┌───┐\n│ B ├───┼─▸│ D │\n└───┘   │  └───┘\n┌───┐   │\n│ C ├───┘\n└───┘";
 
-        let drawn = Drawn::of(text, 80, Some(&expected(&["A", "B", "C", "D"], 3)), ARROWS);
+        let drawn = Drawn::of(text, 80, Some(&expected(&["A", "B", "C", "D"], 3)), Kind::Flowchart);
 
         assert_eq!((drawn.arrows, drawn.crossings), (3, 0));
     }
@@ -149,7 +152,7 @@ mod tests {
     fn a_label_is_found_whatever_markup_the_drawing_keeps() {
         let expected = expected(&["Markdown:", "bolder", "two"], 0);
 
-        assert_eq!(Drawn::of("**Markdown**: <b>bold</b>er one<br/>two", 80, Some(&expected), ARROWS).node_labels, 3);
+        assert_eq!(Drawn::of("**Markdown**: <b>bold</b>er one<br/>two", 80, Some(&expected), Kind::Flowchart).node_labels, 3);
     }
 
     #[test]
@@ -159,14 +162,14 @@ mod tests {
 
     #[test]
     fn a_drawing_wider_than_allowed_does_not_fit() {
-        assert!(!Drawn::of("A ──▸ B", 6, None, ARROWS).fits);
+        assert!(!Drawn::of("A ──▸ B", 6, None, Kind::Flowchart).fits);
     }
 
     #[test]
     fn a_drawing_with_every_label_and_arrow_and_no_crossing_scores_full_marks() {
         let expected = expected(&["A", "B"], 1);
 
-        assert_eq!(Drawn::of("A ──▸ B", 80, Some(&expected), ARROWS).score(&expected), 100);
-        assert_eq!(Drawn::of("A ──┼─ C", 80, Some(&expected), ARROWS).score(&expected), 53);
+        assert_eq!(Drawn::of("A ──▸ B", 80, Some(&expected), Kind::Flowchart).score(&expected), 100);
+        assert_eq!(Drawn::of("A ──┼─ C", 80, Some(&expected), Kind::Flowchart).score(&expected), 53);
     }
 }

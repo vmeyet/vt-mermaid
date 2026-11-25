@@ -1,0 +1,22 @@
+{
+  "input": "er/e2e--diagrams-er-diagram-nightly-check-should-render-er-diagram-with-decimal-numbers-.mmd",
+  "expected": {"node_labels":6,"edge_labels":3,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":26,"rows":21,"area":546,"fits":true,"node_labels":6,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":89},
+      "100": {"status":"rendered","drawn":{"width":26,"rows":21,"area":546,"fits":true,"node_labels":6,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":89}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":63,"rows":12,"area":756,"fits":true,"node_labels":6,"edge_labels":3,"arrows":0,"crossings":0,"bends":6},"score":100},
+      "100": {"status":"rendered","drawn":{"width":63,"rows":12,"area":756,"fits":true,"node_labels":6,"edge_labels":3,"arrows":0,"crossings":0,"bends":6},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":48,"rows":10,"area":480,"fits":true,"node_labels":6,"edge_labels":3,"arrows":0,"crossings":0,"bends":2},"score":100},
+      "100": {"status":"refused","reason":"rendered diagram is 103 columns wide, exceeding the strict budget of 100","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":35,"rows":13,"area":455,"fits":true,"node_labels":6,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":24,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":35,"rows":13,"area":455,"fits":true,"node_labels":6,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":24,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

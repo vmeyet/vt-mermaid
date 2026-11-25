@@ -1,0 +1,22 @@
+{
+  "input": "er/e2e--diagrams-er-diagram-visual-check-entities-and-attributes-with-big-and-small-enti-5.mmd",
+  "expected": {"node_labels":5,"edge_labels":1,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":51,"rows":6,"area":306,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":83},
+      "100": {"status":"rendered","drawn":{"width":51,"rows":6,"area":306,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":83}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse er diagram: line 7: invalid syntax: \\\"EMPLOYEE { bool officer_of_firm }\\\"\"","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse er diagram: line 7: invalid syntax: \\\"EMPLOYEE { bool officer_of_firm }\\\"\"","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"rendered","drawn":{"width":73,"rows":7,"area":511,"fits":true,"node_labels":5,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100},
+      "100": {"status":"rendered","drawn":{"width":73,"rows":7,"area":511,"fits":true,"node_labels":5,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":33,"rows":18,"area":594,"fits":true,"node_labels":5,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":33,"rows":18,"area":594,"fits":true,"node_labels":5,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

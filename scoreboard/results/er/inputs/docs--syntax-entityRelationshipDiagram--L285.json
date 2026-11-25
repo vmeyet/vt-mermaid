@@ -1,0 +1,22 @@
+{
+  "input": "er/docs--syntax-entityRelationshipDiagram--L285.mmd",
+  "expected": {"node_labels":15,"edge_labels":3,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":73,"rows":21,"area":1533,"fits":true,"node_labels":12,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":89},
+      "100": {"status":"rendered","drawn":{"width":73,"rows":21,"area":1533,"fits":true,"node_labels":12,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":89}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":125,"rows":20,"area":2500,"fits":false,"node_labels":15,"edge_labels":3,"arrows":0,"crossings":2,"bends":6},"score":70},
+      "100": {"status":"rendered","drawn":{"width":125,"rows":20,"area":2500,"fits":false,"node_labels":15,"edge_labels":3,"arrows":0,"crossings":2,"bends":6},"score":70}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"MANUFACTURER only one to zero or more CAR : makes\"","score":0},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"MANUFACTURER only one to zero or more CAR : makes\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":77,"rows":48,"area":3696,"fits":true,"node_labels":15,"edge_labels":3,"arrows":0,"crossings":0,"bends":1},"score":100,"exact":{"crossings":0,"bends":1,"edge_cells":53,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":98,"rows":33,"area":3234,"fits":true,"node_labels":15,"edge_labels":3,"arrows":0,"crossings":0,"bends":1},"score":100,"exact":{"crossings":0,"bends":1,"edge_cells":30,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

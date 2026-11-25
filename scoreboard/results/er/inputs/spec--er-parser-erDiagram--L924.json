@@ -1,0 +1,21 @@
+{
+  "input": "er/spec--er-parser-erDiagram--L924.mmd",
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":""},
+      "100": {"status":"refused","reason":""}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse er diagram: line 2: invalid syntax: \\\"A xxx B : has\\\"\""},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse er diagram: line 2: invalid syntax: \\\"A xxx B : has\\\"\""}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"A xxx B : has\""},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"A xxx B : has\""}
+    },
+    "vt-mermaid": {
+      "80": {"status":"refused","reason":"the diagram does not parse: unexpected \":\" on line 2"},
+      "100": {"status":"refused","reason":"the diagram does not parse: unexpected \":\" on line 2"}
+    }
+  }
+}

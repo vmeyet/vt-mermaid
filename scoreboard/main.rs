@@ -1,6 +1,6 @@
 //! vt-mermaid's drawings measured against other text renderers: `cargo run --release --example scoreboard`.
 //!
-//! Options: `--kind sequence`, `state` or `class` measures that kind instead of flowcharts, `--sample <n>` runs one input in n,
+//! Options: `--kind sequence`, `state`, `class` or `er` measures that kind instead of flowcharts, `--sample <n>` runs one input in n,
 //! `--tools <a,b>` runs only those tools and keeps the others' last results, `--gallery <file.html>` writes the gallery
 //! there instead of `target/scoreboard/gallery.html` (`gallery-sequence.html` for sequence diagrams).
 //! [`README.md`](README.md) defines the metrics; `install.sh` installs the competitors.
@@ -121,7 +121,7 @@ fn default_gallery(kind: Kind) -> PathBuf {
     let target = std::env::var_os("CARGO_TARGET_DIR").map_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("target"), PathBuf::from);
     let name = match kind {
         Kind::Flowchart => "gallery.html".to_owned(),
-        Kind::Sequence | Kind::State | Kind::Class => format!("gallery-{}.html", kind.name()),
+        Kind::Sequence | Kind::State | Kind::Class | Kind::Er => format!("gallery-{}.html", kind.name()),
     };
     target.join("scoreboard").join(name)
 }
@@ -175,7 +175,7 @@ fn run_all(inputs: &[Input], tools: &[Tool], kind: Kind) -> io::Result<Vec<Done>
     .map(|done| done.into_iter().flatten().collect())
 }
 
-/// vt-mermaid measures its flowcharts, state and class diagrams exactly; a sequence diagram has only the counts read from its
+/// vt-mermaid measures its flowcharts, state, class and ER diagrams exactly; a sequence diagram has only the counts read from its
 /// text.
 fn run(job: Job, input: &Input, kind: Kind) -> io::Result<Done> {
     let run = job.tool.run(&input.source, job.width)?;
@@ -207,7 +207,7 @@ fn measure_in_process(width: u16) -> Result<(), Box<dyn Error>> {
 fn fresh_metrics(done: &[Done], input: usize, expected: Option<&Expected>, kind: Kind) -> BTreeMap<String, BTreeMap<u16, Metrics>> {
     let mut tools: BTreeMap<String, BTreeMap<u16, Metrics>> = BTreeMap::new();
     for done in done.iter().filter(|done| done.job.input == input) {
-        let metrics = Metrics::of(&done.run, done.job.width, expected, done.exact.clone(), kind.heads());
+        let metrics = Metrics::of(&done.run, done.job.width, expected, done.exact.clone(), kind);
         tools.entry(done.job.tool.name().to_owned()).or_default().insert(done.job.width, metrics);
     }
     tools

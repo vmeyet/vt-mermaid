@@ -16,6 +16,7 @@ pub(crate) enum Kind {
     Sequence,
     State,
     Class,
+    Er,
 }
 
 impl Kind {
@@ -26,6 +27,7 @@ impl Kind {
             Self::Sequence => "sequence",
             Self::State => "state",
             Self::Class => "class",
+            Self::Er => "er",
         }
     }
 
@@ -36,11 +38,12 @@ impl Kind {
             Self::Sequence => "sequence diagram",
             Self::State => "state diagram",
             Self::Class => "class diagram",
+            Self::Er => "ER diagram",
         }
     }
 
     pub(crate) fn named(name: &str) -> Option<Self> {
-        [Self::Flowchart, Self::Sequence, Self::State, Self::Class].into_iter().find(|kind| kind.name() == name)
+        [Self::Flowchart, Self::Sequence, Self::State, Self::Class, Self::Er].into_iter().find(|kind| kind.name() == name)
     }
 
     /// Its folder under `scoreboard/results/`: flowcharts were there first, at the top.
@@ -50,20 +53,29 @@ impl Kind {
             Self::Sequence => "sequence",
             Self::State => "state",
             Self::Class => "class",
+            Self::Er => "er",
         }
     }
 
-    /// The glyphs counted as heads: arrowheads, and for a class diagram its triangles and diamonds too.
+    /// The glyphs counted as heads: arrowheads, and for a class diagram its triangles and diamonds too; none for an ER
+    /// diagram, as every tool draws a crow's foot its own way.
     pub(crate) fn heads(self) -> &'static str {
         match self {
             Self::Flowchart | Self::Sequence | Self::State => ARROWS,
             Self::Class => CLASS_HEADS,
+            Self::Er => "",
         }
     }
 
     /// Whether vt-mermaid measures its drawings of this kind exactly, from their geometry.
     pub(crate) fn measured(self) -> bool {
-        matches!(self, Self::Flowchart | Self::State | Self::Class)
+        matches!(self, Self::Flowchart | Self::State | Self::Class | Self::Er)
+    }
+
+    /// Whether a crossing glyph counts only when lines join it on its four sides: a crow's foot draws its bars as `┼`
+    /// across a line.
+    pub(crate) fn crossings_joined_all_round(self) -> bool {
+        self == Self::Er
     }
 }
 
@@ -180,6 +192,34 @@ struct Note {
     text: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct Er {
+    entities: Vec<ErEntity>,
+    relationships: Vec<ErRelationship>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ErEntity {
+    label: String,
+    alias: String,
+    attributes: Vec<ErAttribute>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ErAttribute {
+    #[serde(rename = "type")]
+    kind: String,
+    name: String,
+    keys: Vec<String>,
+    comment: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ErRelationship {
+    #[serde(rename = "roleA")]
+    role: String,
+}
+
 /// Every diagram of `kind` the oracle accepted, by its path under `corpus/`.
 pub(crate) fn read(results: &Path, kind: Kind) -> Result<BTreeMap<String, Expected>, Box<dyn Error>> {
     let json = fs::read_to_string(results)?;
@@ -197,6 +237,9 @@ pub(crate) fn read(results: &Path, kind: Kind) -> Result<BTreeMap<String, Expect
         }
         Kind::Class => {
             serde_json::from_str::<Results<Class>>(&json)?.cases.into_iter().map(|(path, case)| (path, Expected::of_class(&case))).collect()
+        }
+        Kind::Er => {
+            serde_json::from_str::<Results<Er>>(&json)?.cases.into_iter().map(|(path, case)| (path, Expected::of_er(&case))).collect()
         }
     })
 }
@@ -245,6 +288,27 @@ impl Expected {
             node_labels: names.chain(members).chain(notes).filter(|words| !words.is_empty()).collect(),
             edge_labels: texts.filter(|words| !words.is_empty()).collect(),
             arrows: case.relations.iter().map(|relation| typed(&relation.type1) + typed(&relation.type2)).sum(),
+        }
+    }
+
+    /// An entity's alias, else its name, and each attribute's type, name, keys and comment are its labels; a
+    /// relationship's role is an edge label; no head is counted.
+    fn of_er(case: &Er) -> Self {
+        let names = case.entities.iter().map(|entity| words(if entity.alias.is_empty() { &entity.label } else { &entity.alias }));
+        let attributes = case.entities.iter().flat_map(|entity| {
+            entity.attributes.iter().map(|attribute| {
+                words(&format!("{} {} {} {}", attribute.kind, attribute.name, attribute.keys.join(" "), attribute.comment))
+            })
+        });
+        Self {
+            node_labels: names.chain(attributes).filter(|words| !words.is_empty()).collect(),
+            edge_labels: case
+                .relationships
+                .iter()
+                .map(|relationship| words(&relationship.role))
+                .filter(|words| !words.is_empty())
+                .collect(),
+            arrows: 0,
         }
     }
 

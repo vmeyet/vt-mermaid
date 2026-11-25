@@ -116,6 +116,16 @@ impl Rectangle {
     }
 }
 
+/// The crossing glyphs a line joins on each of their four sides.
+pub(crate) fn joined_crossings(grid: &[Vec<char>]) -> usize {
+    let joins = |row: usize, column: usize, way: u8| {
+        step(row, column, way).is_some_and(|(row, column)| ways(at(grid, row, column)) & opposite(way) != 0)
+    };
+    let crossing =
+        |row: usize, column: usize| CROSSINGS.contains(at(grid, row, column)) && WAYS.into_iter().all(|way| joins(row, column, way));
+    grid.iter().enumerate().map(|(row, cells)| (0..cells.len()).filter(|&column| crossing(row, column)).count()).sum()
+}
+
 /// Closed rectangles: a top-left corner whose row reaches a top-right corner, with sides down to the two bottom corners.
 pub(crate) fn boxes(grid: &[Vec<char>]) -> Vec<Rectangle> {
     let is = |row: usize, column: usize, glyphs: &str| glyphs.contains(at(grid, row, column));

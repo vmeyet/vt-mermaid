@@ -1,0 +1,22 @@
+{
+  "input": "er/e2e--diagrams-er-diagram-visual-check-an-er-diagram-with-unicode-text-without-htmllab.mmd",
+  "expected": {"node_labels":6,"edge_labels":0,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":55,"rows":9,"area":495,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":4},"score":83},
+      "100": {"status":"rendered","drawn":{"width":55,"rows":9,"area":495,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":4},"score":83}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":115,"rows":9,"area":1035,"fits":false,"node_labels":6,"edge_labels":0,"arrows":0,"crossings":0,"bends":4},"score":80},
+      "100": {"status":"rendered","drawn":{"width":115,"rows":9,"area":1035,"fits":false,"node_labels":6,"edge_labels":0,"arrows":0,"crossings":0,"bends":4},"score":80}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"_**testẽζ➕Ø😀㌕ぼ**_ {\"","score":0},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"_**testẽζ➕Ø😀㌕ぼ**_ {\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":64,"rows":16,"area":1024,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":4},"score":83,"exact":{"crossings":0,"bends":0,"edge_cells":0,"beside_nodes":0,"violations":["node _**testẽζ➕Ø😀㌕ぼ**_ has 4 label lines not drawn whole"]}},
+      "100": {"status":"rendered","drawn":{"width":64,"rows":16,"area":1024,"fits":true,"node_labels":4,"edge_labels":0,"arrows":0,"crossings":0,"bends":4},"score":83,"exact":{"crossings":0,"bends":0,"edge_cells":0,"beside_nodes":0,"violations":["node _**testẽζ➕Ø😀㌕ぼ**_ has 4 label lines not drawn whole"]}}
+    }
+  }
+}

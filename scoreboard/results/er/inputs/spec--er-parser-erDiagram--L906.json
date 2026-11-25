@@ -1,0 +1,22 @@
+{
+  "input": "er/spec--er-parser-erDiagram--L906.mmd",
+  "expected": {"node_labels":2,"edge_labels":1,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"","score":0},
+      "100": {"status":"refused","reason":"","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":31,"rows":4,"area":124,"fits":true,"node_labels":2,"edge_labels":1,"arrows":0,"crossings":0,"bends":2},"score":100},
+      "100": {"status":"rendered","drawn":{"width":31,"rows":4,"area":124,"fits":true,"node_labels":2,"edge_labels":1,"arrows":0,"crossings":0,"bends":2},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"HOUSE one to one ROOM : contains\"","score":0},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"HOUSE one to one ROOM : contains\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":9,"rows":13,"area":117,"fits":true,"node_labels":2,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":9,"rows":13,"area":117,"fits":true,"node_labels":2,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":8,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

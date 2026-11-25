@@ -1,0 +1,22 @@
+{
+  "input": "er/e2e--diagrams-er-diagram-nightly-check-should-render-er-diagram-with-u-character-in-e.mmd",
+  "expected": {"node_labels":5,"edge_labels":3,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":28,"rows":10,"area":280,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":81},
+      "100": {"status":"rendered","drawn":{"width":28,"rows":10,"area":280,"fits":true,"node_labels":3,"edge_labels":2,"arrows":0,"crossings":0,"bends":0},"score":81}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"refused","reason":"level=fatal msg=\"failed to parse er diagram: line 4: invalid syntax: \\\"PROJECT u--o{ TEAM_MEMBER : \\\\\\\"parent\\\\\\\"\\\"\"","score":0},
+      "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse er diagram: line 4: invalid syntax: \\\"PROJECT u--o{ TEAM_MEMBER : \\\\\\\"parent\\\\\\\"\\\"\"","score":0}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: invalid left-side cardinality \"u\" (expected ||, |o, }|, or }o) in \"PROJECT u--o{ TEAM_MEMBER : \\\"parent\\\"\"","score":0},
+      "100": {"status":"refused","reason":"parse error: invalid left-side cardinality \"u\" (expected ||, |o, }|, or }o) in \"PROJECT u--o{ TEAM_MEMBER : \\\"parent\\\"\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":29,"rows":23,"area":667,"fits":true,"node_labels":5,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":24,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":29,"rows":23,"area":667,"fits":true,"node_labels":5,"edge_labels":3,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":24,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

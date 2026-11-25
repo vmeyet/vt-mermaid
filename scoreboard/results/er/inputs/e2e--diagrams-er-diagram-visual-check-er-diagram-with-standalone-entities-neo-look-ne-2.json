@@ -1,0 +1,22 @@
+{
+  "input": "er/e2e--diagrams-er-diagram-visual-check-er-diagram-with-standalone-entities-neo-look-ne-2.mmd",
+  "expected": {"node_labels":6,"edge_labels":1,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":36,"rows":15,"area":540,"fits":true,"node_labels":5,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":86},
+      "100": {"status":"rendered","drawn":{"width":36,"rows":15,"area":540,"fits":true,"node_labels":5,"edge_labels":0,"arrows":0,"crossings":0,"bends":0},"score":86}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":52,"rows":11,"area":572,"fits":true,"node_labels":6,"edge_labels":1,"arrows":0,"crossings":0,"bends":2},"score":100},
+      "100": {"status":"rendered","drawn":{"width":52,"rows":11,"area":572,"fits":true,"node_labels":6,"edge_labels":1,"arrows":0,"crossings":0,"bends":2},"score":100}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"ACTIVE_ENTITY\"","score":0},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"ACTIVE_ENTITY\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":60,"rows":16,"area":960,"fits":true,"node_labels":6,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":11,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":60,"rows":16,"area":960,"fits":true,"node_labels":6,"edge_labels":1,"arrows":0,"crossings":0,"bends":0},"score":100,"exact":{"crossings":0,"bends":0,"edge_cells":11,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

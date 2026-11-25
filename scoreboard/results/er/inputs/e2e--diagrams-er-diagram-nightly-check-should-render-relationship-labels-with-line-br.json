@@ -1,0 +1,22 @@
+{
+  "input": "er/e2e--diagrams-er-diagram-nightly-check-should-render-relationship-labels-with-line-br.mmd",
+  "expected": {"node_labels":11,"edge_labels":4,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":27,"rows":22,"area":594,"fits":true,"node_labels":3,"edge_labels":4,"arrows":0,"crossings":0,"bends":10},"score":73},
+      "100": {"status":"rendered","drawn":{"width":27,"rows":22,"area":594,"fits":true,"node_labels":3,"edge_labels":4,"arrows":0,"crossings":0,"bends":10},"score":73}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":197,"rows":18,"area":3546,"fits":false,"node_labels":11,"edge_labels":4,"arrows":0,"crossings":7,"bends":10},"score":67},
+      "100": {"status":"rendered","drawn":{"width":197,"rows":18,"area":3546,"fits":false,"node_labels":11,"edge_labels":4,"arrows":0,"crossings":7,"bends":10},"score":67}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"p[Person] {\"","score":0},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"p[Person] {\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":80,"rows":20,"area":1600,"fits":true,"node_labels":11,"edge_labels":4,"arrows":0,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":73,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":90,"rows":19,"area":1710,"fits":true,"node_labels":11,"edge_labels":4,"arrows":0,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":82,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

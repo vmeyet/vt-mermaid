@@ -1,0 +1,22 @@
+{
+  "input": "er/e2e--diagrams-er-diagram-visual-check-entities-that-have-no-relationships-default.mmd",
+  "expected": {"node_labels":4,"edge_labels":2,"arrows":0},
+  "tools": {
+    "beautiful-mermaid": {
+      "80": {"status":"refused","reason":"","score":0},
+      "100": {"status":"refused","reason":"","score":0}
+    },
+    "mermaid-ascii": {
+      "80": {"status":"rendered","drawn":{"width":70,"rows":10,"area":700,"fits":true,"node_labels":4,"edge_labels":2,"arrows":0,"crossings":1,"bends":4},"score":93},
+      "100": {"status":"rendered","drawn":{"width":70,"rows":10,"area":700,"fits":true,"node_labels":4,"edge_labels":2,"arrows":0,"crossings":1,"bends":4},"score":93}
+    },
+    "mermaid-text": {
+      "80": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"DEAD_PARROT\"","score":0},
+      "100": {"status":"refused","reason":"parse error: relationship line missing `--` or `..` connector: \"DEAD_PARROT\"","score":0}
+    },
+    "vt-mermaid": {
+      "80": {"status":"rendered","drawn":{"width":45,"rows":16,"area":720,"fits":true,"node_labels":4,"edge_labels":2,"arrows":0,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":15,"beside_nodes":0,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":45,"rows":16,"area":720,"fits":true,"node_labels":4,"edge_labels":2,"arrows":0,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":15,"beside_nodes":0,"violations":[]}}
+    }
+  }
+}

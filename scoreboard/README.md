@@ -1,6 +1,6 @@
 # Scoreboard
 
-vt-mermaid's flowcharts, sequence, state and class diagrams measured against the other text renderers of Mermaid, on every diagram of those kinds in the [corpus](../corpus/README.md).
+vt-mermaid's flowcharts, sequence, state, class and ER diagrams measured against the other text renderers of Mermaid, on every diagram of those kinds in the [corpus](../corpus/README.md).
 A PR that changes the drawing reruns it and commits the results, so the diff says whether it got better or worse, and against whom.
 
 ## Run
@@ -12,12 +12,14 @@ cargo run --release --example scoreboard -- --tools vt-mermaid --gallery /tmp/ga
 cargo run --release --example scoreboard -- --kind sequence  # every sequence diagram, about 20 seconds
 cargo run --release --example scoreboard -- --kind state     # every state diagram, about 30 seconds
 cargo run --release --example scoreboard -- --kind class     # every class diagram, about 20 seconds
+cargo run --release --example scoreboard -- --kind er        # every ER diagram, about 20 seconds
 ```
 
 - `--kind sequence` measures sequence diagrams; their results go to `results/sequence/`, the gallery to `target/scoreboard/gallery-sequence.html`.
 - `--kind state` measures state diagrams; their results go to `results/state/`, the gallery to `target/scoreboard/gallery-state.html`.
   mermaid-ascii draws no state diagram, so it refuses all of them and the table of inputs every tool drew leaves it out.
 - `--kind class` does the same for class diagrams, in `results/class/`; mermaid-ascii draws none either.
+- `--kind er` does the same for ER diagrams, in `results/er/`; every tool draws them.
 
 - `--tools <a,b>` runs only those tools; the others keep their last results, read back from `results/inputs/`.
 - `--sample <n>` runs one flowchart in n, for a quick look; the summary says it is a sample.
@@ -50,6 +52,7 @@ vt-mermaid has no exact measures of a sequence diagram: its rows are read from t
 For a state diagram ([`oracle/results/state.json`](../oracle/results/state.json), 276 of 279), a state's label and descriptions, a composite state's title and a note's text are the node labels, the transitions' labels the edge labels, and the arrowheads one per transition; a start or end dot, a fork, a join and a choice show no label.
 Transitions merged into one line before an end dot count one arrowhead, the dot being no rectangle the line could end on.
 For a class diagram ([`oracle/results/class.json`](../oracle/results/class.json), 315 of 372), each class's name and each member's name, parameters and return type are node labels, a generic type's `~` read as a space since tools draw it `<T>`, with the notes; a relation's label and the texts at its ends are edge labels; each end with a relation type counts a head, and the heads read are the arrowheads with the triangles and diamonds class relations end on (`▵ ▹ ▿ ◃ ⬥ ⬦ ◆ ◇ ♦ ♢ ◊`), so a lollipop drawn `o` is not read.
+For an ER diagram ([`oracle/results/er.json`](../oracle/results/er.json), 312 of 315), each entity's alias, else its name, and each attribute's type, name, keys and comment are node labels, the relationships' roles the edge labels; no head is counted, as every tool draws a crow's foot its own way, so every drawing has its arrows right, and a crossing glyph counts only where lines join it on its four sides, as a crow's foot draws its bars as `┼` across a line.
 
 | Metric | Definition | Proxy? |
 |---|---|---|
@@ -83,7 +86,7 @@ Lines joined end to end are one network; a `┼` joins only the cells it lies be
 
 The second table per width compares layout only where it can: on the inputs every tool drew.
 
-vt-mermaid also measures its flowcharts, state and class diagrams from their own geometry (`vt_mermaid::measure`, behind the `measure` feature):
+vt-mermaid also measures its flowcharts, state, class and ER diagrams from their own geometry (`vt_mermaid::measure`, behind the `measure` feature):
 
 | Metric | Definition |
 |---|---|
@@ -97,7 +100,7 @@ Set beside the glyph counts in the same table, they also show how far the proxie
 
 ## Results
 
-- [`results/summary.md`](results/summary.md): the tables; [`results/sequence/summary.md`](results/sequence/summary.md) for sequence diagrams, [`results/state/summary.md`](results/state/summary.md) for state diagrams, [`results/class/summary.md`](results/class/summary.md) for class diagrams.
+- [`results/summary.md`](results/summary.md): the tables; [`results/sequence/summary.md`](results/sequence/summary.md) for sequence diagrams, [`results/state/summary.md`](results/state/summary.md) for state diagrams, [`results/class/summary.md`](results/class/summary.md) for class diagrams, [`results/er/summary.md`](results/er/summary.md) for ER diagrams.
 - `results/inputs/<input>.json`: per input, the oracle's counts and each tool's metrics per width, one line each; times are left out, so a rerun on the same code changes nothing but mermaid-text's unstable inputs.
 - The gallery is not committed: about 15 MB, past what belongs in git.
   It shows per input the source, then each tool's drawing side by side with its metrics, sortable by how far vt-mermaid's score is below the best competitor's.
