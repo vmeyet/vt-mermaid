@@ -24,3 +24,9 @@ vt-canvas ← vt-graph ← vt-mermaid
 ```
 
 vt-mermaid depends on vt-canvas and vt-graph, and on `mermaid-rs-renderer` for parsing and layout; no layout engine is written here.
+
+## Test corpus
+
+- [`corpus/`](corpus/README.md): Mermaid inputs harvested from the mermaid repo at a pinned release, one file per case, grouped by diagram kind.
+- [`oracle/`](oracle/README.md): a Node script that records what the pinned `mermaid` accepts (level A) and its flowchart and sequence dbs (level B), committed as JSON.
+- `examples/agreement.rs`: compares mermaid-rs-renderer's parser with the oracle per kind; a dev-only program, so the library's API never sees the dependency.
