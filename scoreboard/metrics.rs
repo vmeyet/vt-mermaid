@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::expected::Expected;
+use crate::expected::{Expected, without_markup};
 use crate::tool::{Run, Status};
 
 const CROSSINGS: &str = "┼╋╪╫╬┿╀╁╂╃╄╅╆╇╈╉╊";
@@ -67,7 +67,8 @@ impl Drawn {
         let grid: Vec<Vec<char>> = rows.iter().map(|row| row.chars().collect()).collect();
         let width = rows.iter().map(|row| vt_canvas::width(row)).max().unwrap_or(0);
         let all = rows.join("\n");
-        let found = |labels: &[Vec<String>]| labels.iter().filter(|words| words.iter().all(|word| all.contains(word.as_str()))).count();
+        let shown = without_markup(&all);
+        let found = |labels: &[Vec<String>]| labels.iter().filter(|words| words.iter().all(|word| shown.contains(word.as_str()))).count();
         let corners = count(&all, TOP_LEFT) + count(&all, TOP_RIGHT) + count(&all, BOTTOM_LEFT) + count(&all, BOTTOM_RIGHT);
         Self {
             width,
@@ -162,6 +163,13 @@ mod tests {
         let drawn = Drawn::of(text, 80, Some(&expected(&["A", "B"], 1)));
 
         assert_eq!((drawn.bends, drawn.arrows, drawn.node_labels, drawn.rows, drawn.width), (1, 1, 2, 7, 9));
+    }
+
+    #[test]
+    fn a_label_is_found_whatever_markup_the_drawing_keeps() {
+        let expected = expected(&["Markdown:", "bolder", "two"], 0);
+
+        assert_eq!(Drawn::of("**Markdown**: <b>bold</b>er one<br/>two", 80, Some(&expected)).node_labels, 3);
     }
 
     #[test]

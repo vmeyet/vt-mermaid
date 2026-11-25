@@ -46,12 +46,15 @@ Meaning comes from the oracle's level B results ([`oracle/results/flowchart.json
 | Timed out | Still running at the 10 second deadline | No |
 | Width, rows, area | Display columns of the widest row, rows, their product; trailing spaces and blank rows above and below are left out | No |
 | Fits | Width at most the columns asked for | No |
-| Node labels, edge labels | A label is present when every word of it, markup removed, appears somewhere in the output; the table averages the share found per input | Yes: words can match elsewhere, and a label cut with `⋯` counts as missing |
+| Node labels, edge labels | A label is present when every word of it appears somewhere in the output, markup removed from both the same way for every tool; the table averages the share found per input | Yes: words can match elsewhere, and a label cut with `⋯` counts as missing |
 | Arrows right | Arrowhead glyphs (`►▶▸▷→◄◀◂◁←▲▴△↑▼▾▽↓`) equal the oracle's arrowheads: one per `-->`, two per `<-->`, none for open, circle or cross ends | Yes |
 | Crossings | `┼`-like glyphs | Yes: an edge through a group frame draws one too |
 | Bends | Corner glyphs left once every closed rectangle's four corners are taken out | Yes: merged edges and odd shapes miscount |
 | Score | 0 when not rendered; else 50 × the share of labels found, 20 if it fits, 15 × how close the arrowheads are to the oracle's, 15 ÷ (1 + crossings); only for inputs whose oracle has a node | Yes: a weighting, made to rank, not to judge |
 | Median ms, p95 ms | Wall time of the child process over every input, start-up included: Node and ELK add about half a second to beautiful-mermaid | Noisy: the runs share all cores |
+
+Markup removed means: `<br>`, `<br/>` and `<br />` are a space, a tag (`<` with a letter or `/`, up to `>`) goes as the oracle's sanitised labels drop it, and so do `*` and backticks.
+The oracle's escaped characters (`&lt;`, `&amp;`…) are read back; a tool's are not, as a user would see them.
 
 The second table per width compares layout only where it can: on the inputs every tool drew.
 
