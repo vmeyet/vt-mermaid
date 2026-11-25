@@ -1,7 +1,9 @@
 //! Mermaid's flowchart grammar (`flow.jison`), read top-down: each rule a method, accepting what its LALR parser
 //! accepts and calling the db in the order its actions do.
 
-use super::db::{Db, Flowchart, Item, LinkData, Text, TextKind};
+use std::mem;
+
+use super::db::{Db, Flowchart, Header, Item, LinkData, Position, Text, TextKind};
 use super::lexer::{Kind, Token, line_of};
 use super::{Direction, Invalid, Limits, link};
 use crate::error::Error;
@@ -22,6 +24,46 @@ const ID: [Kind; 11] = [
 ];
 /// Tokens a label in brackets is made of.
 const TEXT: [Kind; 4] = [Kind::Text, Kind::TagStart, Kind::TagEnd, Kind::UnicodeText];
+/// Tokens a subgraph's header is made of.
+const HEADER: [Kind; 21] = [
+    Kind::Num,
+    Kind::NodeString,
+    Kind::Space,
+    Kind::Minus,
+    Kind::Amp,
+    Kind::UnicodeText,
+    Kind::Colon,
+    Kind::Mult,
+    Kind::Brkt,
+    Kind::Style,
+    Kind::LinkStyle,
+    Kind::ClassDef,
+    Kind::Class,
+    Kind::Click,
+    Kind::Graph,
+    Kind::Dir,
+    Kind::Subgraph,
+    Kind::End,
+    Kind::Down,
+    Kind::Up,
+    Kind::StartLink,
+];
+/// Tokens a style is made of.
+const STYLE: [Kind; 6] = [Kind::Num, Kind::NodeString, Kind::Colon, Kind::Space, Kind::Brkt, Kind::Style];
+/// Tokens a click's callback name is made of.
+const ALPHA_NUM: [Kind; 11] = [
+    Kind::Num,
+    Kind::UnicodeText,
+    Kind::NodeString,
+    Kind::Dir,
+    Kind::Down,
+    Kind::Minus,
+    Kind::Comma,
+    Kind::Colon,
+    Kind::Amp,
+    Kind::Brkt,
+    Kind::Mult,
+];
 const LINKS: [Kind; 3] = [Kind::Link, Kind::StartLink, Kind::LinkId];
 
 /// A bracket shape: the tokens before the label, then each closing and mermaid's name for the shape it makes.
@@ -50,7 +92,7 @@ const BRACKETS: [Bracket; 13] = [
 /// Reads `tokens` of `text` into the db; with `inherits_direction`, a subgraph without its own direction takes the
 /// flowchart's.
 pub(super) fn parse(text: &str, tokens: &[Token], limits: Limits, inherits_direction: bool) -> Result<Flowchart, Error> {
-    let mut parser = Parser { text, tokens, at: 0, db: Db::new(limits, inherits_direction) };
+    let mut parser = Parser { text, tokens, at: 0, db: Db::new(limits, inherits_direction), opened: 0 };
     parser.header()?;
     parser.document()?;
     Ok(parser.db.into_flowchart())
@@ -62,6 +104,14 @@ struct Parser<'a> {
     tokens: &'a [Token],
     at: usize,
     db: Db,
+    opened: usize,
+}
+
+/// A subgraph being read: its header and the items of the body around it.
+#[derive(Debug)]
+struct Open {
+    header: Header,
+    outer: Vec<Item>,
 }
 
 impl Parser<'_> {
@@ -144,12 +194,24 @@ impl Parser<'_> {
         }
     }
 
-    /// `document`: statements up to the end.
+    /// `document`: statements up to the end, a subgraph's body up to its `end`.
     fn document(&mut self) -> Result<(), Error> {
+        let mut open: Vec<Open> = Vec::new();
         let mut items: Vec<Item> = Vec::new();
         loop {
             match self.peek() {
-                Kind::Eof => return Ok(()),
+                Kind::Eof if open.is_empty() => return Ok(()),
+                Kind::End if !open.is_empty() => {
+                    self.advance();
+                    let Some(subgraph) = open.pop() else { continue };
+                    let id = self.db.add_subgraph(subgraph.header, mem::replace(&mut items, subgraph.outer))?;
+                    items.push(Item::Name(id));
+                }
+                Kind::Subgraph => {
+                    let header = self.subgraph_header()?;
+                    self.db.check_subgraph()?;
+                    open.push(Open { header, outer: mem::take(&mut items) });
+                }
                 Kind::Newline | Kind::Space | Kind::Semi => {
                     let name = self.advance().to_owned();
                     items.push(Item::Name(name));
@@ -166,6 +228,10 @@ impl Parser<'_> {
                 Kind::Direction(direction) => {
                     self.advance();
                     items.push(Item::Direction(direction));
+                }
+                Kind::Style | Kind::LinkStyle | Kind::ClassDef | Kind::Class | Kind::Click => {
+                    self.styling()?;
+                    self.separator()?;
                 }
                 _ => {
                     let nodes = self.vertex_statement()?;
@@ -186,6 +252,34 @@ impl Parser<'_> {
             Kind::Eof => Ok(()),
             _ => Err(self.unexpected()),
         }
+    }
+
+    /// `subgraph id`, `subgraph id[title]` or `subgraph "title"`, then a separator; mermaid fails on a bare
+    /// `subgraph` once it reaches its `end`.
+    fn subgraph_header(&mut self) -> Result<Header, Error> {
+        self.advance();
+        let opened = self.opened;
+        self.opened += 1;
+        if self.peek() != Kind::Space {
+            self.separator()?;
+            return Err(Invalid::UntitledSubgraph.into());
+        }
+        self.advance();
+        let id = match self.peek() {
+            Kind::Str => Text { value: self.advance().to_owned(), kind: TextKind::Text },
+            Kind::MdStr => Text { value: self.advance().to_owned(), kind: TextKind::Markdown },
+            _ => Text { value: self.joined(&HEADER)?, kind: TextKind::Text },
+        };
+        let title = if self.peek() == Kind::Sqs {
+            self.advance();
+            let title = self.text()?;
+            self.expect(Kind::Sqe)?;
+            Some(title)
+        } else {
+            None
+        };
+        self.separator()?;
+        Ok(Header { id, title, opened })
     }
 
     /// `vertexStatement`: nodes joined by links; its nodes listed the way mermaid lists them, the last group first.
@@ -326,6 +420,108 @@ impl Parser<'_> {
         };
         Ok(LinkData { link, text, id })
     }
+
+    /// `style`, `classDef`, `class`, `linkStyle` and `click` statements.
+    fn styling(&mut self) -> Result<(), Error> {
+        let keyword = self.peek();
+        self.advance();
+        if keyword == Kind::Click {
+            return self.click();
+        }
+        self.expect(Kind::Space)?;
+        if keyword == Kind::LinkStyle {
+            return self.link_style();
+        }
+        let id = self.joined(&ID)?;
+        self.expect(Kind::Space)?;
+        match keyword {
+            Kind::Style => {
+                let styles = self.styles()?;
+                self.db.add_styles(&id, styles)
+            }
+            Kind::ClassDef => {
+                let styles = self.styles()?;
+                self.db.add_class(&id, &styles);
+                Ok(())
+            }
+            _ => {
+                let class = self.joined(&ID)?;
+                self.db.set_class(&id, &class);
+                Ok(())
+            }
+        }
+    }
+
+    /// `linkStyle default|0,1 [interpolate curve] styles`.
+    fn link_style(&mut self) -> Result<(), Error> {
+        let positions = if self.peek() == Kind::Default {
+            self.advance();
+            vec![Position::Default]
+        } else {
+            let mut positions = vec![Position::Index(self.expect(Kind::Num)?.to_owned())];
+            while self.peek() == Kind::Comma {
+                self.advance();
+                positions.push(Position::Index(self.expect(Kind::Num)?.to_owned()));
+            }
+            positions
+        };
+        self.expect(Kind::Space)?;
+        if self.peek() == Kind::Interpolate {
+            self.advance();
+            self.expect(Kind::Space)?;
+            self.joined(&ALPHA_NUM)?;
+            self.db.style_links(&positions, &[])?;
+            if self.peek() != Kind::Space {
+                return Ok(());
+            }
+            self.advance();
+        }
+        let styles = self.styles()?;
+        self.db.style_links(&positions, &styles)
+    }
+
+    /// `stylesOpt`: styles separated by commas.
+    fn styles(&mut self) -> Result<Vec<String>, Error> {
+        let mut styles = vec![self.joined(&STYLE)?];
+        while self.peek() == Kind::Comma {
+            self.advance();
+            styles.push(self.joined(&STYLE)?);
+        }
+        Ok(styles)
+    }
+
+    /// `click id`, then a callback, a link or a function name, each with an optional tooltip and target.
+    fn click(&mut self) -> Result<(), Error> {
+        match self.peek() {
+            Kind::CallbackName => {
+                self.advance();
+                if self.peek() == Kind::CallbackArgs {
+                    self.advance();
+                }
+                self.optional_pair(Kind::Str);
+            }
+            Kind::Href | Kind::Str => {
+                if self.peek() == Kind::Href {
+                    self.advance();
+                }
+                self.expect(Kind::Str)?;
+                self.optional_pair(Kind::Str);
+                self.optional_pair(Kind::LinkTarget);
+            }
+            _ => {
+                self.joined(&ALPHA_NUM)?;
+                self.optional_pair(Kind::Str);
+            }
+        }
+        Ok(())
+    }
+
+    /// A space and a token of `kind`, read only when both are there.
+    fn optional_pair(&mut self, kind: Kind) {
+        if self.peek() == Kind::Space && self.peek_at(1) == kind {
+            self.at += 2;
+        }
+    }
 }
 
 /// `setDirection`: arrows name directions, `TD` is `TB`.
@@ -392,8 +588,30 @@ mod tests {
     }
 
     #[test]
+    fn a_subgraph_lists_each_statements_nodes_the_last_group_first() {
+        let flowchart = read("graph TD\n  subgraph one [The one]\n    direction LR\n    A --> B --> C\n    D\n  end\n");
+
+        let subgraph = &flowchart.subgraphs[0];
+        assert_eq!((subgraph.id.as_str(), subgraph.title.value.as_str(), subgraph.direction), ("one", "The one", Some(Direction::LR)));
+        assert_eq!(subgraph.nodes, ["C", "B", "A", "D"]);
+    }
+
+    #[test]
+    fn statements_that_style_nodes_are_read() {
+        let source = "graph TD\n  A --> B\n  classDef hot fill:#f00,stroke-width:2px\n  class A hot\n  style B fill:#0f0\n  linkStyle 0 stroke:red\n  click A callback \"tip\"\n";
+
+        assert_eq!(read(source).nodes.len(), 2);
+    }
+
+    #[test]
     fn what_mermaid_refuses_is_refused() {
-        let refused = ["graph TD\n  end\n", "graph TD\n  A[ \"a\" ]\n", "graph TD A-->B\n"];
+        let refused = [
+            "graph TD\n  end\n",
+            "graph TD\n  subgraph one\n  A\n",
+            "graph TD\n  subgraph\n  A\n  end\n",
+            "graph TD\n  A[ \"a\" ]\n",
+            "graph TD A-->B\n",
+        ];
 
         for source in refused {
             assert!(matches!(parse(source, LIMITS), Err(Error::Invalid { .. })), "{source:?}");

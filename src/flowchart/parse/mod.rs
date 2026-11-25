@@ -69,6 +69,8 @@ pub(super) enum Invalid {
     Unrecognized { line: usize },
     /// The grammar allows no such token there.
     Unexpected { line: usize, found: String },
+    /// A `subgraph` with neither id nor title.
+    UntitledSubgraph,
     /// A block names a shape mermaid does not have.
     Shape { name: String },
     /// A block is not the YAML mermaid reads.
@@ -89,6 +91,7 @@ impl fmt::Display for Invalid {
             Self::NoDiagram => write!(f, "no diagram type matches the text"),
             Self::Unrecognized { line } => write!(f, "unrecognized text on line {line}"),
             Self::Unexpected { line, found } => write!(f, "unexpected {found} on line {line}"),
+            Self::UntitledSubgraph => write!(f, "a subgraph has neither an id nor a title"),
             Self::Shape { name } => write!(f, "no such shape: {name}"),
             Self::ShapeData => write!(f, "a node's @{{ }} block is not valid YAML"),
             Self::LinkStyle { index } => write!(f, "linkStyle {index} names no edge"),
