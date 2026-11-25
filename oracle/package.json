@@ -1,0 +1,11 @@
+{
+  "name": "vt-mermaid-oracle",
+  "private": true,
+  "type": "module",
+  "description": "Parses the corpus with mermaid in Node and records what it accepts.",
+  "license": "MIT",
+  "dependencies": {
+    "jsdom": "31.0.1",
+    "mermaid": "12.3.0"
+  }
+}
