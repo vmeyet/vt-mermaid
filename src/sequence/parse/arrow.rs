@@ -1,4 +1,4 @@
-//! A message's arrow: how mermaid writes it and its name in mermaid's db.
+//! A message's arrow: how mermaid writes it, its name in mermaid's db, and what its ends are drawn with.
 
 /// A message's arrow, named after mermaid's line types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,6 +29,16 @@ pub(in crate::sequence) enum Arrow {
     SolidBottomReverse,
     StickTopReverse,
     StickBottomReverse,
+}
+
+/// What an end of a message is drawn with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(in crate::sequence) enum Tip {
+    /// The line simply stops: mermaid's open arrow, `->`.
+    None,
+    /// Every arrow head, filled, open or half: text has one triangle.
+    Arrow,
+    Cross,
 }
 
 impl Arrow {
@@ -127,6 +137,31 @@ impl Arrow {
             Self::StickBottomReverse => "STICK_ARROW_BOTTOM_REVERSE",
         }
     }
+
+    /// Whether the line is dotted, mermaid's reply.
+    pub(in crate::sequence) fn is_dotted(self) -> bool {
+        self.lexeme().contains("--")
+    }
+
+    /// What the end at the receiver is drawn with.
+    pub(in crate::sequence) fn tip(self) -> Tip {
+        match self {
+            Self::SolidOpen | Self::DottedOpen => Tip::None,
+            Self::SolidCross | Self::DottedCross => Tip::Cross,
+            _ if self.points_back() => Tip::None,
+            _ => Tip::Arrow,
+        }
+    }
+
+    /// What the end at the sender is drawn with: an arrow for a two-way message or a half arrow written head first.
+    pub(in crate::sequence) fn back_tip(self) -> Tip {
+        if self.points_back() || matches!(self, Self::BidirectionalSolid | Self::BidirectionalDotted) { Tip::Arrow } else { Tip::None }
+    }
+
+    /// The half arrows written head first, `/|-` and the like, point at the sender.
+    fn points_back(self) -> bool {
+        self.lexeme().starts_with(['/', '\\'])
+    }
 }
 
 #[cfg(test)]
@@ -139,5 +174,14 @@ mod tests {
             let shadowing = Arrow::ALL[..index].iter().find(|earlier| arrow.lexeme().starts_with(earlier.lexeme()));
             assert_eq!(shadowing, None, "{arrow:?}");
         }
+    }
+
+    #[test]
+    fn the_ends_follow_the_arrow_written() {
+        assert_eq!((Arrow::Solid.tip(), Arrow::Solid.back_tip()), (Tip::Arrow, Tip::None));
+        assert_eq!((Arrow::DottedOpen.tip(), Arrow::DottedOpen.is_dotted()), (Tip::None, true));
+        assert_eq!((Arrow::BidirectionalDotted.tip(), Arrow::BidirectionalDotted.back_tip()), (Tip::Arrow, Tip::Arrow));
+        assert_eq!((Arrow::StickTopReverse.tip(), Arrow::StickTopReverse.back_tip()), (Tip::None, Tip::Arrow));
+        assert_eq!(Arrow::DottedCross.tip(), Tip::Cross);
     }
 }

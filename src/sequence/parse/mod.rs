@@ -11,7 +11,7 @@ mod lexer;
 
 use std::fmt;
 
-pub(super) use arrow::Arrow;
+pub(super) use arrow::{Arrow, Tip};
 pub(super) use db::{Item, Placement, Sequence};
 pub(super) use lexer::Block;
 

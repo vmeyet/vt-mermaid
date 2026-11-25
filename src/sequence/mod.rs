@@ -4,7 +4,7 @@
 mod diagram;
 #[expect(dead_code, reason = "laid out and drawn by later changes")]
 mod layout;
-#[cfg_attr(not(any(test, feature = "fuzz")), expect(dead_code, reason = "read by the drawing, which lands next"))]
+#[cfg_attr(not(test), expect(dead_code, reason = "read by the drawing, which lands next"))]
 mod parse;
 
 /// How much a sequence diagram holds once read.
