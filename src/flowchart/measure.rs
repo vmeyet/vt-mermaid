@@ -8,14 +8,12 @@ use vt_canvas::{Canvas, GlyphSet, Point, Rect};
 
 use super::diagram::{self, Diagram};
 use super::route::Route;
-use super::{Drawing, Engine, render};
+use super::{Drawing, render};
 use crate::error::Error;
 
 /// How a drawing is laid out, counted on its own geometry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Measures {
-    /// The drawing, a string a row.
-    pub rows: Vec<String>,
     /// Places where two edges cross.
     pub crossings: usize,
     /// Turns along all edges, their ends left out.
@@ -27,11 +25,10 @@ pub struct Measures {
 }
 
 /// Draws `source` as [`render`](crate::render) does, then measures the drawing.
-pub fn measure(source: &str, max_width: u16, engine: Engine) -> Result<Measures, Error> {
-    let drawing = render(source, max_width, engine)?;
-    let diagram = Diagram::parsed(source)?;
+pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
+    let drawing = render(source, max_width)?;
+    let diagram = Diagram::read(source)?;
     Ok(Measures {
-        rows: rows(&drawing.canvas),
         crossings: crossings(&drawing),
         bends: bends(&drawing),
         edge_cells: drawing.routes.iter().flat_map(|route| &route.cells).collect::<HashSet<_>>().len(),
@@ -168,7 +165,7 @@ mod tests {
 
     fn measured(path: &str) -> Measures {
         let source = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();
-        measure(&source, 400, Engine::Layered).unwrap()
+        measure(&source, 400).unwrap()
     }
 
     #[test]
@@ -183,8 +180,8 @@ mod tests {
 
     #[test]
     fn a_straight_edge_has_no_bend_and_each_edge_round_two_corners_has_two() {
-        let straight = measure("flowchart TB\n  A --> B", 80, Engine::Layered).unwrap();
-        let cornered = measure("flowchart TB\n  A --> B & C", 80, Engine::Layered).unwrap();
+        let straight = measure("flowchart TB\n  A --> B", 80).unwrap();
+        let cornered = measure("flowchart TB\n  A --> B & C", 80).unwrap();
 
         assert_eq!((straight.bends, straight.edge_cells, straight.violations.len()), (0, 4, 0));
         assert_eq!(cornered.bends, 4);

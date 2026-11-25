@@ -12,12 +12,25 @@ use self::coordinate::Apart;
 use self::layered::{Fold, Gaps, Link, Position, Span};
 use super::diagram::{Diagram, End};
 use super::shape::{self, Size};
-use super::snap::{MARGIN, Placement};
 
+/// Empty cells kept around the drawing so edges can go round it.
+pub(super) const MARGIN: u16 = 3;
 /// Cells between a group's frame and what it holds, on every side.
 const GROUP_PADDING: i32 = 2;
 /// A frame title sits between `┌─ ` and ` ─┐`.
 const TITLE_FRAME: i32 = 6;
+
+/// Where every node and group lands, in grid cells, [`MARGIN`] included.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct Placement {
+    pub(super) nodes: Vec<Rect>,
+    pub(super) groups: Vec<Rect>,
+    /// The room kept for each edge's label, when it has one.
+    pub(super) labels: Vec<Option<Rect>>,
+    /// Whether the edges of one side of a block share a trunk even when the side has room for each.
+    pub(super) shares_ways: bool,
+    pub(super) size: Size,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Item {
@@ -309,7 +322,7 @@ mod tests {
     use super::*;
 
     fn placed(source: &str, fit: Fit) -> (Diagram, Placement) {
-        let diagram = Diagram::parsed(source).unwrap();
+        let diagram = Diagram::read(source).unwrap();
         let placement = place(&diagram, fit);
         (diagram, placement)
     }

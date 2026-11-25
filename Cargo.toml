@@ -24,14 +24,8 @@ harness = false
 name = "corpus"
 harness = false
 
-# mmdr's layout runs about ten times slower unoptimised, which made the spike snapshots take seconds each.
-# Its debug assertions grade its own layout and panic on geometry vt-mermaid redraws anyway; release builds have none.
-[profile.dev.package.mermaid-rs-renderer]
-opt-level = 3
-debug-assertions = false
-
 [dependencies]
-# Parses and lays out the diagram; vt-mermaid snaps its coordinates to the grid.
+# Parses the diagram; vt-mermaid lays it out itself.
 mermaid-rs-renderer = { version = "0.3.1", default-features = false }
 vt-canvas = { path = "../vt-canvas" }
 

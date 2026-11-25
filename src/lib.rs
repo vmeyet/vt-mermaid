@@ -14,12 +14,6 @@ mod flowchart;
 pub use error::{Error, MAX_AREA, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
 pub use vt_canvas::{Canvas, GlyphSet, Role, Run};
 
-/// The layout to draw with, for the scoreboard to compare them: not part of the API.
-#[cfg(feature = "measure")]
-#[doc(hidden)]
-pub use flowchart::Engine;
-#[cfg(not(feature = "measure"))]
-use flowchart::Engine;
 /// Exact measures of a flowchart drawing, for the scoreboard: not part of the API, behind the `measure` feature.
 #[cfg(feature = "measure")]
 #[doc(hidden)]
@@ -27,5 +21,5 @@ pub use flowchart::measure::{Measures, measure};
 
 /// Draws the flowchart in `source` no wider than `max_width` columns.
 pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
-    flowchart::render(source, max_width, Engine::Layered).map(|drawing| drawing.canvas)
+    flowchart::render(source, max_width).map(|drawing| drawing.canvas)
 }

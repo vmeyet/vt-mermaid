@@ -6,8 +6,8 @@ use std::collections::BTreeMap;
 use vt_canvas::{Direction, Point, Rect};
 
 use super::diagram::{Diagram, End};
+use super::layout::Placement;
 use super::route::opposite;
-use super::snap::Placement;
 
 /// A border cell an edge goes through and the direction it travels there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -237,7 +237,7 @@ mod tests {
     const BLOCK: Rect = Rect::new(10, 10, 9, 3);
 
     fn joins_of(source: &str, fit: Fit) -> Vec<Joins> {
-        let diagram = Diagram::parsed(source).unwrap();
+        let diagram = Diagram::read(source).unwrap();
         joins(&diagram, &layout::place(&diagram, fit))
     }
 

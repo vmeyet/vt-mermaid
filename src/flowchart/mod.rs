@@ -1,4 +1,4 @@
-//! Flowcharts: mmdr's layout snapped to the grid, edges routed on it, then drawn.
+//! Flowcharts: laid out in layers on the grid, edges routed on it, then drawn.
 
 mod attributes;
 mod diagram;
@@ -14,16 +14,14 @@ mod parse;
 mod port;
 mod route;
 mod shape;
-mod snap;
 mod source;
 
 use vt_canvas::{Canvas, Rect};
 
 use crate::error::{Error, MAX_AREA, MAX_SOURCE_BYTES};
 use diagram::Diagram;
-use layout::Fit;
+use layout::{Fit, MARGIN, Placement};
 use route::Route;
-use snap::{MARGIN, Placement, Room};
 
 /// A drawn flowchart and where each part went, in canvas cells.
 #[derive(Debug, Clone)]
@@ -36,37 +34,18 @@ pub(crate) struct Drawing {
     labels: Vec<Option<Rect>>,
 }
 
-/// Columns a folded drawing gets, in eighths of the width allowed: edges going round the blocks take the rest.
-const FOLDS: [i32; 3] = [8, 7, 6];
 /// Columns a folded layout gets, in eighths of the width allowed, then a packed one.
 const FOLDED: [i32; 5] = [8, 7, 6, 5, 4];
 const PACKED: [i32; 3] = [8, 6, 4];
 
-/// What places the blocks of a flowchart.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(not(feature = "measure"), expect(unreachable_pub, reason = "only the scoreboard picks the layout, through the measure feature"))]
-pub enum Engine {
-    /// mermaid-rs-renderer's layout, snapped to the grid.
-    Snapped,
-    /// vt-mermaid's own layers, in cells.
-    Layered,
-}
-
-/// Draws `source` in the first form that fits `max_width` and whose edges find a path: with the whole room the
-/// layout leaves, then half of it, then none and its wide ranks folded; each time as written, then turned top-down
-/// when it flows sideways.
-pub(crate) fn render(source: &str, max_width: u16, engine: Engine) -> Result<Drawing, Error> {
+/// Draws `source` in the first form that fits `max_width` and whose edges find a path: laid out loose, then tight,
+/// then with its wide ranks folded narrower and narrower, then packed without room for the links passing a rank;
+/// each time as written, then turned top-down when it flows sideways.
+pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
     if source.len() > MAX_SOURCE_BYTES {
         return Err(Error::TooLong { bytes: source.len() });
     }
-    match engine {
-        Engine::Snapped => snapped(source, max_width),
-        Engine::Layered => layered(source, max_width),
-    }
-}
-
-fn layered(source: &str, max_width: u16) -> Result<Drawing, Error> {
-    let written = Diagram::parsed(source)?;
+    let written = Diagram::read(source)?;
     let turned = written.flows_sideways().then(|| written.turned_top_down());
     let columns = |eighths: i32| i32::from(max_width) * eighths / 8;
     let folded = FOLDED.map(|eighths| Fit::Folded { columns: columns(eighths) });
@@ -81,22 +60,6 @@ fn layered(source: &str, max_width: u16) -> Result<Drawing, Error> {
         drawing = drawn(diagram, layout::place(diagram, fit), max_width);
     }
     drawing
-}
-
-fn snapped(source: &str, max_width: u16) -> Result<Drawing, Error> {
-    let written = Diagram::read(source)?;
-    let as_laid_out = drawn(&written, snap::place(&written, Room::Whole), max_width);
-    if !may_fit_tighter(&as_laid_out) {
-        return as_laid_out;
-    }
-    let turned = if written.flows_sideways() { Some(Diagram::read_top_down(source)?) } else { None };
-    let folds = FOLDS.map(|eighths| Room::Folded { columns: i32::from(max_width) * eighths / 8 });
-    let tighter = std::iter::once(Room::Half)
-        .chain(folds)
-        .flat_map(|room| std::iter::once(&written).chain(&turned).map(move |diagram| (diagram, room)));
-    turned.iter().map(|diagram| (diagram, Room::Whole)).chain(tighter).fold(as_laid_out, |drawing, (diagram, room)| {
-        if may_fit_tighter(&drawing) { drawn(diagram, snap::place(diagram, room), max_width) } else { drawing }
-    })
 }
 
 /// A drawing too wide, or one whose blocks leave an edge no path, may come out with the blocks placed another way.
@@ -131,10 +94,6 @@ mod tests {
     use super::measure::{rows, violations};
     use super::*;
 
-    fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
-        super::render(source, max_width, Engine::Layered)
-    }
-
     /// Wide enough for every spike flowchart: the comparison with mermaid-text judges the width.
     const WIDTH: u16 = 400;
 
@@ -163,7 +122,7 @@ mod tests {
             .into_iter()
             .flat_map(|(name, source)| {
                 let drawing = render(&source, WIDTH).unwrap();
-                violations(&Diagram::parsed(&source).unwrap(), &drawing).into_iter().map(move |found| format!("{name}: {found}"))
+                violations(&Diagram::read(&source).unwrap(), &drawing).into_iter().map(move |found| format!("{name}: {found}"))
             })
             .collect();
 
@@ -196,9 +155,9 @@ mod tests {
         assert_eq!(check_area(MAX_AREA / 100 + 1, 100), Err(Error::TooLarge { width: MAX_AREA / 100 + 1, height: 100 }));
     }
 
-    /// Found by fuzzing: each one failed an assertion mmdr only checks in debug builds.
+    /// Found by fuzzing: each one failed an assertion mmdr's layout only checked in debug builds.
     #[test]
-    fn layouts_mmdr_grades_as_flawed_are_still_drawn() {
+    fn sources_that_broke_the_layout_before_are_still_drawn() {
         let sources = ["graph T\nsubgraph \"1.fir\na\n end\nsubgraph 2. second\nd", "h-/\nA B;subgraph ol styl a brokken;cc"];
 
         for source in sources {
@@ -282,7 +241,7 @@ mod tests {
     #[test]
     fn a_flowchart_too_dense_to_fold_is_packed_without_room_for_its_links() {
         let source = include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-life-choices.mmd");
-        let diagram = Diagram::parsed(source).unwrap();
+        let diagram = Diagram::read(source).unwrap();
 
         let folded = drawn(&diagram, layout::place(&diagram, Fit::Folded { columns: 40 }), 80);
         let packed = render(source, 80);

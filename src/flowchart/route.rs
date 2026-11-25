@@ -7,8 +7,8 @@ use std::ops::Range;
 use vt_canvas::{Direction, Point, Rect};
 
 use super::diagram::{Diagram, End};
+use super::layout::Placement;
 use super::port::{self, Join, Joins};
-use super::snap::Placement;
 use crate::error::Error;
 
 /// A step; every other price is counted in steps, and what is left under one step only tells equal paths apart.
@@ -781,7 +781,7 @@ mod tests {
     }
 
     fn routed(source: &str) -> (Routed, Vec<String>) {
-        let diagram = Diagram::parsed(source).unwrap();
+        let diagram = Diagram::read(source).unwrap();
         let placement = layout::place(&diagram, Fit::Loose);
         let routed = route(&diagram, &placement).unwrap();
         let labels = vec![None; routed.routes.len()];

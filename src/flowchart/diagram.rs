@@ -1,24 +1,18 @@
-//! The flowchart as mermaid-rs-renderer parses and lays it out: the only module that sees the crate.
+//! The flowchart as mermaid-rs-renderer parses it: the only module that sees the crate.
 
 use std::cmp::Reverse;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
-use mermaid_rs_renderer::{self as mmdr, DiagramKind, EdgeStyle, Graph, LayoutConfig, NodeShape, Theme};
+use mermaid_rs_renderer::{self as mmdr, DiagramKind, EdgeStyle, Graph, NodeShape};
 use vt_canvas::{Direction, LineKind, Shape};
 
 use super::attributes;
 use super::invisible::{self, Link};
 use super::label::Label;
-use super::shape;
 use super::source;
 use crate::error::{Error, MAX_EDGES, MAX_NODES};
 
-/// Pixels of a column once mmdr measures a stand-in label: `n` is 0.512 em at its 16 px measuring size.
-pub(super) const PX_PER_COLUMN: f32 = 8.192;
-/// Pixels of a row: one label line, 1.5 times the same 16 px.
-pub(super) const PX_PER_ROW: f32 = 24.0;
-
-/// What mmdr knows of a flowchart, its positions in layout pixels and its text already cut into lines.
+/// What mmdr knows of a flowchart, its text already cut into lines.
 #[derive(Debug, Clone)]
 pub(super) struct Diagram {
     pub(super) nodes: Vec<Node>,
@@ -34,9 +28,6 @@ pub(super) struct Node {
     pub(super) id: String,
     pub(super) label: Label,
     pub(super) shape: Shape,
-    /// Top-left corner in layout pixels.
-    pub(super) x: f32,
-    pub(super) y: f32,
     /// The innermost group holding it.
     pub(super) group: Option<usize>,
     /// Its place among the nodes in the order the source first names them.
@@ -92,18 +83,9 @@ struct InvisibleLink {
 }
 
 impl Diagram {
-    /// Parses and lays out `source`, refusing anything but a flowchart within [`MAX_NODES`] and [`MAX_EDGES`].
+    /// Parses `source`, refusing anything but a flowchart within [`MAX_NODES`] and [`MAX_EDGES`].
     pub(super) fn read(source: &str) -> Result<Self, Error> {
-        let parsed = parse(source)?;
-        let positions = layout(&parsed, &labels(&parsed));
-        Ok(Self::new(&parsed, &positions))
-    }
-
-    /// Parses `source` like [`read`](Self::read) and leaves every node at the origin, for a layout that needs no
-    /// pixels.
-    pub(super) fn parsed(source: &str) -> Result<Self, Error> {
-        let parsed = parse(source)?;
-        Ok(Self::new(&parsed, &unplaced(&parsed.graph)))
+        Ok(Self::new(&parse(source)?))
     }
 
     /// Its ranks and those of its groups going down where they go sideways.
@@ -113,27 +95,15 @@ impl Diagram {
         Self { groups, flow: turned(self.flow), ..self.clone() }
     }
 
-    /// Like [`read`](Self::read), its ranks and those of its groups going down where the source says sideways: a
-    /// left-to-right flowchart too wide for the terminal often fits once turned.
-    pub(super) fn read_top_down(source: &str) -> Result<Self, Error> {
-        let parsed = parse(source)?;
-        let subgraphs =
-            parsed.graph.subgraphs.into_iter().map(|subgraph| mmdr::Subgraph { direction: subgraph.direction.map(top_down), ..subgraph });
-        let graph = Graph { direction: top_down(parsed.graph.direction), subgraphs: subgraphs.collect(), ..parsed.graph };
-        let parsed = Parsed { graph, ..parsed };
-        let positions = layout(&parsed, &labels(&parsed));
-        Ok(Self::new(&parsed, &positions))
-    }
-
     /// Whether its ranks, or those of one of its groups, go left or right.
     pub(super) fn flows_sideways(&self) -> bool {
         let sideways = |flow: Direction| matches!(flow, Direction::Left | Direction::Right);
         sideways(self.flow) || self.groups.iter().any(|group| sideways(group.flow))
     }
 
-    fn new(parsed: &Parsed, positions: &BTreeMap<String, (f32, f32)>) -> Self {
+    fn new(parsed: &Parsed) -> Self {
         let graph = &parsed.graph;
-        let nodes = nodes(graph, &labels(parsed), positions);
+        let nodes = nodes(graph, &labels(parsed));
         let groups = groups(graph, &nodes);
         let nodes = with_innermost_groups(nodes, graph, &groups);
         let ends = Ends { graph, nodes: &nodes, groups: &groups };
@@ -191,10 +161,10 @@ fn labels(parsed: &Parsed) -> HashMap<&str, (Label, Shape)> {
     parsed.graph.nodes.iter().map(|(id, node)| (id.as_str(), (Label::wrapped(&node.label), shape(id, node)))).collect()
 }
 
-/// Every node the layout would place, at the origin: the graph's own and the ends edges name without declaring.
-fn unplaced(graph: &Graph) -> BTreeMap<String, (f32, f32)> {
+/// Every node's id: the graph's own and the ends edges name without declaring.
+fn ids(graph: &Graph) -> BTreeSet<&str> {
     let ends = graph.edges.iter().flat_map(|edge| [&edge.from, &edge.to]);
-    graph.nodes.keys().chain(ends).map(|id| (id.clone(), (0.0, 0.0))).collect()
+    graph.nodes.keys().chain(ends).map(String::as_str).collect()
 }
 
 /// Rewrites what mmdr misreads before it reads the source, then finds the nodes each invisible link joins.
@@ -221,7 +191,7 @@ fn ends(link: &Link) -> Option<InvisibleLink> {
     Some(InvisibleLink { from, to })
 }
 
-/// Invisible links count as edges: mmdr lays them out.
+/// Invisible links count as edges: the layout ranks their ends as it does an edge's.
 fn check_bounds(graph: &Graph, invisible: usize) -> Result<(), Error> {
     if graph.kind != DiagramKind::Flowchart {
         return Err(Error::Unsupported);
@@ -256,13 +226,6 @@ fn shape_of(shape: NodeShape) -> Shape {
     }
 }
 
-fn top_down(direction: mmdr::Direction) -> mmdr::Direction {
-    match direction {
-        mmdr::Direction::LeftRight | mmdr::Direction::RightLeft => mmdr::Direction::TopDown,
-        vertical => vertical,
-    }
-}
-
 fn direction(direction: mmdr::Direction) -> Direction {
     match direction {
         mmdr::Direction::TopDown => Direction::Down,
@@ -272,103 +235,32 @@ fn direction(direction: mmdr::Direction) -> Direction {
     }
 }
 
-/// Top-left corners of the visible nodes, in layout pixels.
-///
-/// mmdr lays out a stand-in graph whose boxes are the nodes' cell sizes in `n`s, so its pixels map to cells and it
-/// never measures text with the system fonts, which would make the drawing depend on the machine.
-fn layout(parsed: &Parsed, labels: &HashMap<&str, (Label, Shape)>) -> BTreeMap<String, (f32, f32)> {
-    let graph = &parsed.graph;
-    let mut stand_in = graph.clone();
-    // mmdr adds a node for an edge end it does not know, as a subgraph's name: add it first, to give it a stand-in.
-    let unknown: Vec<String> =
-        graph.edges.iter().flat_map(|edge| [&edge.from, &edge.to]).filter(|id| !graph.nodes.contains_key(*id)).cloned().collect();
-    for id in unknown {
-        stand_in.ensure_node(&id, None, None);
-    }
-    for (id, node) in &mut stand_in.nodes {
-        let (label, shape) = label_and_shape(labels, id);
-        node.label = stand_in_node(&label, shape);
-        node.shape = NodeShape::Rectangle;
-    }
-    for edge in &mut stand_in.edges {
-        edge.label = edge.label.as_deref().map(|text| stand_in_lines(Label::single_line(text).width, 1));
-        (edge.start_label, edge.end_label) = (None, None);
-    }
-    stand_in.edges.extend(parsed.invisible.iter().map(stand_in_edge));
-    for subgraph in &mut stand_in.subgraphs {
-        subgraph.label = stand_in_lines(Label::single_line(&subgraph.label).width, 1);
-    }
-    let layout = mmdr::compute_layout(&stand_in, &Theme::modern(), &config(graph.direction));
-    layout.nodes.into_iter().filter(|(_, node)| !node.hidden).map(|(id, node)| (id, (node.x, node.y))).collect()
-}
-
 /// A node mmdr added for an edge end is a box named after its id.
 fn label_and_shape(labels: &HashMap<&str, (Label, Shape)>, id: &str) -> (Label, Shape) {
     labels.get(id).cloned().unwrap_or_else(|| (Label::wrapped(id), Shape::Rectangle))
 }
 
-/// The `n`s filling the space inside a node's border.
-fn stand_in_node(label: &Label, shape: Shape) -> String {
-    let size = shape::size(shape, label);
-    stand_in_lines(size.width.saturating_sub(4), size.height.saturating_sub(2))
-}
-
-fn stand_in_edge(link: &InvisibleLink) -> mmdr::Edge {
-    mmdr::Edge {
-        from: link.from.clone(),
-        to: link.to.clone(),
-        label: None,
-        start_label: None,
-        end_label: None,
-        directed: true,
-        arrow_start: false,
-        arrow_end: false,
-        arrow_start_kind: None,
-        arrow_end_kind: None,
-        start_decoration: None,
-        end_decoration: None,
-        style: EdgeStyle::Solid,
-    }
-}
-
-fn stand_in_lines(columns: u16, rows: u16) -> String {
-    vec!["n".repeat(usize::from(columns)); usize::from(rows.max(1))].join("<br/>")
-}
-
-/// Padding of one row and two columns around a label, gaps between nodes as wide as the snap's.
-fn config(direction: mmdr::Direction) -> LayoutConfig {
-    let vertical = matches!(direction, mmdr::Direction::TopDown | mmdr::Direction::BottomTop);
-    let (rank_spacing, node_spacing) = if vertical { (3.0 * PX_PER_ROW, 4.0 * PX_PER_COLUMN) } else { (6.0 * PX_PER_COLUMN, PX_PER_ROW) };
-    LayoutConfig {
-        fast_text_metrics: true,
-        max_label_width_chars: 1_000,
-        node_padding_x: 2.0 * PX_PER_COLUMN,
-        node_padding_y: PX_PER_ROW,
-        rank_spacing,
-        node_spacing,
-        ..LayoutConfig::default()
-    }
-}
-
-fn nodes(graph: &Graph, labels: &HashMap<&str, (Label, Shape)>, positions: &BTreeMap<String, (f32, f32)>) -> Vec<Node> {
-    let anchors: HashSet<&str> = graph.subgraphs.iter().filter_map(|subgraph| anchor(subgraph, positions)).collect();
-    positions
-        .iter()
-        .filter(|(id, _)| !anchors.contains(id.as_str()))
-        .map(|(id, &(x, y))| {
+/// The nodes in the order of their ids, but for those that only stand for a group an edge names.
+fn nodes(graph: &Graph, labels: &HashMap<&str, (Label, Shape)>) -> Vec<Node> {
+    let ids = ids(graph);
+    let anchors: HashSet<&str> = graph.subgraphs.iter().filter_map(|subgraph| anchor(subgraph, &ids)).collect();
+    ids.iter()
+        .filter(|id| !anchors.contains(*id))
+        .map(|&id| {
             let (label, shape) = label_and_shape(labels, id);
             let order = graph.node_order.get(id).copied().unwrap_or(usize::MAX);
-            Node { id: id.clone(), label, shape, x, y, group: None, order }
+            Node { id: id.to_owned(), label, shape, group: None, order }
         })
         .collect()
 }
 
-/// The node mmdr adds for a subgraph an edge names, as `subgraph_anchor_id` picks it.
-fn anchor<'a>(subgraph: &'a mmdr::Subgraph, positions: &BTreeMap<String, (f32, f32)>) -> Option<&'a str> {
+/// The name of a subgraph an edge ends on, which is no node: its id first, then its title, unless it holds a node
+/// of that name.
+fn anchor<'a>(subgraph: &'a mmdr::Subgraph, ids: &BTreeSet<&str>) -> Option<&'a str> {
     [subgraph.id.as_deref(), Some(subgraph.label.as_str())]
         .into_iter()
         .flatten()
-        .find(|id| positions.contains_key(*id) && !subgraph.nodes.iter().any(|member| member == id))
+        .find(|id| ids.contains(*id) && !subgraph.nodes.iter().any(|member| member == id))
 }
 
 /// A group's parent is the smallest other group holding all its nodes, and more of them or its name; of two groups
@@ -502,28 +394,6 @@ mod tests {
     }
 
     #[test]
-    fn a_column_of_layout_pixels_is_one_label_character() {
-        let diagram = Diagram::read("flowchart TB\n  A[nnnnnnnnnn]\n  B[nnnnnnnnnn]\n  C --> A & B").unwrap();
-
-        let (a, b) = (node(&diagram, "A"), node(&diagram, "B"));
-        let between = (b.x - a.x).abs() / PX_PER_COLUMN - 14.0;
-
-        assert!((between - 4.0).abs() < 0.5, "{between} columns between siblings");
-    }
-
-    #[test]
-    fn a_row_of_layout_pixels_is_one_label_line() {
-        let rank_distance = |label: &str| {
-            let diagram = Diagram::read(&format!("flowchart TB\n  A[{label}] --> B")).unwrap();
-            (node(&diagram, "B").y - node(&diagram, "A").y) / PX_PER_ROW
-        };
-
-        let two_more_lines = rank_distance("one<br>two<br>three") - rank_distance("one");
-
-        assert!((two_more_lines - 2.0).abs() < 0.1, "{two_more_lines} rows for two more lines");
-    }
-
-    #[test]
     fn a_nested_group_has_its_parent_and_inherits_its_direction() {
         let source = "flowchart LR\n  subgraph Outer\n    direction TB\n    subgraph Inner\n      A --> B\n    end\n    C\n  end";
 
@@ -587,14 +457,6 @@ mod tests {
 
         assert_eq!(ids(&diagram), ["A", "B"]);
         assert!(diagram.edges.is_empty());
-    }
-
-    #[test]
-    fn an_invisible_link_places_its_nodes_one_rank_apart() {
-        let diagram = Diagram::read("flowchart LR\n  A ~~~ B").unwrap();
-
-        assert!(node(&diagram, "B").x > node(&diagram, "A").x);
-        assert!((node(&diagram, "B").y - node(&diagram, "A").y).abs() < 1.0);
     }
 
     #[test]
@@ -664,25 +526,10 @@ mod tests {
     }
 
     #[test]
-    fn a_diagram_parsed_without_a_layout_has_the_same_parts_at_the_origin() {
-        let source = "flowchart LR\n  subgraph one\n    A\n  end\n  B --> one\n  B -->|x| C ~~~ D";
-
-        let (placed, parsed) = (Diagram::read(source).unwrap(), Diagram::parsed(source).unwrap());
-
-        assert_eq!(ids(&parsed), ids(&placed));
-        assert_eq!(
-            parsed.edges.iter().map(|edge| (edge.from, edge.to)).collect::<Vec<_>>(),
-            [(End::Node(1), End::Group(0)), (End::Node(1), End::Node(2))]
-        );
-        assert_eq!(parsed.invisible, placed.invisible);
-        assert!(parsed.nodes.iter().all(|node| (node.x, node.y) == (0.0, 0.0)));
-    }
-
-    #[test]
     fn turning_top_down_changes_only_the_flows_going_sideways() {
         let source = "flowchart LR\n  subgraph Up\n    direction BT\n    A --> B\n  end\n  subgraph Side\n    C --> D\n  end";
 
-        let turned = Diagram::parsed(source).unwrap().turned_top_down();
+        let turned = Diagram::read(source).unwrap().turned_top_down();
 
         assert_eq!(turned.flow, Direction::Down);
         assert_eq!(turned.groups.iter().map(|group| group.flow).collect::<Vec<_>>(), [Direction::Up, Direction::Down]);

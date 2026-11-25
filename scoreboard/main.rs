@@ -178,7 +178,7 @@ fn exact(source: &str, width: u16) -> io::Result<Option<Exact>> {
 fn measure_in_process(width: u16) -> Result<(), Box<dyn Error>> {
     let mut source = String::new();
     io::stdin().read_to_string(&mut source)?;
-    let measures = vt_mermaid::measure(&source, width, tool::engine())?;
+    let measures = vt_mermaid::measure(&source, width)?;
     let exact =
         Exact { crossings: measures.crossings, bends: measures.bends, edge_cells: measures.edge_cells, violations: measures.violations };
     println!("{}", serde_json::to_string(&exact)?);
