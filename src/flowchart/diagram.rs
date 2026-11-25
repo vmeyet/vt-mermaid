@@ -7,7 +7,7 @@ use vt_canvas::{Direction, LineKind};
 use super::parse::{self, Arrow, Flowchart, Limits, Stroke};
 use super::shape;
 use crate::error::Error;
-use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, Head, Invisible, Node};
+use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Invisible, Node};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
 
@@ -69,6 +69,7 @@ fn groups(subgraphs: &[&parse::Subgraph], flow: Direction) -> Vec<Group> {
             title: Label::single_line(&subgraph.title.shown()),
             parent: parents[index],
             flow: flow_of(index),
+            kind: GroupKind::Framed,
         })
         .collect()
 }

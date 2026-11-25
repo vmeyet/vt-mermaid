@@ -87,8 +87,15 @@ fn drawn(diagram: &Diagram, placement: Placement, max_width: u16) -> Result<Draw
     let routed = route::route(diagram, &placement)?;
     let labels = edge_label::place(diagram, &routed.routes, &routed.grid, &placement.labels);
     let end_labels = edge_label::place_ends(diagram, &routed.routes, &routed.grid, &labels);
-    let parts =
-        draw::Parts { nodes: placement.nodes, groups: placement.groups, titles: routed.titles, routes: routed.routes, labels, end_labels };
+    let parts = draw::Parts {
+        nodes: placement.nodes,
+        groups: placement.groups,
+        titles: routed.titles,
+        dividers: placement.dividers,
+        routes: routed.routes,
+        labels,
+        end_labels,
+    };
     draw::draw(diagram, parts, max_width)
 }
 

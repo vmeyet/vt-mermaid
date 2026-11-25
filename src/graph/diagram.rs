@@ -60,6 +60,18 @@ pub(crate) struct Group {
     pub(crate) parent: Option<usize>,
     /// The way its ranks go: its own direction, else its parent's.
     pub(crate) flow: Direction,
+    pub(crate) kind: GroupKind,
+}
+
+/// How a group shows what it holds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum GroupKind {
+    /// A frame with its title: a subgraph, a composite state.
+    Framed,
+    /// A concurrent region of the group holding it: no frame, a dashed line between it and the regions beside it.
+    Region,
+    /// No frame and no room around: it only keeps its blocks together, as a state and its notes.
+    Bare,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

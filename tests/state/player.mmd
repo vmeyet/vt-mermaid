@@ -1,0 +1,19 @@
+stateDiagram-v2
+    [*] --> Stopped
+    Stopped --> Playing : play
+    note right of Stopped : nothing loaded yet
+    state Playing {
+        [*] --> Buffering
+        Buffering --> Streaming : ready
+        Streaming --> Buffering : stall
+        --
+        [*] --> Muted
+        Muted --> Audible : unmute
+        Audible --> Muted : mute
+    }
+    Playing --> Stopped : stop
+    note left of Playing
+        two regions run
+        at the same time
+    end note
+    Playing --> [*]

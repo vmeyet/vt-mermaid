@@ -77,6 +77,7 @@ mermaid-rs-renderer's parser, which it replaces, accepts and refuses 908 of them
 - Invisible links (`~~~`): the layout ranks their ends as it does an edge's; they are never routed or drawn.
 - Compartments: a node may hold lines under its label, each list in a compartment below a rule (`├───┤`), from the left; flowcharts have none, class and ER diagrams draw their members and attributes so.
 - Shapes: vt-canvas draws each outline (`Canvas::shape`), so every glyph follows the glyph set.
+  A group is framed with its title, a concurrent region without a frame (dashed lines between regions), or bare, without a frame or room around, only keeping its blocks together (`graph::diagram::GroupKind`).
   A node is a figure (`graph::diagram::Figure`): an outline around its label, a marker on one cell (`Canvas::marker`) or a heavy bar across the flow of its group, both without their label; every edge joins a marker's cell, from any side, and a bar's cells each way across it.
   A shape a node's brackets or its `@{ shape: … }` block names maps to the closest one, `doc`, `flag` or any name without a close match to a rectangle; `((text))` is a circle, `(((text)))` a double circle; only a pointed head draws an arrow.
   A node named like a subgraph is that subgraph, as mermaid merges them; a subgraph whose id an edge names inside another subgraph moves into it, as mermaid draws it.
@@ -149,7 +150,8 @@ Every pattern runs in one pass over the text: no regex, no backtracking on the s
   `●` and `◇` would be East Asian ambiguous; `⬤ ◉ ⬥` are one column wide everywhere.
 - A composite state is a frame with its title, flowing its own `direction`, top-down when it has none, as mermaid lays it out; a transition naming it ends on its frame.
 - Transitions point at their target; their labels are one line of at most 60 columns.
-- Notes and concurrent regions come next: notes are left out, regions drawn as frames without a title.
+- Concurrent regions follow one another along their composite state's flow, linked unseen in turn, each a group without a frame (`GroupKind::Region`), and a dashed line runs across the frame in the middle of the gap between two of them, meeting its sides (`├╌╌┤`); edges cross it only at a right angle.
+- A note is rounded, beside its state: the state and its notes stand in a group without a frame or room around it (`GroupKind::Bare`), flowing right, the note linked to its state by a dashed line without a head, on the left for `left of`; when the drawing is too wide, the ladder turns that group top-down and the note goes under its state.
 
 ## Class diagrams
 

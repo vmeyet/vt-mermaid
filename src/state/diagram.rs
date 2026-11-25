@@ -1,5 +1,6 @@
 //! The nodes and edges mermaid's state renderer gets, turned into the graph drawn: states, dots, choices and bars as
-//! nodes, composite states as framed groups.
+//! nodes, composite states as framed groups, their concurrent regions as groups split by dashed lines, and each state
+//! with notes in a bare group with them, laid out beside it.
 
 use std::collections::HashMap;
 
@@ -7,7 +8,7 @@ use vt_canvas::{Direction, LineKind, Marker, Shape};
 
 use super::parse::{self, Limits, Shape as Kind};
 use crate::error::Error;
-use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, Head, Node};
+use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Invisible, Node};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
 use crate::source::entity;
@@ -25,16 +26,18 @@ pub(super) fn read(source: &str) -> Result<Diagram, Error> {
 enum Becomes {
     Node(usize),
     Group(usize),
+    /// A note's group, standing for the bare group of the state the note is about.
+    NoteGroup,
     Nothing,
 }
 
-/// Notes are left out for now, and so are their groups and links.
 fn graph(state: &parse::Diagram) -> Diagram {
+    let notes = noted_states(state);
     let mut becomes: Vec<Becomes> = Vec::with_capacity(state.nodes.len());
     let (mut nodes, mut groups) = (Vec::new(), Vec::new());
     for node in &state.nodes {
         becomes.push(match node.shape {
-            Some(Kind::NoteGroup | Kind::Note) => Becomes::Nothing,
+            Some(Kind::NoteGroup) => Becomes::NoteGroup,
             Some(Kind::Divider) if !node.group => Becomes::Nothing,
             _ if node.group => {
                 groups.push(group(node));
@@ -47,38 +50,89 @@ fn graph(state: &parse::Diagram) -> Diagram {
         });
     }
     let index: HashMap<&str, Becomes> = state.nodes.iter().map(|node| node.id.as_str()).zip(becomes.iter().copied()).collect();
-    for (node, becomes) in state.nodes.iter().zip(&becomes) {
-        let parent = node.parent.as_deref().and_then(|parent| match index.get(parent)? {
-            Becomes::Group(group) => Some(*group),
-            Becomes::Node(_) | Becomes::Nothing => None,
+    let mut bare: HashMap<&str, usize> = HashMap::new();
+    for &id in notes.keys() {
+        bare.insert(id, groups.len());
+        groups.push(Group {
+            id: format!("{id} notes"),
+            title: Label::default(),
+            parent: None,
+            flow: Direction::Right,
+            kind: GroupKind::Bare,
         });
+    }
+    let parent_of = |node: &parse::Node| -> Option<usize> {
+        let parent = node.parent.as_deref()?;
+        match index.get(parent)? {
+            Becomes::Group(group) => Some(*group),
+            Becomes::NoteGroup => {
+                notes.iter().find(|(_, held)| held.contains(&node.id.as_str())).and_then(|(state, _)| bare.get(state).copied())
+            }
+            Becomes::Node(_) | Becomes::Nothing => None,
+        }
+    };
+    for (node, becomes) in state.nodes.iter().zip(&becomes) {
+        let parent = parent_of(node);
+        let held = bare.get(node.id.as_str()).copied();
         match *becomes {
-            Becomes::Node(index) => nodes[index].group = parent,
-            Becomes::Group(index) => groups[index].parent = parent,
-            Becomes::Nothing => {}
+            Becomes::Node(index) => nodes[index].group = held.or(parent),
+            Becomes::Group(index) => groups[index].parent = held.or(parent),
+            Becomes::NoteGroup | Becomes::Nothing => {}
+        }
+        if let Some(held) = held {
+            groups[held].parent = parent;
         }
     }
     let end = |id: &str| match index.get(id)? {
         Becomes::Node(node) => Some(End::Node(*node)),
         Becomes::Group(group) => Some(End::Group(*group)),
-        Becomes::Nothing => None,
+        Becomes::NoteGroup | Becomes::Nothing => None,
     };
     let edges = state.edges.iter().filter_map(|edge| Some(self::edge(end(&edge.start)?, end(&edge.end)?, edge))).collect();
-    Diagram { nodes, groups, edges, invisible: Vec::new(), flow: direction(state.direction), wrap: Wrap::wide(LongWords::Break) }
+    let invisible = regions_in_turn(&groups);
+    Diagram { nodes, groups, edges, invisible, flow: direction(state.direction), wrap: Wrap::wide(LongWords::Break) }
+}
+
+/// Each concurrent region linked to the next of its composite state, unseen, so they follow one another along its
+/// flow and each divider runs across the whole frame.
+fn regions_in_turn(groups: &[Group]) -> Vec<Invisible> {
+    let regions: Vec<usize> = (0..groups.len()).filter(|&index| groups[index].kind == GroupKind::Region).collect();
+    regions
+        .iter()
+        .enumerate()
+        .filter_map(|(at, &region)| {
+            let next = regions[at + 1..].iter().find(|&&next| groups[next].parent == groups[region].parent)?;
+            Some(Invisible { from: End::Group(region), to: End::Group(*next) })
+        })
+        .collect()
+}
+
+/// Each state with notes, and the ids of its notes, from the links between them.
+fn noted_states(state: &parse::Diagram) -> HashMap<&str, Vec<&str>> {
+    let is_note = |id: &str| state.nodes.iter().any(|node| node.id == id && node.shape == Some(Kind::Note));
+    let mut notes: HashMap<&str, Vec<&str>> = HashMap::new();
+    for edge in state.edges.iter().filter(|edge| edge.note) {
+        let (state, note) = if is_note(&edge.start) { (&edge.end, &edge.start) } else { (&edge.start, &edge.end) };
+        notes.entry(state.as_str()).or_default().push(note.as_str());
+    }
+    notes
 }
 
 fn group(node: &parse::Node) -> Group {
+    let kind = if node.shape == Some(Kind::Divider) { GroupKind::Region } else { GroupKind::Framed };
+    let title = if kind == GroupKind::Framed { Label::single_line(&entity::decoded(&node.label)) } else { Label::default() };
     let flow = node.direction.map_or(Direction::Down, direction);
-    Group { id: node.id.clone(), title: Label::single_line(&entity::decoded(&node.label)), parent: None, flow }
+    Group { id: node.id.clone(), title, parent: None, flow, kind }
 }
 
-/// A state is a rectangle with its descriptions as lines under its label.
+/// A state is a rectangle with its descriptions as lines under its label; a note is rounded.
 fn node(node: &parse::Node, shape: Option<Kind>, order: usize, bar: u16) -> Node {
     let figure = match shape {
         Some(Kind::Start) => Figure::Marker(Marker::Dot),
         Some(Kind::End) => Figure::Marker(Marker::RingedDot),
         Some(Kind::Choice) => Figure::Marker(Marker::Diamond),
         Some(Kind::Fork | Kind::Join) => Figure::Bar { length: bar },
+        Some(Kind::Note) => Figure::Shape(Shape::Rounded),
         _ => Figure::Shape(Shape::Rectangle),
     };
     let text = std::iter::once(&node.label).chain(&node.descriptions).map(|line| entity::decoded(line)).collect::<Vec<_>>().join("<br>");
@@ -93,7 +147,7 @@ fn bar_length(state: &parse::Diagram, id: &str) -> u16 {
     u16::try_from(2 * arriving.max(leaving) + 1).unwrap_or(u16::MAX).max(SHORTEST_BAR)
 }
 
-/// A transition points at its target.
+/// A transition points at its target; a note's link has no head and is dashed.
 fn edge(from: End, to: End, edge: &parse::Edge) -> Edge {
     let shown = entity::decoded(&edge.label);
     Edge {
@@ -102,9 +156,9 @@ fn edge(from: End, to: End, edge: &parse::Edge) -> Edge {
         label: (!shown.is_empty()).then(|| Label::single_line(&shown)),
         start_label: None,
         end_label: None,
-        kind: LineKind::Light,
+        kind: if edge.note { LineKind::Dashed } else { LineKind::Light },
         start: Head::None,
-        end: Head::Arrow,
+        end: if edge.note { Head::None } else { Head::Arrow },
     }
 }
 
@@ -152,6 +206,33 @@ mod tests {
         let diagram = read("stateDiagram-v2\nstate j <<join>>\nA --> j\nB --> j\nC --> j\nj --> D\n");
 
         assert_eq!(diagram.nodes[0].figure, Figure::Bar { length: 7 });
+    }
+
+    #[test]
+    fn a_state_with_notes_stands_with_them_in_a_bare_group_flowing_sideways() {
+        let diagram = read("stateDiagram-v2\nstate Outer {\n  A --> B\n  note right of A : hi\n}\n");
+
+        let bare = diagram.groups.iter().position(|group| group.kind == GroupKind::Bare).unwrap();
+        let held: Vec<&str> = diagram.nodes.iter().filter(|node| node.group == Some(bare)).map(|node| node.id.as_str()).collect();
+        assert_eq!(held, ["A", "A----note-1"]);
+        assert_eq!((diagram.groups[bare].flow, diagram.groups[bare].parent), (Direction::Right, Some(0)));
+        assert_eq!(diagram.edges[1].kind, LineKind::Dashed);
+        assert_eq!(diagram.edges[1].end, Head::None);
+    }
+
+    #[test]
+    fn concurrent_regions_follow_one_another_inside_their_composite_state() {
+        let diagram = read("stateDiagram-v2\nstate A {\n  B\n  --\n  C\n  --\n  D\n}\n");
+
+        let kinds: Vec<(GroupKind, Option<usize>)> = diagram.groups.iter().map(|group| (group.kind, group.parent)).collect();
+        assert_eq!(
+            kinds,
+            [(GroupKind::Framed, None), (GroupKind::Region, Some(0)), (GroupKind::Region, Some(0)), (GroupKind::Region, Some(0))]
+        );
+        assert_eq!(
+            diagram.invisible,
+            [Invisible { from: End::Group(1), to: End::Group(2) }, Invisible { from: End::Group(2), to: End::Group(3) }]
+        );
     }
 
     #[test]

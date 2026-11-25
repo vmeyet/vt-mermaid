@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use vt_canvas::{Canvas, GlyphSet, Point, Rect};
 
 use super::Drawing;
-use super::diagram::{self, Diagram};
+use super::diagram::{self, Diagram, GroupKind};
 use super::route::Route;
 
 /// How a drawing is laid out, counted on its own geometry.
@@ -103,6 +103,17 @@ fn inside(inner: Rect, outer: Rect) -> bool {
         && inner.y + inner.height < outer.y + outer.height
 }
 
+/// Whether `group`, drawn on `outer`, holds `inner`: inside its frame, or within its sides when it has none.
+fn held(diagram: &Diagram, group: usize, inner: Rect, outer: Rect) -> bool {
+    if diagram.groups[group].kind == GroupKind::Framed {
+        return inside(inner, outer);
+    }
+    outer.x <= inner.x
+        && outer.y <= inner.y
+        && inner.x + inner.width <= outer.x + outer.width
+        && inner.y + inner.height <= outer.y + outer.height
+}
+
 fn disjoint(first: Rect, second: Rect) -> bool {
     first.x + first.width <= second.x
         || second.x + second.width <= first.x
@@ -126,7 +137,7 @@ pub(crate) fn violations(diagram: &Diagram, drawing: &Drawing) -> Vec<String> {
         if missing > 0 {
             found.push(format!("node {} has {missing} label lines not drawn whole", node.id));
         }
-        if let Some(group) = node.group.filter(|&group| !inside(node_rect, drawing.groups[group])) {
+        if let Some(group) = node.group.filter(|&group| !held(diagram, group, node_rect, drawing.groups[group])) {
             found.push(format!("node {} is outside its group {}", node.id, diagram.groups[group].id));
         }
         for (other, &other_rect) in drawing.nodes.iter().enumerate().skip(index + 1) {
@@ -136,7 +147,7 @@ pub(crate) fn violations(diagram: &Diagram, drawing: &Drawing) -> Vec<String> {
         }
     }
     for (group, &group_rect) in diagram.groups.iter().zip(&drawing.groups) {
-        if let Some(parent) = group.parent.filter(|&parent| !inside(group_rect, drawing.groups[parent])) {
+        if let Some(parent) = group.parent.filter(|&parent| !held(diagram, parent, group_rect, drawing.groups[parent])) {
             found.push(format!("group {} is outside its parent {}", group.id, diagram.groups[parent].id));
         }
     }
@@ -169,7 +180,8 @@ pub(crate) fn violations(diagram: &Diagram, drawing: &Drawing) -> Vec<String> {
     }
     let labels: Vec<Rect> = drawing.labels.iter().flatten().copied().collect();
     for (index, &label) in labels.iter().enumerate() {
-        let on_node = drawing.nodes.iter().chain(&drawing.groups).any(|&rect| !disjoint(label, rect) && !inside(label, rect));
+        let frames = diagram.groups.iter().zip(&drawing.groups).filter(|(group, _)| group.kind == GroupKind::Framed).map(|(_, rect)| rect);
+        let on_node = drawing.nodes.iter().chain(frames).any(|&rect| !disjoint(label, rect) && !inside(label, rect));
         if on_node || labels[index + 1..].iter().any(|&other| !disjoint(label, other)) {
             found.push(format!("the label at ({}, {}) overlaps a node, a frame or a label", label.x, label.y));
         }

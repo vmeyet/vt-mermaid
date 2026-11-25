@@ -1,0 +1,15 @@
+---
+source: src/state/mod.rs
+expression: "rows(&render_with(&source, Settings::new(100)).unwrap()).join(\"\\n\")"
+---
+                                                       ╭────────────────────────────────╮
+                    ┌───────────────────────────┐      │ Important information! You can │
+                    │ The state with a note +,- ├╌╌╌╌╌╌┤           write +,-            │
+                    └─────────────┬─────────────┘      │             notes.             │
+                                  │                    ╰────────────────────────────────╯
+                              With +,-                                                   
+                                  │                                                      
+                                  ▾                                                      
+╭──────────────────────╮      ┌────────┐                                                 
+│ This is the note +,- ├╌╌╌╌╌╌┤ State2 │                                                 
+╰──────────────────────╯      └────────┘

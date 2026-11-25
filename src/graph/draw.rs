@@ -1,8 +1,9 @@
 use vt_canvas::{Canvas, Corner, Frame, LineKind, Point, Rect, Role};
 
 use super::Drawing;
-use super::diagram::{Diagram, Edge, Head};
+use super::diagram::{Diagram, Edge, GroupKind, Head};
 use super::edge_label::EndLabels;
+use super::layout::Divider;
 use super::route::{Route, opposite};
 use super::shape;
 use crate::error::Error;
@@ -14,6 +15,7 @@ pub(super) struct Parts {
     pub(super) groups: Vec<Rect>,
     /// Where each group's title goes on its frame, a line cell and a space each side of it included.
     pub(super) titles: Vec<Rect>,
+    pub(super) dividers: Vec<Divider>,
     pub(super) routes: Vec<Route>,
     pub(super) labels: Vec<Option<Rect>>,
     pub(super) end_labels: Vec<EndLabels>,
@@ -29,8 +31,11 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
     }
     let mut canvas = Canvas::new(bounds.width, bounds.height)
         .map_err(|_canvas_error| Error::TooLarge { width: usize::from(bounds.width), height: usize::from(bounds.height) })?;
-    for rect in &parts.groups {
+    for (_, rect) in diagram.groups.iter().zip(&parts.groups).filter(|(group, _)| group.kind == GroupKind::Framed) {
         canvas.frame(*rect, Frame { kind: LineKind::Light, corner: Corner::Rounded, title: None, role: Role::Group });
+    }
+    for divider in &parts.dividers {
+        canvas.line(divider.from, divider.to, LineKind::Dashed, Role::Group).unwrap_or_default();
     }
     for (node, rect) in diagram.nodes.iter().zip(&parts.nodes) {
         shape::draw(&mut canvas, *rect, node.figure, &node.label, &node.compartments);
@@ -99,6 +104,7 @@ fn moved(parts: Parts, bounds: Rect) -> Parts {
         nodes: parts.nodes.into_iter().map(rect).collect(),
         groups: parts.groups.into_iter().map(rect).collect(),
         titles: parts.titles.into_iter().map(rect).collect(),
+        dividers: parts.dividers.into_iter().map(|divider| Divider { from: point(divider.from), to: point(divider.to) }).collect(),
         routes: parts
             .routes
             .into_iter()

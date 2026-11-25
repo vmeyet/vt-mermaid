@@ -6,8 +6,8 @@ use std::ops::Range;
 
 use vt_canvas::{Direction, Point, Rect};
 
-use super::diagram::{Diagram, End};
-use super::layout::Placement;
+use super::diagram::{Diagram, End, GroupKind};
+use super::layout::{Divider, Placement};
 use super::port::{self, Join, Joins};
 use crate::error::Error;
 
@@ -120,8 +120,13 @@ pub(super) struct Grid {
 impl Grid {
     fn new(diagram: &Diagram, placement: &Placement, titles: &[Rect]) -> Self {
         let mut grid = Self::empty(placement.size.width, placement.size.height);
-        for (rect, title) in placement.groups.iter().zip(titles) {
-            grid.frame(*rect, *title);
+        for ((group, rect), title) in diagram.groups.iter().zip(&placement.groups).zip(titles) {
+            if group.kind == GroupKind::Framed {
+                grid.frame(*rect, *title);
+            }
+        }
+        for divider in &placement.dividers {
+            grid.divider(*divider);
         }
         for rect in &placement.nodes {
             grid.node(*rect);
@@ -196,6 +201,15 @@ impl Grid {
             self.set(corner, Use::Blocked);
         }
         self.fill(title, Use::Title);
+    }
+
+    /// A divider may be crossed like a frame's side, never where it meets the frame.
+    fn divider(&mut self, divider: Divider) {
+        let horizontal = divider.from.y == divider.to.y;
+        let cells = Rect::new(divider.from.x, divider.from.y, divider.to.x - divider.from.x + 1, divider.to.y - divider.from.y + 1);
+        self.fill(cells, Use::Line { horizontal });
+        self.set(divider.from, Use::Blocked);
+        self.set(divider.to, Use::Blocked);
     }
 
     /// Lays the cells of `route` it does not share on the grid so later routes only cross it at a right angle, away
@@ -903,6 +917,7 @@ mod tests {
             nodes: placement.nodes,
             groups: placement.groups,
             titles: routed.titles.clone(),
+            dividers: placement.dividers,
             routes: routed.routes.clone(),
             labels,
             end_labels,

@@ -80,4 +80,15 @@ mod tests {
 
         assert_eq!(found, [""; 0]);
     }
+
+    #[test]
+    fn a_sideways_note_too_wide_goes_under_its_state() {
+        let source = "stateDiagram-v2\n  A --> B\n  note right of A : a note far too long to stand beside its state";
+
+        let beside = rows(&render_with(source, Settings::new(100)).unwrap());
+        let under = rows(&render_with(source, Settings::new(40)).unwrap());
+
+        assert!(beside[1].contains("├╌"), "{beside:?}");
+        assert!(under.len() > beside.len() + 3, "{under:?}");
+    }
 }

@@ -6,11 +6,11 @@ mod layered;
 mod order;
 mod rank;
 
-use vt_canvas::{Direction, Rect};
+use vt_canvas::{Direction, Point, Rect};
 
 use self::coordinate::Apart;
 use self::layered::{Fold, Gaps, Link, Position, Span};
-use super::diagram::{Diagram, End};
+use super::diagram::{Diagram, End, GroupKind};
 use super::shape::{self, Size};
 
 /// Empty cells kept around the drawing so edges can go round it.
@@ -29,7 +29,16 @@ pub(super) struct Placement {
     pub(super) labels: Vec<Option<Rect>>,
     /// Whether the edges of one side of a block share a trunk even when the side has room for each.
     pub(super) shares_ways: bool,
+    /// The dashed lines between concurrent regions, each from one side of the frame holding them to the other.
+    pub(super) dividers: Vec<Divider>,
     pub(super) size: Size,
+}
+
+/// A line between two concurrent regions, its ends on the frame holding them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct Divider {
+    pub(super) from: Point,
+    pub(super) to: Point,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -63,6 +72,8 @@ struct Child {
     y: i32,
     width: i32,
     height: i32,
+    /// Cells from its sides to its content.
+    padding: i32,
     /// A group's own content; empty for a node.
     content: Arrangement,
 }
@@ -81,11 +92,11 @@ pub(super) enum Fit {
 }
 
 impl Fit {
-    /// The fit inside a group's frame and padding.
-    fn inside_group(self) -> Self {
+    /// The fit inside a group's `padding`.
+    fn inside(self, padding: i32) -> Self {
         match self {
-            Self::Folded { columns } => Self::Folded { columns: columns - 2 * GROUP_PADDING },
-            Self::Packed { columns } => Self::Packed { columns: columns - 2 * GROUP_PADDING },
+            Self::Folded { columns } => Self::Folded { columns: columns - 2 * padding },
+            Self::Packed { columns } => Self::Packed { columns: columns - 2 * padding },
             fit => fit,
         }
     }
@@ -100,6 +111,7 @@ pub(super) fn place(diagram: &Diagram, fit: Fit) -> Placement {
         groups: vec![Rect::new(0, 0, 0, 0); diagram.groups.len()],
         labels: vec![None; diagram.edges.len()],
         shares_ways: matches!(fit, Fit::Folded { .. } | Fit::Packed { .. }),
+        dividers: Vec::new(),
         size: Size { width: to_cells(root.width + 2 * margin), height: to_cells(root.height + 2 * margin) },
     };
     for (item, rect) in flatten(&root, margin, margin) {
@@ -111,7 +123,34 @@ pub(super) fn place(diagram: &Diagram, fit: Fit) -> Placement {
     for (edge, rect) in kept(&root, margin, margin) {
         placement.labels[edge] = Some(rect);
     }
+    placement.dividers = dividers(diagram, &placement.groups);
     placement
+}
+
+/// A line between each two concurrent regions of a frame, in the middle of the ranks' gap between them, from one side
+/// of the frame to the other.
+fn dividers(diagram: &Diagram, groups: &[Rect]) -> Vec<Divider> {
+    let mut dividers = Vec::new();
+    for (frame_index, frame) in groups.iter().enumerate() {
+        let vertical = matches!(diagram.groups[frame_index].flow, Direction::Down | Direction::Up);
+        let mut regions: Vec<Rect> = (0..diagram.groups.len())
+            .filter(|&index| diagram.groups[index].parent == Some(frame_index) && diagram.groups[index].kind == GroupKind::Region)
+            .map(|index| groups[index])
+            .collect();
+        regions.sort_by_key(|rect| if vertical { rect.y } else { rect.x });
+        let (right, bottom) = (frame.x + frame.width.saturating_sub(1), frame.y + frame.height.saturating_sub(1));
+        for pair in regions.windows(2) {
+            let (first, second) = (pair[0], pair[1]);
+            dividers.push(if vertical {
+                let y = (first.y + first.height + second.y) / 2;
+                Divider { from: Point::new(frame.x, y), to: Point::new(right, y) }
+            } else {
+                let x = (first.x + first.width + second.x) / 2;
+                Divider { from: Point::new(x, frame.y), to: Point::new(x, bottom) }
+            });
+        }
+    }
+    dividers
 }
 
 /// The children of `container` in layers going the way it flows, each child group arranged first.
@@ -121,7 +160,7 @@ fn arrange(diagram: &Diagram, container: Option<usize>, fit: Fit) -> Arrangement
         .iter()
         .map(|item| match item {
             Item::Node(_) => Arrangement::default(),
-            Item::Group(index) => arrange(diagram, Some(*index), fit.inside_group()),
+            Item::Group(index) => arrange(diagram, Some(*index), fit.inside(padding(diagram, *item))),
         })
         .collect();
     let flow = container.map_or(diagram.flow, |group| diagram.groups[group].flow);
@@ -157,7 +196,7 @@ fn arrange(diagram: &Diagram, container: Option<usize>, fit: Fit) -> Arrangement
         .zip(sizes.iter().zip(placed.blocks.iter().zip(&spans)))
         .map(|((item, content), (&(width, height), (&position, &span)))| {
             let (x, y) = corner(position, span);
-            Child { item, x, y, width, height, content }
+            Child { item, x, y, width, height, padding: padding(diagram, item), content }
         })
         .collect();
     let ends = children.iter().map(|child| (child.x + child.width, child.y + child.height));
@@ -195,9 +234,23 @@ fn size(diagram: &Diagram, item: Item, content: &Arrangement) -> (i32, i32) {
             (i32::from(size.width), i32::from(size.height))
         }
         Item::Group(index) => {
-            let title = i32::from(diagram.groups[index].title.width) + TITLE_FRAME;
-            ((content.width + 2 * GROUP_PADDING).max(title), content.height + 2 * GROUP_PADDING)
+            let padding = padding(diagram, item);
+            let title = if diagram.groups[index].kind == GroupKind::Framed {
+                i32::from(diagram.groups[index].title.width) + TITLE_FRAME
+            } else {
+                0
+            };
+            ((content.width + 2 * padding).max(title), content.height + 2 * padding)
         }
+    }
+}
+
+/// Cells between a block's sides and what it holds.
+fn padding(diagram: &Diagram, item: Item) -> i32 {
+    match item {
+        Item::Node(_) => 0,
+        Item::Group(index) if diagram.groups[index].kind == GroupKind::Framed => GROUP_PADDING,
+        Item::Group(_) => 0,
     }
 }
 
@@ -250,7 +303,8 @@ impl Blocks<'_> {
         let (x, y, width, height) = if item == held {
             (0, 0, self.sizes[block].0, self.sizes[block].1)
         } else {
-            corner(&self.contents[block], item, GROUP_PADDING, GROUP_PADDING)?
+            let padding = padding(diagram, held);
+            corner(&self.contents[block], item, padding, padding)?
         };
         Some((block, if self.vertical { x + (width - 1) / 2 } else { y + (height - 1) / 2 }))
     }
@@ -263,7 +317,7 @@ fn corner(arrangement: &Arrangement, item: Item, x: i32, y: i32) -> Option<(i32,
         if child.item == item {
             Some((left, top, child.width, child.height))
         } else {
-            corner(&child.content, item, left + GROUP_PADDING, top + GROUP_PADDING)
+            corner(&child.content, item, left + child.padding, top + child.padding)
         }
     })
 }
@@ -306,7 +360,7 @@ fn flatten(arrangement: &Arrangement, x: i32, y: i32) -> Vec<(Item, Rect)> {
         .flat_map(|child| {
             let (left, top) = (x + child.x, y + child.y);
             let own = (child.item, Rect::new(to_cells(left), to_cells(top), to_cells(child.width), to_cells(child.height)));
-            let inner = flatten(&child.content, left + GROUP_PADDING, top + GROUP_PADDING);
+            let inner = flatten(&child.content, left + child.padding, top + child.padding);
             std::iter::once(own).chain(inner)
         })
         .collect()
@@ -319,7 +373,7 @@ fn kept(arrangement: &Arrangement, x: i32, y: i32) -> Vec<(usize, Rect)> {
         .iter()
         .map(|label| (label.edge, Rect::new(to_cells(x + label.x), to_cells(y + label.y), to_cells(label.width), 1)));
     let inner =
-        arrangement.children.iter().flat_map(|child| kept(&child.content, x + child.x + GROUP_PADDING, y + child.y + GROUP_PADDING));
+        arrangement.children.iter().flat_map(|child| kept(&child.content, x + child.x + child.padding, y + child.y + child.padding));
     own.chain(inner).collect()
 }
 
