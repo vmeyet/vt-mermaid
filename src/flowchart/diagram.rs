@@ -1,5 +1,6 @@
 //! The flowchart as mermaid-rs-renderer parses and lays it out: the only module that sees the crate.
 
+use std::cmp::Reverse;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use mermaid_rs_renderer::{self as mmdr, DiagramKind, EdgeStyle, Graph, LayoutConfig, NodeShape, Theme};
@@ -291,7 +292,8 @@ fn anchor<'a>(subgraph: &'a mmdr::Subgraph, positions: &BTreeMap<String, (f32, f
         .find(|id| positions.contains_key(*id) && !subgraph.nodes.iter().any(|member| member == id))
 }
 
-/// A group's parent is the smallest other group holding all its nodes, and more of them or its name.
+/// A group's parent is the smallest other group holding all its nodes, and more of them or its name; of two groups
+/// holding the same nodes, the one the source opens first holds the other.
 fn groups(graph: &Graph, nodes: &[Node]) -> Vec<Group> {
     let visible: HashSet<&str> = nodes.iter().map(|node| node.id.as_str()).collect();
     let members: Vec<HashSet<&str>> = graph
@@ -303,11 +305,15 @@ fn groups(graph: &Graph, nodes: &[Node]) -> Vec<Group> {
     let holds = |outer: usize, inner: usize| {
         outer != inner
             && members[inner].is_subset(&members[outer])
-            && (members[inner].len() < members[outer].len() || graph.subgraphs[outer].nodes.contains(&ids[inner]))
+            && (members[inner].len() < members[outer].len()
+                || graph.subgraphs[outer].nodes.contains(&ids[inner])
+                || (outer < inner && !members[inner].is_empty()))
     };
     let parents = without_cycles(
         (0..graph.subgraphs.len())
-            .map(|inner| (0..graph.subgraphs.len()).filter(|&outer| holds(outer, inner)).min_by_key(|&outer| (members[outer].len(), outer)))
+            .map(|inner| {
+                (0..graph.subgraphs.len()).filter(|&outer| holds(outer, inner)).min_by_key(|&outer| (members[outer].len(), Reverse(outer)))
+            })
             .collect(),
     );
     let flows = flows(graph, &parents);
@@ -440,6 +446,17 @@ mod tests {
         assert_eq!(groups[inner].1, Some(outer));
         assert_eq!((groups[inner].2, groups[outer].2), (Direction::Down, Direction::Down));
         assert_eq!((node(&diagram, "A").group, node(&diagram, "C").group), (Some(inner), Some(outer)));
+    }
+
+    #[test]
+    fn of_two_groups_holding_the_same_nodes_the_first_opened_holds_the_other() {
+        let source = "flowchart TB\n  subgraph Outer\n    subgraph Middle\n      subgraph Inner\n        A\n      end\n    end\n  end";
+
+        let diagram = Diagram::read(source).unwrap();
+
+        let parents: Vec<(&str, Option<usize>)> = diagram.groups.iter().map(|group| (group.id.as_str(), group.parent)).collect();
+        assert_eq!(parents, [("Outer", None), ("Middle", Some(0)), ("Inner", Some(1))]);
+        assert_eq!(node(&diagram, "A").group, Some(2));
     }
 
     #[test]

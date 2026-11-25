@@ -15,8 +15,8 @@
       "100": {"status":"rendered","drawn":{"width":14,"rows":35,"area":490,"fits":true,"node_labels":4,"edge_labels":0,"arrows":2,"crossings":0,"bends":0},"score":100}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the drawing needs 102 columns, more than the 80 allowed","score":0},
-      "100": {"status":"refused","reason":"the drawing needs 102 columns, more than the 100 allowed","score":0}
+      "80": {"status":"refused","reason":"the drawing needs 107 columns, more than the 80 allowed","score":0},
+      "100": {"status":"refused","reason":"the drawing needs 107 columns, more than the 100 allowed","score":0}
     }
   }
 }
