@@ -10,7 +10,6 @@ const MAX_WRAPPED_COLUMNS: usize = 30;
 const MAX_LINE_COLUMNS: usize = 60;
 /// Characters a long word is best cut after.
 const SEPARATORS: [char; 8] = ['.', '/', '-', '_', ':', ',', '=', '&'];
-const BREAKS: [&str; 4] = ["<br>", "<br/>", "<br />", "\n"];
 
 /// Text drawn in a node or on an edge, already cut into the lines it is drawn on.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -92,12 +91,31 @@ fn explicit_lines(text: &str) -> Vec<String> {
     let text = text.trim();
     let text = text.strip_prefix('"').and_then(|rest| rest.strip_suffix('"')).unwrap_or(text);
     let text = text.strip_prefix('`').and_then(|rest| rest.strip_suffix('`')).unwrap_or(text);
-    let unified = BREAKS.iter().fold(text.to_owned(), |text, line_break| text.replace(line_break, "\n"));
+    let unified = with_breaks_as_line_ends(text);
     let lines: Vec<String> = unified.lines().map(|line| line.split_whitespace().collect::<Vec<_>>().join(" ")).collect();
     if lines.is_empty() { vec![String::new()] } else { lines }
 }
 
 /// The pieces on lines of at most `max_width` columns, a space between two on a line; a piece wider has its own.
+/// Mermaid's `lineBreakRegex`, `<br\s*/?>` in any case, as a line end.
+fn with_breaks_as_line_ends(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(open) = rest.find('<') {
+        out.push_str(&rest[..open]);
+        let tag = &rest[open..];
+        let length = tag.get(..3).filter(|name| name.eq_ignore_ascii_case("<br")).and_then(|_| {
+            let after_space = tag[3..].trim_start_matches(char::is_whitespace);
+            let after_slash = after_space.strip_prefix('/').unwrap_or(after_space);
+            after_slash.starts_with('>').then(|| tag.len() - after_slash.len() + 1)
+        });
+        out.push_str(if length.is_some() { "\n" } else { "<" });
+        rest = &tag[length.unwrap_or(1)..];
+    }
+    out.push_str(rest);
+    out
+}
+
 fn filled(pieces: impl Iterator<Item = String>, max_width: usize) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
     for piece in pieces {
@@ -128,12 +146,20 @@ fn pieces(word: &str, max_width: usize) -> Vec<String> {
 /// Where a word too long for a line is cut, `None` for a word that fits: after the last separator in the second half
 /// of the line, so a path or a dotted name breaks between its parts, else at the last character that fits.
 fn cut(word: &str, max_width: usize) -> Option<usize> {
-    let ends = word.char_indices().map(|(start, character)| (start + character.len_utf8(), character));
-    let fitting: Vec<(usize, char)> = ends.take_while(|&(end, _)| width(&word[..end]) <= max_width).collect();
-    let &(last, _) = fitting.last().filter(|&&(end, _)| end < word.len())?;
-    let after_separator =
-        fitting.iter().rev().find(|&&(end, character)| SEPARATORS.contains(&character) && 2 * width(&word[..end]) > max_width);
-    Some(after_separator.map_or(last, |&(end, _)| end))
+    let mut columns = 0;
+    let mut fitting: Vec<(usize, char, usize)> = Vec::new();
+    for (start, character) in word.char_indices() {
+        let end = start + character.len_utf8();
+        columns += width(&word[start..end]);
+        if columns > max_width {
+            let &(last, ..) = fitting.last()?;
+            let after_separator =
+                fitting.iter().rev().find(|&&(_, character, columns)| SEPARATORS.contains(&character) && 2 * columns > max_width);
+            return Some(after_separator.map_or(last, |&(end, ..)| end));
+        }
+        fitting.push((end, character, columns));
+    }
+    None
 }
 
 #[cfg(test)]
@@ -143,6 +169,11 @@ mod tests {
     #[test]
     fn a_wrapped_label_breaks_at_each_br_tag() {
         assert_eq!(Label::wrapped("one<br>two<br/>three<br />four").lines, ["one", "two", "three", "four"]);
+    }
+
+    #[test]
+    fn a_break_tag_in_any_spelling_breaks_a_line_and_another_tag_stays() {
+        assert_eq!(Label::wrapped("a<BR>b<br \t/>c<br/ >d<b>e").lines, ["a", "b", "c<br/ >d<b>e"]);
     }
 
     #[test]
@@ -200,6 +231,14 @@ mod tests {
 
         assert_eq!(label.lines, ["Sleep and", "chill at home", "SAM.CommonFA.FMESummary"]);
         assert_eq!(label.width, 23);
+    }
+
+    #[test]
+    fn a_word_of_any_length_is_cut_in_one_pass_over_it() {
+        let word = "n".repeat(60_000);
+
+        assert_eq!(Label::wrapped_as(&word, Wrap::to(usize::MAX, LongWords::Break)).lines, std::slice::from_ref(&word));
+        assert_eq!(Label::wrapped_as(&word, Wrap::to(6, LongWords::Break).tight()).lines.len(), 10_000);
     }
 
     #[test]
