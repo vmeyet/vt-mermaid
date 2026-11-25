@@ -8,6 +8,8 @@ mod invisible;
 mod label;
 #[cfg(any(test, feature = "measure"))]
 pub(crate) mod measure;
+#[cfg_attr(not(test), expect(dead_code, reason = "flowcharts switch to this parser once it agrees with mermaid"))]
+mod parse;
 mod route;
 mod shape;
 mod snap;
