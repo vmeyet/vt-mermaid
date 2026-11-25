@@ -94,6 +94,39 @@ impl Arrow {
             Self::StickBottomReverse => "\\\\-",
         }
     }
+
+    /// Its name in mermaid's `LINETYPE`.
+    #[cfg(test)]
+    pub(in crate::sequence) fn name(self) -> &'static str {
+        match self {
+            Self::Solid => "SOLID",
+            Self::BidirectionalSolid => "BIDIRECTIONAL_SOLID",
+            Self::Dotted => "DOTTED",
+            Self::BidirectionalDotted => "BIDIRECTIONAL_DOTTED",
+            Self::SolidOpen => "SOLID_OPEN",
+            Self::DottedOpen => "DOTTED_OPEN",
+            Self::SolidCross => "SOLID_CROSS",
+            Self::DottedCross => "DOTTED_CROSS",
+            Self::SolidPoint => "SOLID_POINT",
+            Self::DottedPoint => "DOTTED_POINT",
+            Self::SolidTopDotted => "SOLID_TOP_DOTTED",
+            Self::SolidBottomDotted => "SOLID_BOTTOM_DOTTED",
+            Self::StickTopDotted => "STICK_TOP_DOTTED",
+            Self::StickBottomDotted => "STICK_BOTTOM_DOTTED",
+            Self::SolidTopReverseDotted => "SOLID_ARROW_TOP_REVERSE_DOTTED",
+            Self::SolidBottomReverseDotted => "SOLID_ARROW_BOTTOM_REVERSE_DOTTED",
+            Self::StickTopReverseDotted => "STICK_ARROW_TOP_REVERSE_DOTTED",
+            Self::StickBottomReverseDotted => "STICK_ARROW_BOTTOM_REVERSE_DOTTED",
+            Self::SolidTop => "SOLID_TOP",
+            Self::SolidBottom => "SOLID_BOTTOM",
+            Self::StickTop => "STICK_TOP",
+            Self::StickBottom => "STICK_BOTTOM",
+            Self::SolidTopReverse => "SOLID_ARROW_TOP_REVERSE",
+            Self::SolidBottomReverse => "SOLID_ARROW_BOTTOM_REVERSE",
+            Self::StickTopReverse => "STICK_ARROW_TOP_REVERSE",
+            Self::StickBottomReverse => "STICK_ARROW_BOTTOM_REVERSE",
+        }
+    }
 }
 
 #[cfg(test)]

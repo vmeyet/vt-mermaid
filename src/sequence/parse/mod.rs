@@ -1,6 +1,8 @@
 //! Sequence diagrams read as mermaid 12.3.0 reads them: its lexer, its grammar and its diagram db, rewritten by hand,
 //! so a sequence diagram means here what it means to mermaid.
 
+#[cfg(test)]
+mod agreement;
 mod arrow;
 mod colour;
 mod db;

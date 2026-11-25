@@ -21,7 +21,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 - `render(source, max_width)` returns the drawing as a `Canvas`, at most `max_width` columns wide.
   A flowchart too wide, or with an edge left without a path, is laid out again until it fits: tight, then with the ranks going down folded to 8, 7, 6, 5 and 4 eighths of the width, then packed to 8, 6 and 4 eighths without room for the links passing a rank; each as written, then turned top-down when it or one of its groups flows sideways.
   That is at most twenty placements, each routed only when its blocks fit; one still too wide is `Error::TooWide`, so the caller can fall back.
-- Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`).
+- Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`); a sequence diagram has at most 50 participants (`MAX_PARTICIPANTS`) and 1000 messages (`MAX_MESSAGES`), notes, activations and the starts, sections and ends of blocks included.
   The parser counts nodes and edges as it reads them, an `&` group's edges before it makes them, and stops at the first over a limit.
 - Time, measured on an Apple M5 in a release build with `cargo bench --bench limits` and `cargo bench --bench corpus`, the fastest of a few runs on a shared machine:
   - The corpus's 946 flowcharts at 100 columns: median 12 µs, p95 0.6 ms, p99 1.7 ms, slowest 8 ms (`e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression`, packed after eleven placements too wide).
@@ -34,7 +34,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 - Ten minutes of fuzzing the parser alone, 1.8 million inputs, found no panic and no input that took a second.
 - The `measure` feature adds `measure(source, max_width)`: crossings, bends, edge cells and level C violations, read from where each part went.
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
-- The `fuzz` feature adds `read_flowchart(source)`, the parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
+- The `fuzz` feature adds `read_flowchart(source)` and `read_sequence(source)`, each parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
 
 ## Every kind
 
@@ -92,6 +92,17 @@ mermaid-rs-renderer's parser, which it replaces, accepts and refuses 908 of them
   A label slid along a horizontal run keeps a line cell on each side, so it never touches a crossing.
 - Two lines crossing draw `┼` (vt-canvas).
 
+## Sequence diagrams
+
+`parse` is mermaid's own sequence parser rewritten by hand, in three steps after the shared preparation:
+`lexer` applies the rules of `sequenceDiagram.jison` in their order, case-insensitive, the first that matches winning, each start condition a state on a stack;
+the actor rule's lookahead (a name stops before anything that starts an arrow, `-x`, `--`, `()`…) and the `ID` rules' (a name runs to the last place followed by only spaces before a line end, a `;` or a `#`) are each one pass over the text, never a backtracking regex;
+`grammar` reads the tokens top-down, accepting what mermaid's LALR parser accepts, the blocks open at a point a stack, so nesting never deepens the call stack, and flattens each statement into what jison's actions hand the db;
+`db` does what `sequenceDb.ts` does once the whole source parsed: a participant is added the first time a statement names it, a later `participant` sets its alias and type again in its first place, an `@{ … }` block's `type` and `alias` count, a box keeps its participants and names itself after its first word unless that word is a CSS colour; a participant in two boxes, a `create` of one already there, a message after `create` or `destroy` that does not involve it, and a deactivation of one not active are refused.
+`parse::agreement`, a test, compares it with the oracle on every corpus sequence diagram: it accepts and refuses the 394 as mermaid does (level A), and reads the 386 mermaid accepts into the same participants, messages and boxes (level B).
+mermaid-rs-renderer's parser accepts and refuses 79% of them as mermaid does.
+Tried against mermaid itself on 50000 inputs mutated from the corpus, it differs only where mermaid's YAML reader does: front matters it refuses, which no parser here reads, and `@{ … }` blocks running over several lines.
+
 ## Dependency direction
 
 ```
@@ -108,7 +119,7 @@ vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its 
   Flowcharts are compared with vt-mermaid's own parser by `parse::agreement` instead.
 - `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks of `measure` (every node and label drawn whole, every edge joining both ends, nothing overlapping).
 - [`scoreboard/`](scoreboard/README.md): every corpus flowchart drawn by vt-mermaid and three other text renderers, measured the same way, results committed; a dev-only example, run by hand.
-- `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`, seeded from `corpus/flowchart`; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits; `cargo +nightly fuzz run parse` feeds it to the parser alone, through `read_flowchart` behind the `fuzz` feature, and checks it never panics and keeps the limits.
+- `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`, seeded from `corpus/flowchart`; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits; `cargo +nightly fuzz run parse` feeds it to the parser alone, through `read_flowchart` behind the `fuzz` feature, and checks it never panics and keeps the limits; `parse_sequence` does the same for the sequence parser through `read_sequence`.
   On stable, build a target with `cargo build --release --target <host>` and the sanitizer-coverage `RUSTFLAGS` cargo-fuzz passes, then run the binary.
 - `benches/`: `limits` times a typical flowchart and inputs built at each limit with divan, `corpus` times every corpus flowchart and prints the spread; both run with `cargo bench` only.
 - `examples/compare.rs`: prints each spike flowchart drawn by mermaid-text, then by vt-mermaid; mermaid-text is a dev-dependency only.
