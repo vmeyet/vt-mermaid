@@ -18,6 +18,23 @@ pub(super) enum Kind {
     String,
     Default,
     Direction(Direction),
+    Scale,
+    Width,
+    AccTitle,
+    AccTitleValue,
+    AccDescr,
+    AccDescrValue,
+    AccDescrMultilineValue,
+    ClassDef,
+    DefaultClassDefId,
+    ClassDefId,
+    ClassDefStyleOpts,
+    Class,
+    ClassEntityIds,
+    StyleClass,
+    Style,
+    StyleIds,
+    StyleDefStyleOpts,
     Fork,
     Join,
     Choice,
@@ -27,6 +44,10 @@ pub(super) enum Kind {
     CompositState,
     StructStart,
     StructStop,
+    Note,
+    LeftOf,
+    RightOf,
+    NoteText,
     Header,
     HideEmpty,
     EdgeState,
@@ -75,6 +96,21 @@ enum Condition {
     State,
     StateString,
     StateId,
+    Scale,
+    AccTitle,
+    AccDescr,
+    AccDescrMultiline,
+    ClassDef,
+    ClassDefId,
+    Class,
+    ClassStyle,
+    Style,
+    StyleDefStyles,
+    Note,
+    NoteId,
+    NoteText,
+    FloatingNote,
+    FloatingNoteId,
 }
 
 /// What a rule does to the stack of states.
@@ -252,6 +288,22 @@ fn rule(state: Condition, index: &Index<'_>, position: usize) -> Result<Option<M
         Condition::StateString if rest.starts_with('"') => Some(Matched::skip(1, Step::Pop)),
         Condition::StateString => Some(Matched::token(until(rest, |char| char == '"'), Kind::StateDescr, Step::Stay)),
         Condition::StateId => Some(Matched::name(until(rest, |char| matches!(char, '\n' | '{')), rest, Kind::Id, Step::Pop)),
+        Condition::Scale => scale(rest),
+        Condition::AccTitle => Some(Matched::token(until(rest, |char| char == '\n'), Kind::AccTitleValue, Step::Pop)),
+        Condition::AccDescr => Some(Matched::token(until(rest, |char| char == '\n'), Kind::AccDescrValue, Step::Pop)),
+        Condition::AccDescrMultiline if rest.starts_with('}') => Some(Matched::skip(1, Step::Pop)),
+        Condition::AccDescrMultiline => Some(Matched::token(until(rest, |char| char == '}'), Kind::AccDescrMultilineValue, Step::Stay)),
+        Condition::ClassDef => class_def(rest),
+        Condition::ClassDefId => Some(Matched::token(until(rest, |char| char == '\n'), Kind::ClassDefStyleOpts, Step::Pop)),
+        Condition::Class => class_ids(rest).map(|length| Matched::token(length, Kind::ClassEntityIds, Step::Swap(Condition::ClassStyle))),
+        Condition::ClassStyle => Some(Matched::token(until(rest, |char| char == '\n'), Kind::StyleClass, Step::Pop)),
+        Condition::Style => style_ids(rest).map(|length| Matched::token(length, Kind::StyleIds, Step::Swap(Condition::StyleDefStyles))),
+        Condition::StyleDefStyles => Some(Matched::token(until(rest, |char| char == '\n'), Kind::StyleDefStyleOpts, Step::Pop)),
+        Condition::Note => note(rest),
+        Condition::NoteId => note_id(rest),
+        Condition::NoteText => note_text(rest),
+        Condition::FloatingNote => Some(floating_note(rest)),
+        Condition::FloatingNoteId => Some(Matched::name(until(rest, |char| char == '\n'), rest, Kind::Id, Step::Pop)),
     })
 }
 
@@ -284,11 +336,26 @@ fn initial(index: &Index<'_>, position: usize) -> Option<Matched> {
     if let Some(length) = comment(rest) {
         return Some(Matched::skip(length, Step::Stay));
     }
+    if let Some(length) = spaced_keyword(rest, "scale") {
+        return Some(Matched::token(length, Kind::Scale, Step::Push(Condition::Scale)));
+    }
+    if let Some(length) = keyword_then(rest, "accTitle", ':') {
+        return Some(Matched::token(length, Kind::AccTitle, Step::Push(Condition::AccTitle)));
+    }
+    if let Some(length) = keyword_then(rest, "accDescr", ':') {
+        return Some(Matched::token(length, Kind::AccDescr, Step::Push(Condition::AccDescr)));
+    }
+    if let Some(length) = keyword_then(rest, "accDescr", '{') {
+        return Some(Matched::skip(length, Step::Push(Condition::AccDescrMultiline)));
+    }
     if let Some(matched) = statement_keyword(rest) {
         return Some(matched);
     }
     if first == '{' {
         return Some(Matched::token(1, Kind::StructStart, Step::Swap(Condition::Struct)));
+    }
+    if let Some(length) = spaced_keyword(rest, "note") {
+        return Some(Matched::token(length, Kind::Note, Step::Push(Condition::Note)));
     }
     if let Some(length) = spaced_keyword(rest, "stateDiagram").or_else(|| spaced_keyword(rest, "stateDiagram-v2")) {
         return Some(Matched::token(length, Kind::Header, Step::Stay));
@@ -320,11 +387,22 @@ fn structure(index: &Index<'_>, position: usize) -> Option<Matched> {
         Some(b'\n') => return Some(Matched::skip(1, Step::Stay)),
         _ => {}
     }
+    if let Some(length) = spaced_keyword(rest, "note") {
+        return Some(Matched::token(length, Kind::Note, Step::Push(Condition::Note)));
+    }
     shared_tail(rest).or_else(|| rest.starts_with("--").then(|| Matched::token(2, Kind::Concurrent, Step::Stay)))
 }
 
-/// `state` before a space, in both the diagram and a composite state's body.
+/// `classDef`, `class`, `style` and `state`, each before a space, in both the diagram and a composite state's body.
 fn statement_keyword(rest: &str) -> Option<Matched> {
+    let words: [(&str, Kind, Condition); 3] = [
+        ("classDef", Kind::ClassDef, Condition::ClassDef),
+        ("class", Kind::Class, Condition::Class),
+        ("style", Kind::Style, Condition::Style),
+    ];
+    if let Some((length, kind, state)) = words.iter().find_map(|&(word, kind, state)| Some((spaced_keyword(rest, word)?, kind, state))) {
+        return Some(Matched::token(length, kind, Step::Push(state)));
+    }
     spaced_keyword(rest, "state").map(|length| Matched::skip(length, Step::Push(Condition::State)))
 }
 
@@ -408,10 +486,124 @@ fn alias(rest: &str) -> Option<usize> {
     (gap > 0).then_some(space + 2 + gap)
 }
 
+/// `\d+`, then `\s+"width"` which ends the statement.
+fn scale(rest: &str) -> Option<Matched> {
+    let digits = until(rest, |char| !char.is_ascii_digit());
+    if digits > 0 {
+        return Some(Matched::token(digits, Kind::Width, Step::Stay));
+    }
+    let space = until(rest, |char| !is_space(char));
+    (space > 0).then(|| keyword(&rest[space..], "width")).flatten().map(|length| Matched::skip(space + length, Step::Pop))
+}
+
+/// `DEFAULT\s+`, then `\w+\s+`: each the id of a class.
+fn class_def(rest: &str) -> Option<Matched> {
+    if let Some(length) = spaced_keyword(rest, "default") {
+        return Some(Matched::token(length, Kind::DefaultClassDefId, Step::Swap(Condition::ClassDefId)));
+    }
+    let word = until(rest, |char| !is_word(char));
+    let space = until(&rest[word..], |char| !is_space(char));
+    (word > 0 && space > 0).then(|| Matched::token(word + space, Kind::ClassDefId, Step::Swap(Condition::ClassDefId)))
+}
+
+/// `(\w+)+((","\s*\w+)*)`.
+fn class_ids(rest: &str) -> Option<usize> {
+    let mut end = until(rest, |char| !is_word(char));
+    if end == 0 {
+        return None;
+    }
+    while let Some(after_comma) = rest[end..].strip_prefix(',') {
+        let space = until(after_comma, |char| !is_space(char));
+        let word = until(&after_comma[space..], |char| !is_word(char));
+        if word == 0 {
+            break;
+        }
+        end += 1 + space + word;
+    }
+    Some(end)
+}
+
+/// `[\w,]+\s+`.
+fn style_ids(rest: &str) -> Option<usize> {
+    let ids = until(rest, |char| !is_word(char) && char != ',');
+    let space = until(&rest[ids..], |char| !is_space(char));
+    (ids > 0 && space > 0).then_some(ids + space)
+}
+
+/// After `note`: the side of the state it stands, or a quote opening a floating note.
+fn note(rest: &str) -> Option<Matched> {
+    if let Some(length) = keyword(rest, "left of") {
+        return Some(Matched::token(length, Kind::LeftOf, Step::Swap(Condition::NoteId)));
+    }
+    if let Some(length) = keyword(rest, "right of") {
+        return Some(Matched::token(length, Kind::RightOf, Step::Swap(Condition::NoteId)));
+    }
+    rest.starts_with('"').then(|| Matched::skip(1, Step::Swap(Condition::FloatingNote)))
+}
+
+/// `\s*[^:\n\s\-]+`: the state a note stands beside.
+fn note_id(rest: &str) -> Option<Matched> {
+    let space = until(rest, |char| !is_space(char));
+    let name = until(&rest[space..], |char| matches!(char, ':' | '\n' | '-') || is_space(char));
+    (name > 0).then(|| Matched::name(space + name, rest, Kind::Id, Step::Swap(Condition::NoteText)))
+}
+
+/// A note's text: `\s*":"[^:\n;]+` on its line, less its first two characters; else every line up to `end note`.
+fn note_text(rest: &str) -> Option<Matched> {
+    let space = until(rest, |char| !is_space(char));
+    if rest[space..].starts_with(':') {
+        let text = until(&rest[space + 1..], |char| matches!(char, ':' | '\n' | ';'));
+        return (text > 0).then(|| Matched {
+            text: (utf16_units(rest, 2), space + 1 + text),
+            ..Matched::token(space + 1 + text, Kind::NoteText, Step::Pop)
+        });
+    }
+    let end = end_note(rest)?;
+    Some(Matched { text: (0, end - "end note".len()), ..Matched::token(end, Kind::NoteText, Step::Pop) })
+}
+
+/// `[\s\S]*?\n\s*"end note"\b`: where the first `end note` starting a line, after spaces, ends.
+fn end_note(rest: &str) -> Option<usize> {
+    let mut from = 0;
+    while let Some(line_end) = rest[from..].find('\n').map(|at| from + at) {
+        let space_end = line_end + until(&rest[line_end..], |char| !is_space(char));
+        if let Some(length) = keyword(&rest[space_end..], "end note") {
+            return Some(space_end + length);
+        }
+        from = space_end;
+    }
+    None
+}
+
+/// After `note "`: `\s*"as"\s*` before the note's name, the closing quote, else the note's text.
+fn floating_note(rest: &str) -> Matched {
+    let space = until(rest, |char| !is_space(char));
+    if rest.get(space..space + 2).is_some_and(|word| word.eq_ignore_ascii_case("as")) {
+        let length = space + 2 + until(&rest[space + 2..], |char| !is_space(char));
+        return Matched::token(length, Kind::As, Step::Swap(Condition::FloatingNoteId));
+    }
+    if rest.starts_with('"') {
+        return Matched::skip(1, Step::Stay);
+    }
+    Matched::token(until(rest, |char| char == '"'), Kind::NoteText, Step::Stay)
+}
+
 /// `\#[^\n]*` and `\%\%(?!\{)[^\n]*`.
 fn comment(rest: &str) -> Option<usize> {
     let opens = rest.starts_with('#') || (rest.starts_with("%%") && !rest[2..].starts_with('{'));
     opens.then(|| until(rest, |char| char == '\n'))
+}
+
+/// Bytes of the first `units` UTF-16 code units of `text`, as JavaScript's `substr` counts; a character it would cut
+/// in two is left out whole.
+fn utf16_units(text: &str, units: usize) -> usize {
+    let mut counted = 0;
+    text.char_indices()
+        .find_map(|(at, char)| {
+            counted += char.len_utf16();
+            (counted >= units).then_some(at + char.len_utf8())
+        })
+        .unwrap_or(text.len())
 }
 
 /// `word` and a word boundary, as jison adds one after a rule ending in a word character.
@@ -425,6 +617,14 @@ fn spaced_keyword(text: &str, word: &str) -> Option<usize> {
     let after = text.get(word.len()..).filter(|_| starts_with_ignoring_case(text, word))?;
     let space = until(after, |char| !is_space(char));
     (space > 0).then_some(word.len() + space)
+}
+
+/// `word\s*"mark"\s*`.
+fn keyword_then(text: &str, word: &str, mark: char) -> Option<usize> {
+    let after = text.get(word.len()..).filter(|_| starts_with_ignoring_case(text, word))?;
+    let space = until(after, |char| !is_space(char));
+    let after_mark = after[space..].strip_prefix(mark)?;
+    Some(text.len() - after_mark.len() + until(after_mark, |char| !is_space(char)))
 }
 
 fn starts_with_ignoring_case(text: &str, prefix: &str) -> bool {
@@ -483,6 +683,15 @@ mod tests {
     }
 
     #[test]
+    fn a_note_reads_its_side_its_state_and_its_text() {
+        assert_eq!(
+            texts("note right of A : hi\n")[..4],
+            [(K::Note, "note "), (K::RightOf, "right of"), (K::Id, " A"), (K::NoteText, " hi")]
+        );
+        assert_eq!(texts("note left of A\n  one\n  two\nend note\n")[3], (K::NoteText, "\n  one\n  two\n"));
+    }
+
+    #[test]
     fn a_quoted_description_is_given_an_id_after_as() {
         assert_eq!(texts("state \"Long name\" as L\n")[..3], [(K::StateDescr, "Long name"), (K::As, "as "), (K::Id, "L")]);
     }
@@ -499,6 +708,12 @@ mod tests {
 
     #[test]
     fn text_no_rule_reads_is_refused_with_its_line() {
-        assert_eq!(tokens("state A {\n{\n"), Err(Invalid::Unrecognized { line: 2 }));
+        assert_eq!(tokens("A\nscale x\n"), Err(Invalid::Unrecognized { line: 2 }));
+    }
+
+    #[test]
+    fn a_note_text_ends_at_the_first_end_note_starting_a_line() {
+        assert_eq!(end_note("a\n\n  end note\nend note"), Some(13));
+        assert_eq!(end_note("a end note\n"), None);
     }
 }
