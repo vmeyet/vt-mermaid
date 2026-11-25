@@ -10,10 +10,10 @@ expression: "rows(&drawing.canvas).join(\"\\n\")"
 │ │ │ pppB │    │    │ │ pppA │    │ │
 │ │ └──────┘    │    │ └──────┘    │ │
 │ │             │    │             │ │
-│ ╰───────┬─────╯    ╰──────┬──────╯ │
-│         │        ┌────────┘        │
-│   via_AWSBatch messages            │
-│         ▾        ▾                 │
+│ ╰─────────┬───╯    ╰──┬──────────╯ │
+│           │           │            │
+│     via_AWSBatch  messages         │
+│           ▾           ▾            │
 │        ╭─ container_Beta ─╮        │
 │        │                  │        │
 │        │ ┌───────────┐    │        │

@@ -77,7 +77,38 @@ pub(super) fn joins(diagram: &Diagram, placement: &Placement) -> Vec<Joins> {
             }
         }
     }
-    joins
+    in_line_with_labels(joins, diagram, placement)
+}
+
+/// The joins with those of an edge going down or up through the room kept for its label moved under that room, as
+/// near its middle as the side has a free cell: labels side by side then each stand on their edge.
+fn in_line_with_labels(joins: Vec<Joins>, diagram: &Diagram, placement: &Placement) -> Vec<Joins> {
+    let rect = |end: End| match end {
+        End::Node(index) => placement.nodes[index],
+        End::Group(index) => placement.groups[index],
+    };
+    let mut taken: Vec<Point> = joins.iter().flat_map(|joins| [joins.exit.cell, joins.entry.cell]).collect();
+    let mut moved = joins;
+    for (index, edge) in diagram.edges.iter().enumerate() {
+        let Some(room) = placement.labels[index] else { continue };
+        let middle = room.x + room.width.saturating_sub(1) / 2;
+        for (block, leaves) in [(rect(edge.from), true), (rect(edge.to), false)] {
+            let join = if leaves { moved[index].exit } else { moved[index].entry };
+            if join.trunk.is_some() || matches!(join.heading, Direction::Left | Direction::Right) {
+                continue;
+            }
+            let side = block.x + 1..(block.x + block.width).saturating_sub(1);
+            let mut under: Vec<u16> = (room.x..room.x + room.width).filter(|x| side.contains(x)).collect();
+            under.sort_by_key(|x| x.abs_diff(middle));
+            let free = |x: &u16| *x == join.cell.x || !taken.contains(&Point::new(*x, join.cell.y));
+            if let Some(x) = under.into_iter().find(free) {
+                let cell = Point::new(x, join.cell.y);
+                taken.push(cell);
+                if leaves { moved[index].exit.cell = cell } else { moved[index].entry.cell = cell }
+            }
+        }
+    }
+    moved
 }
 
 /// A side of a block.
@@ -266,6 +297,21 @@ mod tests {
 
         assert_eq!(joins[0].exit, joins[1].exit);
         assert!(joins[0].exit.trunk.is_some());
+    }
+
+    #[test]
+    fn labelled_edges_between_two_blocks_each_join_them_in_line_with_their_label() {
+        let source = "flowchart TB\n  A[A first node wide enough for two labels] -->|the first label| B[Another node just as wide as the first]\n  A -->|the second label| B";
+        let diagram = Diagram::read(source).unwrap();
+        let placement = layout::place(&diagram, Fit::Loose);
+
+        let joins = joins(&diagram, &placement);
+
+        for (joins, room) in joins.iter().zip(&placement.labels) {
+            let under = room.unwrap().x..room.unwrap().x + room.unwrap().width;
+            assert!(under.contains(&joins.exit.cell.x) && joins.exit.cell.x == joins.entry.cell.x, "{joins:?} {room:?}");
+        }
+        assert!(joins[0].entry.cell.x + 10 < joins[1].entry.cell.x, "{joins:?}");
     }
 
     #[test]

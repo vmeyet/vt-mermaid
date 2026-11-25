@@ -33,19 +33,19 @@ expression: "rows(&drawing.canvas).join(\"\\n\")"
                        ┌─────────────────────────────┐    ┌────────────────────────────────┐    ┌────────────────────────────────┐                                                 
                        │   Investigate and isolate   │    │ Investigate the effect of SOX2 │    │ Investigate the effect of SOX2 │                                                 
                        │ migratory glioblastoma with │    │         on EMT in GBM          │    │       downregulation on        │                                                 
-                       │    regards to phenotype     │    └───────────────┬────────────────┘    │  migratory/invasive phenotype  │                                                 
-                       └───────────────┬──┬──────────┘                    │                     │ in the in vitro model and the  │                                                 
-                         ┌─────────────┘  │                               │                     │ effect on metastasis formation │                                                 
-                         │                │                               │                     │      in the in vivo model      ├─┐                                               
-                         │                │             Lentiviral-mediated RNA interference    └──────────────┬─────────────────┘ │                                               
-             Transwell migration assay    │                               │                                    │            Orthotopic PDX                                         
-                         │                │                               │                    Transwell/Wound Healing Assay       │                                               
-                         ▾         RNA Sequencing                         ▾                                    ▾                   ▾                                               
-          ╭──────────────────────────────╮│                    ╭────────────────────╮                 ╭────────────╮          ╭─────────╮                                          
-          │ Isolation of migratory cells ││                    │ J: Sox2 Knock-Down │                 │ In Vitro m │          │ In Vivo │                                          
-          ╰──────────────┬───────────────╯│                    ╰────────┬─┬─────────╯                 ╰─────┬──────╯          ╰───┬─┬───╯                                          
-              ┌──────────┘                │      ┌──────────────────────┘ │                                 │                     │ └─────────────────────────────┐                
-              │ ┌─────────────────────────┘      │                        │                                 │                     │                               │                
+                       │    regards to phenotype     │    └──────────────┬─────────────────┘    │  migratory/invasive phenotype  │                                                 
+                       └─┬────────────────────┬──────┘                   │                      │ in the in vitro model and the  │                                                 
+                         │                    │                          │                      │ effect on metastasis formation │                                                 
+                         │                    │                          │                      │      in the in vivo model      │                                                 
+             Transwell migration assay        │        Lentiviral-mediated RNA interference     └───────────┬───────────────────┬┘                                                 
+                         │                    │                          │                                  │                   │                                                  
+                         │                    │                          │                    Transwell/Wound Healing Assay Orthotopic PDX                                         
+                         ▾             RNA Sequencing                    ▾                                  ▾                   ▾                                                  
+          ╭──────────────────────────────╮    │                ╭────────────────────╮                 ╭────────────╮          ╭─────────╮                                          
+          │ Isolation of migratory cells │    │                │ J: Sox2 Knock-Down │                 │ In Vitro m │          │ In Vivo │                                          
+          ╰──────────────┬───────────────╯    │                ╰────────┬─┬─────────╯                 ╰─────┬──────╯          ╰───┬─┬───╯                                          
+              ┌──────────┘                    │  ┌──────────────────────┘ │                                 │                     │ └─────────────────────────────┐                
+              │ ┌─────────────────────────────┘  │                        │                                 │                     │                               │                
               ▾ ▾                                ▾                        ▾                                 ▾                     ▾                               ▾                
 ╭──────────────────────────────╮    ╭─────────────────────────╮    ╭──────────────────────────╮    ╭─────────────╮    ╭───────────────────────╮    ╭──────────────────────────────╮
 │ L: Expression of markers for │    │ O: Up/downregulation of │    │ Up/downregulation of EMT │    │ Phenotyping │    │ Kaplan-Meier Survival │    │ Immunohistochemical Analysis │
