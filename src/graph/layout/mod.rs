@@ -189,7 +189,8 @@ fn holds(diagram: &Diagram, group: usize, inner: Option<usize>) -> bool {
 fn size(diagram: &Diagram, item: Item, content: &Arrangement) -> (i32, i32) {
     match item {
         Item::Node(index) => {
-            let size = shape::size(diagram.nodes[index].shape, &diagram.nodes[index].label);
+            let node = &diagram.nodes[index];
+            let size = shape::size(node.shape, &node.label, &node.compartments);
             (i32::from(size.width), i32::from(size.height))
         }
         Item::Group(index) => {

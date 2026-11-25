@@ -121,7 +121,8 @@ pub(crate) fn violations(diagram: &Diagram, drawing: &Drawing) -> Vec<String> {
     for (index, (node, &node_rect)) in diagram.nodes.iter().zip(&drawing.nodes).enumerate() {
         let drawn: String =
             (node_rect.y..node_rect.y + node_rect.height).map(|y| text_at(&rows, Rect::new(node_rect.x, y, node_rect.width, 1))).collect();
-        let missing = node.label.lines.iter().filter(|line| !drawn.contains(line.as_str())).count();
+        let missing =
+            node.label.lines.iter().chain(node.compartments.iter().flatten()).filter(|line| !drawn.contains(line.as_str())).count();
         if missing > 0 {
             found.push(format!("node {} has {missing} label lines not drawn whole", node.id));
         }

@@ -32,6 +32,7 @@ fn diagram(flowchart: &Flowchart) -> Diagram {
             id: node.id.clone(),
             text: node.text.shown(),
             label: Label::wrapped(&node.text.shown()),
+            compartments: Vec::new(),
             shape: shape::named(node.shape.as_deref()),
             group: innermost(&subgraphs, &groups, &node.id),
             order,

@@ -24,6 +24,9 @@ pub(crate) struct Node {
     /// Its text as the source gives it, before it is cut into lines.
     pub(crate) text: String,
     pub(crate) label: Label,
+    /// Lines under its label, each list in a compartment of its own below a rule, left-aligned: a class's
+    /// attributes and methods, an entity's attributes.
+    pub(crate) compartments: Vec<Vec<String>>,
     pub(crate) shape: Shape,
     /// The innermost group holding it.
     pub(crate) group: Option<usize>,
