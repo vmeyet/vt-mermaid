@@ -24,6 +24,9 @@ pub(super) struct Diagram {
     pub(super) nodes: Vec<Node>,
     pub(super) groups: Vec<Group>,
     pub(super) edges: Vec<Edge>,
+    /// Links that shape the layout and are never drawn (`A ~~~ B`).
+    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
+    pub(super) invisible: Vec<Invisible>,
     pub(super) flow: Direction,
 }
 
@@ -37,6 +40,9 @@ pub(super) struct Node {
     pub(super) y: f32,
     /// The innermost group holding it.
     pub(super) group: Option<usize>,
+    /// Its place among the nodes in the order the source first names them.
+    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
+    pub(super) order: usize,
 }
 
 /// A subgraph.
@@ -65,17 +71,24 @@ pub(super) struct Edge {
     pub(super) arrow_end: bool,
 }
 
+/// An invisible link between two nodes or groups.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct Invisible {
+    pub(super) from: End,
+    pub(super) to: End,
+}
+
 /// mmdr's graph, the invisible links it cannot read, which shape the layout and are never drawn, and the shapes
 /// attribute blocks name, which it cannot read either.
 #[derive(Debug, Clone)]
 struct Parsed {
     graph: Graph,
-    invisible: Vec<Invisible>,
+    invisible: Vec<InvisibleLink>,
     shapes: HashMap<String, Shape>,
 }
 
 #[derive(Debug, Clone)]
-struct Invisible {
+struct InvisibleLink {
     from: String,
     to: String,
 }
@@ -83,7 +96,25 @@ struct Invisible {
 impl Diagram {
     /// Parses and lays out `source`, refusing anything but a flowchart within [`MAX_NODES`] and [`MAX_EDGES`].
     pub(super) fn read(source: &str) -> Result<Self, Error> {
-        Ok(Self::new(&parse(source)?))
+        let parsed = parse(source)?;
+        let positions = layout(&parsed, &labels(&parsed));
+        Ok(Self::new(&parsed, &positions))
+    }
+
+    /// Parses `source` like [`read`](Self::read) and leaves every node at the origin, for a layout that needs no
+    /// pixels.
+    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
+    pub(super) fn parsed(source: &str) -> Result<Self, Error> {
+        let parsed = parse(source)?;
+        Ok(Self::new(&parsed, &unplaced(&parsed.graph)))
+    }
+
+    /// Its ranks and those of its groups going down where they go sideways.
+    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
+    pub(super) fn turned_top_down(&self) -> Self {
+        let turned = |flow: Direction| if matches!(flow, Direction::Left | Direction::Right) { Direction::Down } else { flow };
+        let groups = self.groups.iter().map(|group| Group { flow: turned(group.flow), ..group.clone() }).collect();
+        Self { groups, flow: turned(self.flow), ..self.clone() }
     }
 
     /// Like [`read`](Self::read), its ranks and those of its groups going down where the source says sideways: a
@@ -93,7 +124,9 @@ impl Diagram {
         let subgraphs =
             parsed.graph.subgraphs.into_iter().map(|subgraph| mmdr::Subgraph { direction: subgraph.direction.map(top_down), ..subgraph });
         let graph = Graph { direction: top_down(parsed.graph.direction), subgraphs: subgraphs.collect(), ..parsed.graph };
-        Ok(Self::new(&Parsed { graph, ..parsed }))
+        let parsed = Parsed { graph, ..parsed };
+        let positions = layout(&parsed, &labels(&parsed));
+        Ok(Self::new(&parsed, &positions))
     }
 
     /// Whether its ranks, or those of one of its groups, go left or right.
@@ -102,17 +135,18 @@ impl Diagram {
         sideways(self.flow) || self.groups.iter().any(|group| sideways(group.flow))
     }
 
-    fn new(parsed: &Parsed) -> Self {
+    fn new(parsed: &Parsed, positions: &BTreeMap<String, (f32, f32)>) -> Self {
         let graph = &parsed.graph;
-        let shape = |id: &str, node: &mmdr::Node| parsed.shapes.get(id).copied().unwrap_or_else(|| shape_of(node.shape));
-        let labels: HashMap<&str, (Label, Shape)> =
-            graph.nodes.iter().map(|(id, node)| (id.as_str(), (Label::wrapped(&node.label), shape(id, node)))).collect();
-        let positions = layout(parsed, &labels);
-        let nodes = nodes(graph, &labels, &positions);
+        let nodes = nodes(graph, &labels(parsed), positions);
         let groups = groups(graph, &nodes);
         let nodes = with_innermost_groups(nodes, graph, &groups);
-        let edges = edges(graph, &nodes, &groups);
-        Self { nodes, groups, edges, flow: direction(graph.direction) }
+        let ends = Ends { graph, nodes: &nodes, groups: &groups };
+        let invisible = parsed
+            .invisible
+            .iter()
+            .filter_map(|link| Some(Invisible { from: ends.named(&link.from)?, to: ends.named(&link.to)? }))
+            .collect();
+        Self { edges: edges(&ends), invisible, flow: direction(graph.direction), nodes, groups }
     }
 
     /// The direction ranks go in the group holding `end`.
@@ -124,12 +158,51 @@ impl Diagram {
         container.map_or(self.flow, |group| self.groups[group].flow)
     }
 
+    /// The direction ranks go in the innermost group holding both ends, which is where an edge between them is
+    /// laid out.
+    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
+    pub(super) fn flow_between(&self, from: End, to: End) -> Direction {
+        let around_to = self.holders(to);
+        self.holders(from).into_iter().find(|group| around_to.contains(group)).map_or(self.flow, |group| self.groups[group].flow)
+    }
+
+    /// How many group frames an edge between the ends crosses.
+    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
+    pub(super) fn frames_between(&self, from: End, to: End) -> usize {
+        let (around_from, around_to) = (self.holders(from), self.holders(to));
+        let only = |groups: &[usize], others: &[usize]| groups.iter().filter(|group| !others.contains(group)).count();
+        only(&around_from, &around_to) + only(&around_to, &around_from)
+    }
+
+    /// The groups holding `end`, the innermost first.
+    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
+    fn holders(&self, end: End) -> Vec<usize> {
+        let container = match end {
+            End::Node(node) => self.nodes[node].group,
+            End::Group(group) => self.groups[group].parent,
+        };
+        std::iter::successors(container, |&group| self.groups[group].parent).take(self.groups.len() + 1).collect()
+    }
+
     pub(super) fn name(&self, end: End) -> &str {
         match end {
             End::Node(node) => &self.nodes[node].id,
             End::Group(group) => &self.groups[group].id,
         }
     }
+}
+
+/// Each node's label cut into lines and its shape, the one its attribute block names first.
+fn labels(parsed: &Parsed) -> HashMap<&str, (Label, Shape)> {
+    let shape = |id: &str, node: &mmdr::Node| parsed.shapes.get(id).copied().unwrap_or_else(|| shape_of(node.shape));
+    parsed.graph.nodes.iter().map(|(id, node)| (id.as_str(), (Label::wrapped(&node.label), shape(id, node)))).collect()
+}
+
+/// Every node the layout would place, at the origin: the graph's own and the ends edges name without declaring.
+#[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
+fn unplaced(graph: &Graph) -> BTreeMap<String, (f32, f32)> {
+    let ends = graph.edges.iter().flat_map(|edge| [&edge.from, &edge.to]);
+    graph.nodes.keys().chain(ends).map(|id| (id.clone(), (0.0, 0.0))).collect()
 }
 
 /// Rewrites what mmdr misreads before it reads the source, then finds the nodes each invisible link joins.
@@ -148,12 +221,12 @@ fn parse(source: &str) -> Result<Parsed, Error> {
 }
 
 /// The last node of the statement before the link and the first node of the one after, as mmdr reads each alone.
-fn ends(link: &Link) -> Option<Invisible> {
+fn ends(link: &Link) -> Option<InvisibleLink> {
     let statement = |text: &str| mmdr::parse_mermaid(&format!("flowchart TD\n{text}")).ok().map(|parsed| parsed.graph);
     let (before, after) = (statement(&link.before)?, statement(&link.after)?);
     let from = before.edges.last().map(|edge| edge.to.clone()).or_else(|| before.nodes.keys().next().cloned())?;
     let to = after.edges.first().map(|edge| edge.from.clone()).or_else(|| after.nodes.keys().next().cloned())?;
-    Some(Invisible { from, to })
+    Some(InvisibleLink { from, to })
 }
 
 /// Invisible links count as edges: mmdr lays them out.
@@ -248,7 +321,7 @@ fn stand_in_node(label: &Label, shape: Shape) -> String {
     stand_in_lines(size.width.saturating_sub(4), size.height.saturating_sub(2))
 }
 
-fn stand_in_edge(link: &Invisible) -> mmdr::Edge {
+fn stand_in_edge(link: &InvisibleLink) -> mmdr::Edge {
     mmdr::Edge {
         from: link.from.clone(),
         to: link.to.clone(),
@@ -292,7 +365,8 @@ fn nodes(graph: &Graph, labels: &HashMap<&str, (Label, Shape)>, positions: &BTre
         .filter(|(id, _)| !anchors.contains(id.as_str()))
         .map(|(id, &(x, y))| {
             let (label, shape) = label_and_shape(labels, id);
-            Node { id: id.clone(), label, shape, x, y, group: None }
+            let order = graph.node_order.get(id).copied().unwrap_or(usize::MAX);
+            Node { id: id.clone(), label, shape, x, y, group: None, order }
         })
         .collect()
 }
@@ -383,22 +457,33 @@ fn with_innermost_groups(nodes: Vec<Node>, graph: &Graph, groups: &[Group]) -> V
         .collect()
 }
 
-fn edges(graph: &Graph, nodes: &[Node], groups: &[Group]) -> Vec<Edge> {
-    let end = |id: &str| {
-        nodes
+/// What an edge's end may name: a node, a group's id or its title.
+#[derive(Debug, Clone, Copy)]
+struct Ends<'a> {
+    graph: &'a Graph,
+    nodes: &'a [Node],
+    groups: &'a [Group],
+}
+
+impl Ends<'_> {
+    fn named(&self, id: &str) -> Option<End> {
+        self.nodes
             .iter()
             .position(|node| node.id == id)
             .map(End::Node)
-            .or_else(|| groups.iter().position(|group| group.id == id).map(End::Group))
-            .or_else(|| graph.subgraphs.iter().position(|subgraph| subgraph.label == id).map(End::Group))
-    };
-    graph
+            .or_else(|| self.groups.iter().position(|group| group.id == id).map(End::Group))
+            .or_else(|| self.graph.subgraphs.iter().position(|subgraph| subgraph.label == id).map(End::Group))
+    }
+}
+
+fn edges(ends: &Ends<'_>) -> Vec<Edge> {
+    ends.graph
         .edges
         .iter()
         .filter_map(|edge| {
             Some(Edge {
-                from: end(&edge.from)?,
-                to: end(&edge.to)?,
+                from: ends.named(&edge.from)?,
+                to: ends.named(&edge.to)?,
                 label: edge.label.as_deref().map(Label::single_line),
                 kind: match edge.style {
                     EdgeStyle::Solid => LineKind::Light,
@@ -470,6 +555,18 @@ mod tests {
         let parents: Vec<(&str, Option<usize>)> = diagram.groups.iter().map(|group| (group.id.as_str(), group.parent)).collect();
         assert_eq!(parents, [("Outer", None), ("Middle", Some(0)), ("Inner", Some(1))]);
         assert_eq!(node(&diagram, "A").group, Some(2));
+    }
+
+    #[test]
+    fn an_edge_between_groups_follows_the_flow_of_the_group_holding_both() {
+        let source = "flowchart TB\n  A --> B\n  subgraph Side\n    direction LR\n    B --> C\n  end";
+
+        let diagram = Diagram::read(source).unwrap();
+
+        let end = |id: &str| End::Node(diagram.nodes.iter().position(|node| node.id == id).unwrap());
+        assert_eq!(diagram.flow_between(end("A"), end("B")), Direction::Down);
+        assert_eq!(diagram.flow_between(end("B"), end("C")), Direction::Right);
+        assert_eq!((diagram.frames_between(end("A"), end("B")), diagram.frames_between(end("B"), end("C"))), (1, 0));
     }
 
     #[test]
@@ -558,6 +655,45 @@ mod tests {
             (Shape::LeanRight, ["In".to_owned()].as_slice())
         );
         assert_eq!(node(&diagram, "B").shape, Shape::DoubleCircle);
+    }
+
+    #[test]
+    fn an_invisible_link_is_kept_between_its_ends() {
+        let diagram = Diagram::read("flowchart LR\n  A ~~~ B --> C").unwrap();
+
+        assert_eq!(diagram.invisible, [Invisible { from: End::Node(0), to: End::Node(1) }]);
+    }
+
+    #[test]
+    fn nodes_know_the_order_the_source_names_them_in() {
+        let diagram = Diagram::read("flowchart LR\n  Z --> A --> M").unwrap();
+
+        assert_eq!(diagram.nodes.iter().map(|node| (node.id.as_str(), node.order)).collect::<Vec<_>>(), [("A", 1), ("M", 2), ("Z", 0)]);
+    }
+
+    #[test]
+    fn a_diagram_parsed_without_a_layout_has_the_same_parts_at_the_origin() {
+        let source = "flowchart LR\n  subgraph one\n    A\n  end\n  B --> one\n  B -->|x| C ~~~ D";
+
+        let (placed, parsed) = (Diagram::read(source).unwrap(), Diagram::parsed(source).unwrap());
+
+        assert_eq!(ids(&parsed), ids(&placed));
+        assert_eq!(
+            parsed.edges.iter().map(|edge| (edge.from, edge.to)).collect::<Vec<_>>(),
+            [(End::Node(1), End::Group(0)), (End::Node(1), End::Node(2))]
+        );
+        assert_eq!(parsed.invisible, placed.invisible);
+        assert!(parsed.nodes.iter().all(|node| (node.x, node.y) == (0.0, 0.0)));
+    }
+
+    #[test]
+    fn turning_top_down_changes_only_the_flows_going_sideways() {
+        let source = "flowchart LR\n  subgraph Up\n    direction BT\n    A --> B\n  end\n  subgraph Side\n    C --> D\n  end";
+
+        let turned = Diagram::parsed(source).unwrap().turned_top_down();
+
+        assert_eq!(turned.flow, Direction::Down);
+        assert_eq!(turned.groups.iter().map(|group| group.flow).collect::<Vec<_>>(), [Direction::Up, Direction::Down]);
     }
 
     #[test]

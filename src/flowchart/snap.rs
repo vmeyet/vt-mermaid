@@ -48,6 +48,10 @@ impl Room {
 pub(super) struct Placement {
     pub(super) nodes: Vec<Rect>,
     pub(super) groups: Vec<Rect>,
+    /// The room the layout keeps for each edge's label, when it keeps any.
+    pub(super) labels: Vec<Option<Rect>>,
+    /// Whether the edges of one side of a block share a trunk even when the side has room for each.
+    pub(super) shares_ways: bool,
     pub(super) size: Size,
 }
 
@@ -92,6 +96,8 @@ pub(super) fn place(diagram: &Diagram, room: Room) -> Placement {
     let mut placement = Placement {
         nodes: vec![Rect::new(0, 0, 0, 0); diagram.nodes.len()],
         groups: vec![Rect::new(0, 0, 0, 0); diagram.groups.len()],
+        labels: vec![None; diagram.edges.len()],
+        shares_ways: false,
         size: Size { width: to_cells(root.width + 2 * margin), height: to_cells(root.height + 2 * margin) },
     };
     for (item, rect) in flatten(&root, margin, margin) {
