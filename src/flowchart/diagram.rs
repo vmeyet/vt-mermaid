@@ -25,7 +25,6 @@ pub(super) struct Diagram {
     pub(super) groups: Vec<Group>,
     pub(super) edges: Vec<Edge>,
     /// Links that shape the layout and are never drawn (`A ~~~ B`).
-    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
     pub(super) invisible: Vec<Invisible>,
     pub(super) flow: Direction,
 }
@@ -41,7 +40,6 @@ pub(super) struct Node {
     /// The innermost group holding it.
     pub(super) group: Option<usize>,
     /// Its place among the nodes in the order the source first names them.
-    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
     pub(super) order: usize,
 }
 
@@ -103,14 +101,12 @@ impl Diagram {
 
     /// Parses `source` like [`read`](Self::read) and leaves every node at the origin, for a layout that needs no
     /// pixels.
-    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
     pub(super) fn parsed(source: &str) -> Result<Self, Error> {
         let parsed = parse(source)?;
         Ok(Self::new(&parsed, &unplaced(&parsed.graph)))
     }
 
     /// Its ranks and those of its groups going down where they go sideways.
-    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
     pub(super) fn turned_top_down(&self) -> Self {
         let turned = |flow: Direction| if matches!(flow, Direction::Left | Direction::Right) { Direction::Down } else { flow };
         let groups = self.groups.iter().map(|group| Group { flow: turned(group.flow), ..group.clone() }).collect();
@@ -196,7 +192,6 @@ fn labels(parsed: &Parsed) -> HashMap<&str, (Label, Shape)> {
 }
 
 /// Every node the layout would place, at the origin: the graph's own and the ends edges name without declaring.
-#[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
 fn unplaced(graph: &Graph) -> BTreeMap<String, (f32, f32)> {
     let ends = graph.edges.iter().flat_map(|edge| [&edge.from, &edge.to]);
     graph.nodes.keys().chain(ends).map(|id| (id.clone(), (0.0, 0.0))).collect()

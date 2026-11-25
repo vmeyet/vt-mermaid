@@ -15,8 +15,8 @@
       "100": {"status":"rendered","drawn":{"width":55,"rows":44,"area":2420,"fits":true,"node_labels":10,"edge_labels":3,"arrows":10,"crossings":2,"bends":29},"score":90}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":78,"rows":27,"area":2106,"fits":true,"node_labels":10,"edge_labels":2,"arrows":10,"crossings":0,"bends":4},"score":96,"exact":{"crossings":0,"bends":4,"edge_cells":77,"violations":["edge 1 USCompany → HongKongCompany label found no room"]}},
-      "100": {"status":"rendered","drawn":{"width":78,"rows":27,"area":2106,"fits":true,"node_labels":10,"edge_labels":2,"arrows":10,"crossings":0,"bends":4},"score":96,"exact":{"crossings":0,"bends":4,"edge_cells":77,"violations":["edge 1 USCompany → HongKongCompany label found no room"]}}
+      "80": {"status":"rendered","drawn":{"width":68,"rows":27,"area":1836,"fits":true,"node_labels":10,"edge_labels":3,"arrows":10,"crossings":0,"bends":8},"score":100,"exact":{"crossings":0,"bends":8,"edge_cells":110,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":68,"rows":27,"area":1836,"fits":true,"node_labels":10,"edge_labels":3,"arrows":10,"crossings":0,"bends":8},"score":100,"exact":{"crossings":0,"bends":8,"edge_cells":110,"violations":[]}}
     }
   }
 }

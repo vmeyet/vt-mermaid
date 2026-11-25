@@ -2,10 +2,10 @@
 source: src/flowchart/mod.rs
 expression: "rows(&drawing.canvas).join(\"\\n\")"
 ---
-   ┌───────┐    
-   │ Start │    
-   └───┬───┘    
-┌──────┘        
+    ┌───────┐   
+    │ Start │   
+    └───┬───┘   
+┌───────┘       
 │               
 │               
 │ ╭─ My Group ─╮
@@ -30,6 +30,6 @@ expression: "rows(&drawing.canvas).join(\"\\n\")"
         │       
         │       
         ▾       
-    ┌─────┐     
-    │ End │     
-    └─────┘
+     ┌─────┐    
+     │ End │    
+     └─────┘

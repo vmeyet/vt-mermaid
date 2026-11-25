@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 136 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":76,"rows":102,"area":7752,"fits":true,"node_labels":20,"edge_labels":6,"arrows":25,"crossings":13,"bends":29},"score":84,"exact":{"crossings":13,"bends":29,"edge_cells":519,"violations":["edge 12 F → K label found no room"]}},
-      "100": {"status":"rendered","drawn":{"width":98,"rows":89,"area":8722,"fits":true,"node_labels":20,"edge_labels":7,"arrows":25,"crossings":9,"bends":24},"score":87,"exact":{"crossings":9,"bends":24,"edge_cells":514,"violations":[]}}
+      "80": {"status":"rendered","drawn":{"width":70,"rows":121,"area":8470,"fits":true,"node_labels":20,"edge_labels":6,"arrows":21,"crossings":12,"bends":45},"score":82,"exact":{"crossings":12,"bends":56,"edge_cells":681,"violations":["edge 9 E → J label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":59,"rows":128,"area":7552,"fits":true,"node_labels":20,"edge_labels":5,"arrows":22,"crossings":14,"bends":37},"score":80,"exact":{"crossings":14,"bends":47,"edge_cells":660,"violations":["edge 9 E → J label found no room","edge 12 F → K label found no room"]}}
     }
   }
 }

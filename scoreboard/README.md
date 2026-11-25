@@ -47,8 +47,8 @@ Meaning comes from the oracle's level B results ([`oracle/results/flowchart.json
 | Width, rows, area | Display columns of the widest row, rows, their product; trailing spaces and blank rows above and below are left out | No |
 | Fits | Width at most the columns asked for | No |
 | Node labels, edge labels | A label is present when every word of it appears somewhere in the output, markup removed from both the same way for every tool; the table averages the share found per input | Yes: words can match elsewhere, and a label cut with `⋯` counts as missing |
-| Arrows right | Arrowhead glyphs (`►▶▸▷→◄◀◂◁←▲▴△↑▼▾▽↓`) equal the oracle's arrowheads: one per `-->`, two per `<-->`, none for open, circle or cross ends | Yes |
-| Crossings | `┼`-like glyphs | Yes: an edge through a group frame draws one too |
+| Arrows right | Arrowhead glyphs (`►▶▸▷→◄◀◂◁←▲▴△↑▼▾▽↓`) equal the oracle's arrowheads: one per `-->`, two per `<-->`, none for open, circle or cross ends | Yes: edges a tool merges into one trunk share one arrowhead |
+| Crossings | `┼`-like glyphs | Yes: an edge through a group frame draws one too, and so does a trunk its edges leave on both sides |
 | Bends | Corner glyphs left once every closed rectangle's four corners are taken out | Yes: merged edges and odd shapes miscount |
 | Score | 0 when not rendered; else 50 × the share of labels found, 20 if it fits, 15 × how close the arrowheads are to the oracle's, 15 ÷ (1 + crossings); only for inputs whose oracle has a node | Yes: a weighting, made to rank, not to judge |
 | Median ms, p95 ms | Wall time of the child process over every input, start-up included: Node and ELK add about half a second to beautiful-mermaid | Noisy: the runs share all cores |
@@ -62,9 +62,9 @@ vt-mermaid also measures itself from its own geometry (`vt_mermaid::measure`, be
 
 | Metric | Definition |
 |---|---|
-| Crossings | Cells two edge routes share; lines never run along each other, so each one is a crossing |
-| Bends | Turns along every route, its ends left out |
-| Edge cells | Cells every route covers |
+| Crossings | Cells one edge route runs straight through sideways and another up or down; routes sharing a trunk run the same way there, so they never count |
+| Bends | Turns along every route, its ends left out, a turn the routes of a trunk share counted once |
+| Edge cells | Cells the routes cover, a cell they share counted once |
 | Violations | Level C invariants broken: a label not drawn whole or with no room, an edge not joining both ends or running through a node, overlaps, a node outside its group |
 
 Set beside the glyph counts in the same table, they also show how far the proxies are off.

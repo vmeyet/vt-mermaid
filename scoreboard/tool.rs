@@ -9,7 +9,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
-use vt_mermaid::GlyphSet;
 
 const DEADLINE: Duration = Duration::from_secs(10);
 const POLL: Duration = Duration::from_millis(2);
@@ -157,7 +156,9 @@ pub(crate) fn render_in_process(name: &str, width: u16) -> Result<(), Box<dyn st
     let mut source = String::new();
     io::stdin().read_to_string(&mut source)?;
     let drawn = match Tool::named(name) {
-        Some(Tool::VtMermaid) => vt_mermaid::render(&source, width).map(|canvas| text_of(&canvas)).map_err(|error| error.to_string()),
+        Some(Tool::VtMermaid) => {
+            vt_mermaid::measure(&source, width, engine()).map(|measures| measures.rows.join("\n")).map_err(|error| error.to_string())
+        }
         Some(Tool::MermaidText) => mermaid_text(&source, width),
         _ => return Err(format!("{name} does not run in-process").into()),
     };
@@ -171,8 +172,13 @@ pub(crate) fn render_in_process(name: &str, width: u16) -> Result<(), Box<dyn st
     Ok(())
 }
 
-pub(crate) fn text_of(canvas: &vt_mermaid::Canvas) -> String {
-    canvas.rows(GlyphSet::Unicode).map(|runs| runs.into_iter().map(|run| run.text).collect::<String>()).collect::<Vec<_>>().join("\n")
+/// The layout vt-mermaid draws with: its own, or mermaid-rs-renderer's when `VT_MERMAID_LAYOUT` is `snapped`, to
+/// compare the two until the second is removed.
+pub(crate) fn engine() -> vt_mermaid::Engine {
+    match env::var("VT_MERMAID_LAYOUT").as_deref() {
+        Ok("snapped") => vt_mermaid::Engine::Snapped,
+        _ => vt_mermaid::Engine::Layered,
+    }
 }
 
 fn mermaid_text(source: &str, width: u16) -> Result<String, String> {

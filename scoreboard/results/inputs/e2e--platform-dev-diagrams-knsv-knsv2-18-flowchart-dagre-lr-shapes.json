@@ -15,8 +15,8 @@
       "100": {"status":"rendered","drawn":{"width":55,"rows":15,"area":825,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":1,"bends":4},"score":93}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":24,"rows":4,"area":96,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":1,"edge_cells":34,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":24,"rows":4,"area":96,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":1,"edge_cells":34,"violations":[]}}
+      "80": {"status":"rendered","drawn":{"width":25,"rows":5,"area":125,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":38,"violations":[]}},
+      "100": {"status":"rendered","drawn":{"width":25,"rows":5,"area":125,"fits":true,"node_labels":2,"edge_labels":2,"arrows":1,"crossings":0,"bends":2},"score":100,"exact":{"crossings":0,"bends":2,"edge_cells":38,"violations":[]}}
     }
   }
 }

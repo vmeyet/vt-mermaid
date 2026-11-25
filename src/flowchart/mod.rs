@@ -6,7 +6,6 @@ mod draw;
 mod edge_label;
 mod invisible;
 mod label;
-#[cfg_attr(not(test), expect(dead_code, reason = "flowcharts are drawn with this layout once it beats the snapped one"))]
 mod layout;
 #[cfg(any(test, feature = "measure"))]
 pub(crate) mod measure;
@@ -22,6 +21,7 @@ use vt_canvas::{Canvas, Rect};
 
 use crate::error::{Error, MAX_AREA, MAX_SOURCE_BYTES};
 use diagram::Diagram;
+use layout::Fit;
 use route::Route;
 use snap::{MARGIN, Placement, Room};
 
@@ -38,16 +38,54 @@ pub(crate) struct Drawing {
 
 /// Columns a folded drawing gets, in eighths of the width allowed: edges going round the blocks take the rest.
 const FOLDS: [i32; 3] = [8, 7, 6];
+/// Columns a folded layout gets, in eighths of the width allowed, then a packed one.
+const FOLDED: [i32; 5] = [8, 7, 6, 5, 4];
+const PACKED: [i32; 3] = [8, 6, 4];
+
+/// What places the blocks of a flowchart.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(not(feature = "measure"), expect(unreachable_pub, reason = "only the scoreboard picks the layout, through the measure feature"))]
+pub enum Engine {
+    /// mermaid-rs-renderer's layout, snapped to the grid.
+    Snapped,
+    /// vt-mermaid's own layers, in cells.
+    Layered,
+}
 
 /// Draws `source` in the first form that fits `max_width` and whose edges find a path: with the whole room the
 /// layout leaves, then half of it, then none and its wide ranks folded; each time as written, then turned top-down
 /// when it flows sideways.
-pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
+pub(crate) fn render(source: &str, max_width: u16, engine: Engine) -> Result<Drawing, Error> {
     if source.len() > MAX_SOURCE_BYTES {
         return Err(Error::TooLong { bytes: source.len() });
     }
+    match engine {
+        Engine::Snapped => snapped(source, max_width),
+        Engine::Layered => layered(source, max_width),
+    }
+}
+
+fn layered(source: &str, max_width: u16) -> Result<Drawing, Error> {
+    let written = Diagram::parsed(source)?;
+    let turned = written.flows_sideways().then(|| written.turned_top_down());
+    let columns = |eighths: i32| i32::from(max_width) * eighths / 8;
+    let folded = FOLDED.map(|eighths| Fit::Folded { columns: columns(eighths) });
+    let packed = PACKED.map(|eighths| Fit::Packed { columns: columns(eighths) });
+    let fits = [Fit::Loose, Fit::Tight].into_iter().chain(folded).chain(packed);
+    let forms = fits.flat_map(|fit| std::iter::once(&written).chain(&turned).map(move |diagram| (diagram, fit)));
+    let mut drawing = Err(Error::TooWide { width: usize::MAX, max_width });
+    for (diagram, fit) in forms {
+        if !may_fit_tighter(&drawing) {
+            break;
+        }
+        drawing = drawn(diagram, layout::place(diagram, fit), max_width);
+    }
+    drawing
+}
+
+fn snapped(source: &str, max_width: u16) -> Result<Drawing, Error> {
     let written = Diagram::read(source)?;
-    let as_laid_out = drawn(&written, Room::Whole, max_width);
+    let as_laid_out = drawn(&written, snap::place(&written, Room::Whole), max_width);
     if !may_fit_tighter(&as_laid_out) {
         return as_laid_out;
     }
@@ -56,11 +94,9 @@ pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
     let tighter = std::iter::once(Room::Half)
         .chain(folds)
         .flat_map(|room| std::iter::once(&written).chain(&turned).map(move |diagram| (diagram, room)));
-    turned
-        .iter()
-        .map(|diagram| (diagram, Room::Whole))
-        .chain(tighter)
-        .fold(as_laid_out, |drawing, (diagram, room)| if may_fit_tighter(&drawing) { drawn(diagram, room, max_width) } else { drawing })
+    turned.iter().map(|diagram| (diagram, Room::Whole)).chain(tighter).fold(as_laid_out, |drawing, (diagram, room)| {
+        if may_fit_tighter(&drawing) { drawn(diagram, snap::place(diagram, room), max_width) } else { drawing }
+    })
 }
 
 /// A drawing too wide, or one whose blocks leave an edge no path, may come out with the blocks placed another way.
@@ -68,8 +104,7 @@ fn may_fit_tighter(drawing: &Result<Drawing, Error>) -> bool {
     matches!(drawing, Err(Error::TooWide { .. } | Error::Unroutable { .. }))
 }
 
-fn drawn(diagram: &Diagram, room: Room, max_width: u16) -> Result<Drawing, Error> {
-    let placement = snap::place(diagram, room);
+fn drawn(diagram: &Diagram, placement: Placement, max_width: u16) -> Result<Drawing, Error> {
     check_width(&placement, max_width)?;
     check_area(usize::from(placement.size.width), usize::from(placement.size.height))?;
     let routed = route::route(diagram, &placement)?;
@@ -95,6 +130,10 @@ mod tests {
 
     use super::measure::{rows, violations};
     use super::*;
+
+    fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
+        super::render(source, max_width, Engine::Layered)
+    }
 
     /// Wide enough for every spike flowchart: the comparison with mermaid-text judges the width.
     const WIDTH: u16 = 400;
@@ -124,7 +163,7 @@ mod tests {
             .into_iter()
             .flat_map(|(name, source)| {
                 let drawing = render(&source, WIDTH).unwrap();
-                violations(&Diagram::read(&source).unwrap(), &drawing).into_iter().map(move |found| format!("{name}: {found}"))
+                violations(&Diagram::parsed(&source).unwrap(), &drawing).into_iter().map(move |found| format!("{name}: {found}"))
             })
             .collect();
 
@@ -199,7 +238,7 @@ mod tests {
     }
 
     #[test]
-    fn a_rank_too_wide_is_folded_into_rows() {
+    fn a_rank_too_wide_is_folded_and_its_edges_share_a_trunk() {
         let source = "flowchart TB\n  A[Start] --> B[First option] & C[Second option] & D[Third option]";
 
         let one_row = render(source, WIDTH).unwrap();
@@ -209,35 +248,47 @@ mod tests {
         assert_eq!(
             rows(&folded.canvas),
             [
-                " ┌───────┐                           ",
-                " │ Start │                           ",
-                " └┬┬───┬─┘                           ",
-                "┌─┘│   └────────────────────┐        ",
-                "│  │                        │        ",
-                "│  ▾                        ▾        ",
-                "│┌──────────────┐    ┌──────────────┐",
-                "││ First option │    │ Third option │",
-                "│└──────────────┘    └──────────────┘",
-                "│                                    ",
-                "└────────┐                           ",
-                "         ▾                           ",
-                " ┌───────────────┐                   ",
-                " │ Second option │                   ",
-                " └───────────────┘                   ",
+                "                      ┌───────┐    ",
+                "                      │ Start │    ",
+                "                      └───┬───┘    ",
+                "                          │        ",
+                "       ┌─────────┬────────┤        ",
+                "       ▾         │        ▾        ",
+                "┌──────────────┐ │┌───────────────┐",
+                "│ First option │ ││ Second option │",
+                "└──────────────┘ │└───────────────┘",
+                "                 │                 ",
+                "                 │                 ",
+                "                 ▾                 ",
+                "              ┌──────────────┐     ",
+                "              │ Third option │     ",
+                "              └──────────────┘     ",
             ]
         );
     }
 
     #[test]
-    fn a_folded_drawing_whose_edges_go_past_the_width_is_folded_narrower() {
+    fn a_folded_drawing_still_too_wide_is_folded_narrower() {
         let source = "flowchart TB\n  A[Start] --> B[First option] & C[Second option] & D[Third option]";
 
-        let two_in_a_row = render(source, 38).unwrap();
-        let one_in_a_row = render(source, 30).unwrap();
+        let two_in_a_row = render(source, 37).unwrap();
+        let one_in_a_row = render(source, 36).unwrap();
 
         let size = |drawing: &Drawing| (rows(&drawing.canvas)[0].chars().count(), rows(&drawing.canvas).len());
-        assert_eq!(size(&two_in_a_row), (37, 15));
-        assert_eq!(size(&one_in_a_row).1, 21);
+        assert_eq!(size(&two_in_a_row), (35, 15));
+        assert_eq!(size(&one_in_a_row), (21, 21));
+    }
+
+    #[test]
+    fn a_flowchart_too_dense_to_fold_is_packed_without_room_for_its_links() {
+        let source = include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-life-choices.mmd");
+        let diagram = Diagram::parsed(source).unwrap();
+
+        let folded = drawn(&diagram, layout::place(&diagram, Fit::Folded { columns: 40 }), 80);
+        let packed = render(source, 80);
+
+        assert!(matches!(folded, Err(Error::TooWide { .. })), "{:?}", folded.map(|drawing| rows(&drawing.canvas)));
+        assert!(packed.is_ok());
     }
 
     #[test]

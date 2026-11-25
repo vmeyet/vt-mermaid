@@ -2,29 +2,21 @@
 source: src/flowchart/mod.rs
 expression: "rows(&drawing.canvas).join(\"\\n\")"
 ---
-                                                                                 ╱──────────────────────────╲                                                                            
-                                                                     ┌───────────┤ What triggered this run? ├──Push to master──┐                                                         
-                                                                     │           ╲────────┬───┬───┬─────────╱                  │                                                         
-                 ┌──────────────────────────────PR → develop─────────┼────────────────────┘   │   └────────────────────────────┼─────────────────────────────────────┐                   
-                 │                                                   │                        │                                │                                     │                   
-                 │                                              PR → master                   │                                │                                     │                   
-                 │                                                   │        Push to develop (e.g. a PR merge)                │          Scheduled (daily) or manual 'simulated nightly'
-                 │                                                   │                        │                                │                                     │                   
-                 │                                                   │                        │                                │                                     │                   
-                 ▾                                                   ▾                        ▾                                ▾                                     ▾                   
-         ╱────────────────╲                                ╱────────────────────╲    ┌────────────────────┐    ┌────────────────────────────────┐    ┌────────────────────────────────┐  
-         │ 'run pr tests' │                                │ 'run release test' │    │ pr-check tier only │    │ pr-check + nightly-check tiers │    │ pr-check + nightly-check tiers │  
-         │   label set?   │                                │     label set?     │    └────────────────────┘    └────────────────────────────────┘    └────────────────────────────────┘  
-         ╲──────┬─┬───────╱                                ╲────────┬─┬─────────╱                                                                                                        
-                │ └────────no────────┐                              │ └──yes, or PR just opened───┐                                                                                      
-                │                    │                              │                             │                                                                                      
-                │                    │                              │                             │                                                                                      
-     yes, or PR just opened          │                             no                             │                                                                                      
-                │                    │                              │                             │                                                                                      
-                │                    │                              │                             │                                                                                      
-                ▾                    ▾                              ▾                             ▾                                                                                      
-┌────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐    ┌────────────────────────────────┐                                                                     
-│ pr-check tier only │    │    e2e skipped —     │    │    e2e skipped —     │    │ pr-check + nightly-check tiers │                                                                     
-└────────────────────┘    │ required check fails │    │ required check fails │    │  (visual-check excluded — see  │                                                                     
-                          └──────────────────────┘    └──────────────────────┘    │          Applitools)           │                                                                     
-                                                                                  └────────────────────────────────┘
+                                                                                                    ╱──────────────────────────╲                                                                           
+                                                                                       ┌────────────┤ What triggered this run? ├─Push to master──┐                                                         
+                                                                                       │            ╲────────┬───┬───┬─────────╱                 │                                                         
+                        ┌──────────────────────────────────────────────────────────────┼─────────────────────┘   │   └───────────────────────────┼─────────────────────────────────────┐                   
+                  PR → develop                                                    PR → master    Push to develop (e.g. a PR merge)               │          Scheduled (daily) or manual 'simulated nightly'
+                        ▾                                                              ▾                         ▾                               ▾                                     ▾                   
+                ╱────────────────╲                                           ╱────────────────────╲    ┌────────────────────┐    ┌────────────────────────────────┐    ┌────────────────────────────────┐  
+                │ 'run pr tests' │                                           │ 'run release test' │    │ pr-check tier only │    │ pr-check + nightly-check tiers │    │ pr-check + nightly-check tiers │  
+                │   label set?   │                                           │     label set?     │    └────────────────────┘    └────────────────────────────────┘    └────────────────────────────────┘  
+                ╲──────┬─┬───────╱                                           ╲────────┬──┬────────╱                                                                                                        
+           ┌───────────┘ │                                             ┌──────────────┘  │                                                                                                                 
+yes, or PR just opened   │                                  yes, or PR just opened       │                                                                                                                 
+           ▾            no                                             ▾                no                                                                                                                 
+ ┌────────────────────┐  │ ┌──────────────────────┐    ┌────────────────────────────────┐│   ┌──────────────────────┐                                                                                      
+ │ pr-check tier only │  └▸│    e2e skipped —     │    │ pr-check + nightly-check tiers │└──▸│    e2e skipped —     │                                                                                      
+ └────────────────────┘    │ required check fails │    │  (visual-check excluded — see  │    │ required check fails │                                                                                      
+                           └──────────────────────┘    │          Applitools)           │    └──────────────────────┘                                                                                      
+                                                       └────────────────────────────────┘

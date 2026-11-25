@@ -8,7 +8,7 @@ use vt_canvas::{Canvas, GlyphSet, Point, Rect};
 
 use super::diagram::{self, Diagram};
 use super::route::Route;
-use super::{Drawing, render};
+use super::{Drawing, Engine, render};
 use crate::error::Error;
 
 /// How a drawing is laid out, counted on its own geometry.
@@ -27,9 +27,9 @@ pub struct Measures {
 }
 
 /// Draws `source` as [`render`](crate::render) does, then measures the drawing.
-pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
-    let drawing = render(source, max_width)?;
-    let diagram = Diagram::read(source)?;
+pub fn measure(source: &str, max_width: u16, engine: Engine) -> Result<Measures, Error> {
+    let drawing = render(source, max_width, engine)?;
+    let diagram = Diagram::parsed(source)?;
     Ok(Measures {
         rows: rows(&drawing.canvas),
         crossings: crossings(&drawing),
@@ -168,12 +168,12 @@ mod tests {
 
     fn measured(path: &str) -> Measures {
         let source = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();
-        measure(&source, 400).unwrap()
+        measure(&source, 400, Engine::Layered).unwrap()
     }
 
     #[test]
     fn edges_crossing_each_other_are_counted_once_each() {
-        assert_eq!(measured("tests/spike/cached.mmd").crossings, 4);
+        assert_eq!(measured("tests/spike/cached.mmd").crossings, 1);
     }
 
     #[test]
@@ -183,8 +183,8 @@ mod tests {
 
     #[test]
     fn a_straight_edge_has_no_bend_and_each_edge_round_two_corners_has_two() {
-        let straight = measure("flowchart TB\n  A --> B", 80).unwrap();
-        let cornered = measure("flowchart TB\n  A --> B & C", 80).unwrap();
+        let straight = measure("flowchart TB\n  A --> B", 80, Engine::Layered).unwrap();
+        let cornered = measure("flowchart TB\n  A --> B & C", 80, Engine::Layered).unwrap();
 
         assert_eq!((straight.bends, straight.edge_cells, straight.violations.len()), (0, 4, 0));
         assert_eq!(cornered.bends, 4);

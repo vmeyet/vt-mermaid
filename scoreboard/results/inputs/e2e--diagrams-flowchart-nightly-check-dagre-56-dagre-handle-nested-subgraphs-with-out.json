@@ -15,8 +15,8 @@
       "100": {"status":"rendered","drawn":{"width":42,"rows":32,"area":1344,"fits":true,"node_labels":5,"edge_labels":2,"arrows":4,"crossings":1,"bends":14},"score":93}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":24,"rows":29,"area":696,"fits":true,"node_labels":5,"edge_labels":1,"arrows":4,"crossings":3,"bends":4},"score":82,"exact":{"crossings":0,"bends":4,"edge_cells":48,"violations":["edge 2 process_A → process_C label found no room"]}},
-      "100": {"status":"rendered","drawn":{"width":24,"rows":29,"area":696,"fits":true,"node_labels":5,"edge_labels":1,"arrows":4,"crossings":3,"bends":4},"score":82,"exact":{"crossings":0,"bends":4,"edge_cells":48,"violations":["edge 2 process_A → process_C label found no room"]}}
+      "80": {"status":"rendered","drawn":{"width":24,"rows":29,"area":696,"fits":true,"node_labels":5,"edge_labels":1,"arrows":4,"crossings":3,"bends":7},"score":82,"exact":{"crossings":1,"bends":7,"edge_cells":52,"violations":["edge 3 process_B → container_Beta label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":24,"rows":29,"area":696,"fits":true,"node_labels":5,"edge_labels":1,"arrows":4,"crossings":3,"bends":7},"score":82,"exact":{"crossings":1,"bends":7,"edge_cells":52,"violations":["edge 3 process_B → container_Beta label found no room"]}}
     }
   }
 }
