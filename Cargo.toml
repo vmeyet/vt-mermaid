@@ -16,6 +16,14 @@ name = "scoreboard"
 path = "scoreboard/main.rs"
 test = true
 
+[[bench]]
+name = "limits"
+harness = false
+
+[[bench]]
+name = "corpus"
+harness = false
+
 # mmdr's layout runs about ten times slower unoptimised, which made the spike snapshots take seconds each.
 # Its debug assertions grade its own layout and panic on geometry vt-mermaid redraws anyway; release builds have none.
 [profile.dev.package.mermaid-rs-renderer]
@@ -32,8 +40,9 @@ vt-canvas = { path = "../vt-canvas" }
 measure = []
 
 # serde_json reads the oracle's results for examples/agreement.rs and scoreboard/, serde reads them into structs and writes the scoreboard's;
-# mermaid-text is what examples/compare.rs and scoreboard/ measure against, pinned so the scoreboard compares one version.
+# mermaid-text is what examples/compare.rs and scoreboard/ measure against, pinned so the scoreboard compares one version; divan runs benches/limits.rs.
 [dev-dependencies]
+divan = "0.1.21"
 insta = "1.49.0"
 mermaid-text = "=0.58.0"
 serde = { version = "1.0.229", features = ["derive"] }

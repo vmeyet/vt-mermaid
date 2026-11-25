@@ -76,4 +76,6 @@ vt-mermaid depends on vt-canvas and vt-graph, and on `mermaid-rs-renderer` for p
 - `examples/agreement.rs`: compares mermaid-rs-renderer's parser with the oracle per kind; a dev-only program, so the library's API never sees the dependency.
 - `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks of `measure` (every node and label drawn whole, every edge joining both ends, nothing overlapping), but for the violations the test lists.
 - [`scoreboard/`](scoreboard/README.md): every corpus flowchart drawn by vt-mermaid and three other text renderers, measured the same way, results committed; a dev-only example, run by hand.
+- `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits, seeded from `corpus/flowchart`.
+- `benches/`: `limits` times a typical flowchart and inputs built at each limit with divan, `corpus` times every corpus flowchart and prints the spread; both run with `cargo bench` only.
 - `examples/compare.rs`: prints each spike flowchart drawn by mermaid-text, then by vt-mermaid; mermaid-text is a dev-dependency only.
