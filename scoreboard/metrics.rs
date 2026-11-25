@@ -41,6 +41,8 @@ pub(crate) struct Exact {
     pub(crate) crossings: usize,
     pub(crate) bends: usize,
     pub(crate) edge_cells: usize,
+    #[serde(default)]
+    pub(crate) beside_nodes: usize,
     pub(crate) violations: Vec<String>,
 }
 

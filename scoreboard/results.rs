@@ -172,7 +172,7 @@ fn common_table(results: &[InputResult], width: u16) -> String {
 
 fn exact_table(results: &[InputResult], widths: &[u16]) -> String {
     let mut table = String::from(
-        "| Width | Drawn | Crossings | Crossing glyphs | Bends | Corner glyphs as bends | Edge cells | Inputs with violations | Violations |\n|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n",
+        "| Width | Drawn | Crossings | Crossing glyphs | Bends | Corner glyphs as bends | Edge cells | Cells beside a node | Inputs with violations | Violations |\n|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n",
     );
     for &width in widths {
         let measured: Vec<&Metrics> =
@@ -180,13 +180,14 @@ fn exact_table(results: &[InputResult], widths: &[u16]) -> String {
         let exact = measured.iter().filter_map(|metrics| metrics.exact.as_ref());
         let drawn = measured.iter().filter_map(|metrics| metrics.drawn);
         table.push_str(&format!(
-            "| {width} | {} | {} | {} | {} | {} | {} | {} | {} |\n",
+            "| {width} | {} | {} | {} | {} | {} | {} | {} | {} | {} |\n",
             measured.len(),
             exact.clone().map(|exact| exact.crossings).sum::<usize>(),
             drawn.clone().map(|drawn| drawn.crossings).sum::<usize>(),
             exact.clone().map(|exact| exact.bends).sum::<usize>(),
             drawn.map(|drawn| drawn.bends).sum::<usize>(),
             exact.clone().map(|exact| exact.edge_cells).sum::<usize>(),
+            exact.clone().map(|exact| exact.beside_nodes).sum::<usize>(),
             exact.clone().filter(|exact| !exact.violations.is_empty()).count(),
             exact.map(|exact| exact.violations.len()).sum::<usize>(),
         ));

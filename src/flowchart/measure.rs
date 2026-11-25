@@ -20,6 +20,8 @@ pub struct Measures {
     pub bends: usize,
     /// Cells all edges cover.
     pub edge_cells: usize,
+    /// Cells an edge runs through right beside the border of a node it does not join.
+    pub beside_nodes: usize,
     /// Level C invariants the drawing breaks, one line each.
     pub violations: Vec<String>,
 }
@@ -32,6 +34,7 @@ pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
         crossings: crossings(&drawing),
         bends: bends(&drawing),
         edge_cells: drawing.routes.iter().flat_map(|route| &route.cells).collect::<HashSet<_>>().len(),
+        beside_nodes: beside_nodes(&diagram, &drawing),
         violations: violations(&diagram, &drawing),
     })
 }
@@ -61,6 +64,26 @@ fn bends(drawing: &Drawing) -> usize {
             .collect::<Vec<_>>()
     };
     drawing.routes.iter().flat_map(turns).collect::<HashSet<_>>().len()
+}
+
+/// Cells a route runs straight through with a node it does not join right beside it: its line reads as a second
+/// border of that node.
+fn beside_nodes(diagram: &Diagram, drawing: &Drawing) -> usize {
+    let rect = |end| match end {
+        diagram::End::Node(index) => drawing.nodes[index],
+        diagram::End::Group(index) => drawing.groups[index],
+    };
+    let beside = |(cell, sideways): (Point, bool)| {
+        let (before, after) = if sideways { ((0, -1), (0, 1)) } else { ((-1, 0), (1, 0)) };
+        [before, after].into_iter().filter_map(move |(x, y)| Some(Point::new(cell.x.checked_add_signed(x)?, cell.y.checked_add_signed(y)?)))
+    };
+    let mut cells = HashSet::new();
+    for (edge, route) in diagram.edges.iter().zip(&drawing.routes) {
+        let ends = [rect(edge.from), rect(edge.to)];
+        let hugs = |near: Point| drawing.nodes.iter().any(|node| contains(*node, near) && !ends.contains(node));
+        cells.extend(route.straight().filter(|&run| beside(run).any(hugs)).map(|(cell, _)| cell));
+    }
+    cells.len()
 }
 
 pub(super) fn rows(canvas: &Canvas) -> Vec<String> {
@@ -185,5 +208,14 @@ mod tests {
 
         assert_eq!((straight.bends, straight.edge_cells, straight.violations.len()), (0, 4, 0));
         assert_eq!(cornered.bends, 4);
+    }
+
+    #[test]
+    fn an_edge_running_beside_a_node_it_does_not_join_counts_each_cell_beside_it() {
+        let apart = measure("flowchart TB\n  A --> B", 80).unwrap();
+        let beside = measured("corpus/flowchart/docs--intro-getting-started--L46.mmd");
+
+        assert_eq!(apart.beside_nodes, 0);
+        assert!(beside.beside_nodes > 0, "{beside:?}");
     }
 }

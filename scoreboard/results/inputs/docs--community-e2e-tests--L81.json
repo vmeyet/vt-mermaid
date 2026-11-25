@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 136 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":78,"rows":37,"area":2886,"fits":true,"node_labels":10,"edge_labels":8,"arrows":11,"crossings":5,"bends":9},"score":82,"exact":{"crossings":4,"bends":16,"edge_cells":251,"violations":["edge 2 start → push_develop label found no room","edge 5 pr_label → pr_scoped label found no room"]}},
-      "100": {"status":"rendered","drawn":{"width":100,"rows":43,"area":4300,"fits":true,"node_labels":10,"edge_labels":7,"arrows":11,"crossings":1,"bends":12},"score":84,"exact":{"crossings":0,"bends":17,"edge_cells":269,"violations":["edge 2 start → push_develop label found no room","edge 4 start → nightly_run label found no room"]}}
+      "80": {"status":"rendered","drawn":{"width":78,"rows":37,"area":2886,"fits":true,"node_labels":10,"edge_labels":8,"arrows":11,"crossings":5,"bends":9},"score":82,"exact":{"crossings":4,"bends":16,"edge_cells":251,"beside_nodes":33,"violations":["edge 2 start → push_develop label found no room","edge 5 pr_label → pr_scoped label found no room"]}},
+      "100": {"status":"rendered","drawn":{"width":100,"rows":43,"area":4300,"fits":true,"node_labels":10,"edge_labels":7,"arrows":11,"crossings":1,"bends":12},"score":84,"exact":{"crossings":0,"bends":17,"edge_cells":269,"beside_nodes":3,"violations":["edge 2 start → push_develop label found no room","edge 4 start → nightly_run label found no room"]}}
     }
   }
 }

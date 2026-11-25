@@ -77,6 +77,7 @@ vt-mermaid also measures itself from its own geometry (`vt_mermaid::measure`, be
 | Crossings | Cells one edge route runs straight through sideways and another up or down; routes sharing a trunk run the same way there, so they never count |
 | Bends | Turns along every route, its ends left out, a turn the routes of a trunk share counted once |
 | Edge cells | Cells the routes cover, a cell they share counted once |
+| Cells beside a node | Cells a route runs straight through right beside the border of a node it does not join |
 | Violations | Level C invariants broken: a label not drawn whole or with no room, an edge not joining both ends or running through a node, overlaps, a node outside its group |
 
 Set beside the glyph counts in the same table, they also show how far the proxies are off.

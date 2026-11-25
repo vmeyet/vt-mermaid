@@ -41,7 +41,7 @@ On the 620 inputs every tool drew:
 
 ## vt-mermaid exact
 
-| Width | Drawn | Crossings | Crossing glyphs | Bends | Corner glyphs as bends | Edge cells | Inputs with violations | Violations |
-|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| 80 | 898 | 265 | 602 | 2458 | 3062 | 32986 | 41 | 47 |
-| 100 | 898 | 268 | 616 | 2448 | 3031 | 32510 | 40 | 47 |
+| Width | Drawn | Crossings | Crossing glyphs | Bends | Corner glyphs as bends | Edge cells | Cells beside a node | Inputs with violations | Violations |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| 80 | 898 | 265 | 602 | 2458 | 3062 | 32986 | 1479 | 41 | 47 |
+| 100 | 898 | 268 | 616 | 2448 | 3031 | 32510 | 1419 | 40 | 47 |
