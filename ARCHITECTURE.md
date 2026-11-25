@@ -21,7 +21,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 - `render(source, max_width)` returns the drawing as a `Canvas`, at most `max_width` columns wide.
   A flowchart flowing sideways that is too wide is laid out again top-down; one still too wide is `Error::TooWide`, so the caller can fall back.
-- Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), 250000 cells on the routing grid (`MAX_AREA`).
+- Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`).
 - mermaid-rs-renderer never loads a font: it lays out a stand-in graph whose labels are `n`s, measured with its fast metrics, so the drawing is the same on every machine.
 - mermaid-rs-renderer may panic on input it misreads; the caller catches it, as mrk does with `mermaid::catch::caught`.
 - The `measure` feature adds `measure(source, max_width)`: crossings, bends, edge cells and level C violations, read from where each part went.
@@ -40,9 +40,11 @@ This page says how the code is laid out today; when a module or a boundary chang
 | `draw` | Cuts the grid to what was drawn and draws it on a `Canvas` |
 
 `label` cuts text into lines and `shape` sizes and draws a node.
+`invisible` cuts invisible links (`A ~~~ B`) out of the source before mmdr reads it: mmdr 0.3.1 keeps `A` and drops the rest of the statement.
 `measure`, built for tests and the `measure` feature only, counts what a drawing does and checks the level C invariants.
 
 - Text: a node's label breaks at `<br>` and wraps at spaces past 30 columns, a longer word is cut with `⋯`; an edge label or a group title is one line of at most 60 columns; quotes around a label are left out.
+- Invisible links: `diagram` finds the nodes each one joins and adds it to mmdr's stand-in graph, so it shapes the layout; it is never routed or drawn.
 - Shapes: vt-canvas draws each outline (`Canvas::shape`), so every glyph follows the glyph set; mmdr's shape maps to the vt-canvas one of the same name, mindmap and text nodes to a rectangle.
   mmdr reads both `((text))` and `(((text)))` as a double circle; it is drawn as a circle, the one people write.
   A node is its label plus a space and the shape's inset on each side.

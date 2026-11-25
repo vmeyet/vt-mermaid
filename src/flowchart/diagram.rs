@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use mermaid_rs_renderer::{self as mmdr, DiagramKind, EdgeStyle, Graph, LayoutConfig, NodeShape, Theme};
 use vt_canvas::{Direction, LineKind, Shape};
 
+use super::invisible::{self, Link};
 use super::label::Label;
 use super::shape;
 use crate::error::{Error, MAX_EDGES, MAX_NODES};
@@ -61,6 +62,19 @@ pub(super) struct Edge {
     pub(super) arrow_end: bool,
 }
 
+/// mmdr's graph, and the invisible links it cannot read: they shape the layout and are never drawn.
+#[derive(Debug, Clone)]
+struct Parsed {
+    graph: Graph,
+    invisible: Vec<Invisible>,
+}
+
+#[derive(Debug, Clone)]
+struct Invisible {
+    from: String,
+    to: String,
+}
+
 impl Diagram {
     /// Parses and lays out `source`, refusing anything but a flowchart within [`MAX_NODES`] and [`MAX_EDGES`].
     pub(super) fn read(source: &str) -> Result<Self, Error> {
@@ -70,18 +84,19 @@ impl Diagram {
     /// Like [`read`](Self::read), its ranks going down whatever the source says: a left-to-right flowchart too wide
     /// for the terminal often fits once turned.
     pub(super) fn read_top_down(source: &str) -> Result<Self, Error> {
-        let graph = parse(source)?;
-        Ok(Self::new(&Graph { direction: mmdr::Direction::TopDown, ..graph }))
+        let parsed = parse(source)?;
+        Ok(Self::new(&Parsed { graph: Graph { direction: mmdr::Direction::TopDown, ..parsed.graph }, ..parsed }))
     }
 
     pub(super) fn is_horizontal(&self) -> bool {
         matches!(self.flow, Direction::Left | Direction::Right)
     }
 
-    fn new(graph: &Graph) -> Self {
+    fn new(parsed: &Parsed) -> Self {
+        let graph = &parsed.graph;
         let labels: HashMap<&str, (Label, Shape)> =
             graph.nodes.iter().map(|(id, node)| (id.as_str(), (Label::wrapped(&node.label), shape_of(node.shape)))).collect();
-        let positions = layout(graph, &labels);
+        let positions = layout(parsed, &labels);
         let nodes = nodes(graph, &labels, &positions);
         let groups = groups(graph, &nodes);
         let nodes = with_innermost_groups(nodes, graph, &groups);
@@ -106,13 +121,31 @@ impl Diagram {
     }
 }
 
-fn parse(source: &str) -> Result<Graph, Error> {
-    let graph = mmdr::parse_mermaid(source).map_err(|error| Error::Invalid { reason: error.to_string() })?.graph;
-    check_bounds(&graph)?;
-    Ok(graph)
+/// Cuts the invisible links out before mmdr reads the source, then finds the nodes each one joins.
+fn parse(source: &str) -> Result<Parsed, Error> {
+    let split = invisible::split(source);
+    let graph = mmdr::parse_mermaid(&split.source).map_err(|error| Error::Invalid { reason: error.to_string() })?.graph;
+    check_bounds(&graph, split.links.len())?;
+    let invisible = split
+        .links
+        .iter()
+        .filter_map(ends)
+        .filter(|link| graph.nodes.contains_key(&link.from) && graph.nodes.contains_key(&link.to))
+        .collect();
+    Ok(Parsed { graph, invisible })
 }
 
-fn check_bounds(graph: &Graph) -> Result<(), Error> {
+/// The last node of the statement before the link and the first node of the one after, as mmdr reads each alone.
+fn ends(link: &Link) -> Option<Invisible> {
+    let statement = |text: &str| mmdr::parse_mermaid(&format!("flowchart TD\n{text}")).ok().map(|parsed| parsed.graph);
+    let (before, after) = (statement(&link.before)?, statement(&link.after)?);
+    let from = before.edges.last().map(|edge| edge.to.clone()).or_else(|| before.nodes.keys().next().cloned())?;
+    let to = after.edges.first().map(|edge| edge.from.clone()).or_else(|| after.nodes.keys().next().cloned())?;
+    Some(Invisible { from, to })
+}
+
+/// Invisible links count as edges: mmdr lays them out.
+fn check_bounds(graph: &Graph, invisible: usize) -> Result<(), Error> {
     if graph.kind != DiagramKind::Flowchart {
         return Err(Error::Unsupported);
     }
@@ -120,8 +153,9 @@ fn check_bounds(graph: &Graph) -> Result<(), Error> {
     if nodes > MAX_NODES {
         return Err(Error::TooManyNodes { nodes });
     }
-    if graph.edges.len() > MAX_EDGES {
-        return Err(Error::TooManyEdges { edges: graph.edges.len() });
+    let edges = graph.edges.len() + invisible;
+    if edges > MAX_EDGES {
+        return Err(Error::TooManyEdges { edges });
     }
     Ok(())
 }
@@ -158,7 +192,8 @@ fn direction(direction: mmdr::Direction) -> Direction {
 ///
 /// mmdr lays out a stand-in graph whose boxes are the nodes' cell sizes in `n`s, so its pixels map to cells and it
 /// never measures text with the system fonts, which would make the drawing depend on the machine.
-fn layout(graph: &Graph, labels: &HashMap<&str, (Label, Shape)>) -> BTreeMap<String, (f32, f32)> {
+fn layout(parsed: &Parsed, labels: &HashMap<&str, (Label, Shape)>) -> BTreeMap<String, (f32, f32)> {
+    let graph = &parsed.graph;
     let mut stand_in = graph.clone();
     // mmdr adds a node for an edge end it does not know, as a subgraph's name: add it first, to give it a stand-in.
     let unknown: Vec<String> =
@@ -175,6 +210,7 @@ fn layout(graph: &Graph, labels: &HashMap<&str, (Label, Shape)>) -> BTreeMap<Str
         edge.label = edge.label.as_deref().map(|text| stand_in_lines(Label::single_line(text).width, 1));
         (edge.start_label, edge.end_label) = (None, None);
     }
+    stand_in.edges.extend(parsed.invisible.iter().map(stand_in_edge));
     for subgraph in &mut stand_in.subgraphs {
         subgraph.label = stand_in_lines(Label::single_line(&subgraph.label).width, 1);
     }
@@ -191,6 +227,24 @@ fn label_and_shape(labels: &HashMap<&str, (Label, Shape)>, id: &str) -> (Label, 
 fn stand_in_node(label: &Label, shape: Shape) -> String {
     let size = shape::size(shape, label);
     stand_in_lines(size.width.saturating_sub(4), size.height.saturating_sub(2))
+}
+
+fn stand_in_edge(link: &Invisible) -> mmdr::Edge {
+    mmdr::Edge {
+        from: link.from.clone(),
+        to: link.to.clone(),
+        label: None,
+        start_label: None,
+        end_label: None,
+        directed: true,
+        arrow_start: false,
+        arrow_end: false,
+        arrow_start_kind: None,
+        arrow_end_kind: None,
+        start_decoration: None,
+        end_decoration: None,
+        style: EdgeStyle::Solid,
+    }
 }
 
 fn stand_in_lines(columns: u16, rows: u16) -> String {
@@ -384,6 +438,59 @@ mod tests {
         assert_eq!(edges, [(LineKind::Light, false, true), (LineKind::Dashed, false, false), (LineKind::Heavy, true, true)]);
     }
 
+    fn ids(diagram: &Diagram) -> Vec<&str> {
+        diagram.nodes.iter().map(|node| node.id.as_str()).collect()
+    }
+
+    #[test]
+    fn an_invisible_link_keeps_both_nodes_and_draws_no_edge() {
+        let diagram = Diagram::read("flowchart LR\n  A ~~~ B").unwrap();
+
+        assert_eq!(ids(&diagram), ["A", "B"]);
+        assert!(diagram.edges.is_empty());
+    }
+
+    #[test]
+    fn an_invisible_link_places_its_nodes_one_rank_apart() {
+        let diagram = Diagram::read("flowchart LR\n  A ~~~ B").unwrap();
+
+        assert!(node(&diagram, "B").x > node(&diagram, "A").x);
+        assert!((node(&diagram, "B").y - node(&diagram, "A").y).abs() < 1.0);
+    }
+
+    #[test]
+    fn invisible_links_in_a_chain_keep_every_node_and_every_other_edge() {
+        let diagram = Diagram::read("flowchart LR\n  A ~~~ B[Bee] ~~~ C --> D ~~~ E").unwrap();
+
+        assert_eq!(ids(&diagram), ["A", "B", "C", "D", "E"]);
+        assert_eq!(node(&diagram, "B").label.lines, ["Bee"]);
+        assert_eq!(diagram.edges.iter().map(|edge| (diagram.name(edge.from), diagram.name(edge.to))).collect::<Vec<_>>(), [("C", "D")]);
+    }
+
+    #[test]
+    fn tildes_inside_a_label_or_the_front_matter_are_not_a_link() {
+        let source = "---\ntitle: a ~~~ b\n---\nflowchart LR\n  A[\"x ~~~ y\"] --> B";
+
+        let diagram = Diagram::read(source).unwrap();
+
+        assert_eq!(node(&diagram, "A").label.lines, ["x ~~~ y"]);
+        assert_eq!(diagram.edges.len(), 1);
+    }
+
+    #[test]
+    fn invisible_links_at_the_edge_limit_are_accepted() {
+        let source = format!("flowchart LR\n{}", "  A ~~~ B\n".repeat(MAX_EDGES));
+
+        assert_eq!(parse(&source).map(|parsed| parsed.invisible.len()).ok(), Some(MAX_EDGES));
+    }
+
+    #[test]
+    fn invisible_links_count_towards_the_edge_limit() {
+        let source = format!("flowchart LR\n  A --> B\n{}", "  A ~~~ B\n".repeat(MAX_EDGES));
+
+        assert!(matches!(parse(&source), Err(Error::TooManyEdges { edges }) if edges == MAX_EDGES + 1));
+    }
+
     #[test]
     fn a_diagram_of_another_kind_is_unsupported() {
         assert!(matches!(Diagram::read("pie\n  \"a\" : 1"), Err(Error::Unsupported)));
@@ -398,27 +505,27 @@ mod tests {
     fn a_flowchart_at_the_node_limit_is_accepted() {
         let source = format!("flowchart LR\n{}", (0..MAX_NODES).map(|index| format!("  n{index}\n")).collect::<String>());
 
-        assert_eq!(check_bounds(&graph(&source)), Ok(()));
+        assert_eq!(check_bounds(&graph(&source), 0), Ok(()));
     }
 
     #[test]
     fn a_flowchart_over_the_node_limit_is_refused() {
         let source = format!("flowchart LR\n{}", (0..=MAX_NODES).map(|index| format!("  n{index}\n")).collect::<String>());
 
-        assert_eq!(check_bounds(&graph(&source)), Err(Error::TooManyNodes { nodes: MAX_NODES + 1 }));
+        assert_eq!(check_bounds(&graph(&source), 0), Err(Error::TooManyNodes { nodes: MAX_NODES + 1 }));
     }
 
     #[test]
     fn a_flowchart_at_the_edge_limit_is_accepted() {
         let source = format!("flowchart LR\n{}", "  A --> B\n".repeat(MAX_EDGES));
 
-        assert_eq!(check_bounds(&graph(&source)), Ok(()));
+        assert_eq!(check_bounds(&graph(&source), 0), Ok(()));
     }
 
     #[test]
     fn a_flowchart_over_the_edge_limit_is_refused() {
         let source = format!("flowchart LR\n{}", "  A --> B\n".repeat(MAX_EDGES + 1));
 
-        assert_eq!(check_bounds(&graph(&source)), Err(Error::TooManyEdges { edges: MAX_EDGES + 1 }));
+        assert_eq!(check_bounds(&graph(&source), 0), Err(Error::TooManyEdges { edges: MAX_EDGES + 1 }));
     }
 }

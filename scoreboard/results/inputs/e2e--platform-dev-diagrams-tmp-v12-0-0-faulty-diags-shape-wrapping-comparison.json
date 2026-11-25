@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"parse error: expected 'graph' or 'flowchart', got 'case'","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the drawing needs 444 columns, more than the 80 allowed","score":0},
-      "100": {"status":"refused","reason":"the drawing needs 444 columns, more than the 100 allowed","score":0}
+      "80": {"status":"refused","reason":"the drawing needs 453 columns, more than the 80 allowed","score":0},
+      "100": {"status":"refused","reason":"the drawing needs 453 columns, more than the 100 allowed","score":0}
     }
   }
 }

@@ -3,6 +3,7 @@
 mod diagram;
 mod draw;
 mod edge_label;
+mod invisible;
 mod label;
 #[cfg(any(test, feature = "measure"))]
 pub(crate) mod measure;

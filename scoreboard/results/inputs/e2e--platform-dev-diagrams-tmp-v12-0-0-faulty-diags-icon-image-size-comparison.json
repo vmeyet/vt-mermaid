@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 421 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the drawing needs 552 columns, more than the 80 allowed","score":0},
-      "100": {"status":"refused","reason":"the drawing needs 552 columns, more than the 100 allowed","score":0}
+      "80": {"status":"refused","reason":"the drawing needs 621 columns, more than the 80 allowed","score":0},
+      "100": {"status":"refused","reason":"the drawing needs 621 columns, more than the 100 allowed","score":0}
     }
   }
 }
