@@ -136,6 +136,8 @@ The rules looking past the token at hand (a `direction` or a `<<fork>>` later on
 `grammar` reads the tokens top-down, accepting what mermaid's LALR parser accepts and building the document its actions build; the composite states open at a point are a stack, so nesting never deepens the call stack, and each opening counts towards `MAX_NODES`.
 `db` does what `stateDb.ts` hands mermaid's renderer: `docTranslator` names each `[*]` after the document holding it, `_start` where it leads and `_end` where it is led to, and splits a composite state's body at its dividers into regions, the statements after the last a region of its own unless the body ends with a divider; then `dataFetcher` walks the documents into nodes and edges, a node made the first time a statement names it and changed by each later one: its descriptions (a state described twice draws them as lines under its label), whether it is a group, its parent where its last naming statement gives one; a note becomes a group of its own holding the note, and a link without a head to its state; a composite state with more than its label is refused.
 Nodes, note groups included, count towards `MAX_NODES` and edges towards `MAX_EDGES` as they are made, each found through an index, so the work stays linear in the statements.
+Every pattern runs in one pass over the text: no regex, no backtracking on the source.
+`parse::agreement`, a test, compares it with the oracle on every corpus state diagram: it accepts and refuses the 279 as mermaid does (level A), and reads the 276 mermaid accepts into the same nodes (id, shape, label, descriptions, parent, direction, note side) and edges (ends, label, head) (level B).
 Drawing comes next: `render` refuses a state diagram mermaid reads as `Error::Unsupported`.
 
 ## Dependency direction
@@ -149,7 +151,7 @@ vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its 
 ## Test corpus
 
 - [`corpus/`](corpus/README.md): Mermaid inputs harvested from the mermaid repo at a pinned release, one file per case, grouped by diagram kind.
-- [`oracle/`](oracle/README.md): a Node script that records what the pinned `mermaid` accepts (level A) and its flowchart and sequence dbs (level B), committed as JSON.
+- [`oracle/`](oracle/README.md): a Node script that records what the pinned `mermaid` accepts (level A) and its flowchart, sequence and state dbs (level B), committed as JSON.
 - `examples/agreement.rs`: compares mermaid-rs-renderer's parser with the oracle per kind; a dev-only program, so the library's API never sees the dependency.
   Flowcharts are compared with vt-mermaid's own parser by `parse::agreement` instead.
 - `tests/sequence/diagrams.txt`: sequence diagrams from the corpus and `tests/sequence/checkout.mmd`, each an insta snapshot at 100 columns; every corpus diagram mermaid accepts is drawn within 80 columns but two with eight and ten participants side by side.
