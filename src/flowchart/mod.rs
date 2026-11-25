@@ -15,7 +15,7 @@ use vt_canvas::{Canvas, Rect};
 
 use crate::error::{Error, MAX_AREA};
 use crate::label::Wrap;
-use crate::settings::{LongWords, Settings};
+use crate::settings::Settings;
 use diagram::Diagram;
 use layout::{Fit, MARGIN, Placement};
 use route::Route;
@@ -29,31 +29,51 @@ pub(crate) struct Drawing {
     groups: Vec<Rect>,
     routes: Vec<Route>,
     labels: Vec<Option<Rect>>,
+    /// How the nodes' text was cut into lines to fit.
+    wrap: Wrap,
 }
 
-/// Columns a folded layout gets, in eighths of the width allowed, then a packed one.
+/// Columns a node's label is wrapped at when the flowchart is too wide as written, before any rank is folded.
+const NARROW: usize = 20;
+const NARROWEST: usize = 14;
+/// Columns a folded layout gets, in eighths of the width allowed; with labels at their narrowest; then a packed one.
 const FOLDED: [i32; 5] = [8, 7, 6, 5, 4];
+const FOLDED_NARROWEST: [i32; 7] = [8, 7, 6, 5, 4, 3, 2];
 const PACKED: [i32; 3] = [8, 6, 4];
 
-/// Draws `source` in the first form that fits `max_width` and whose edges find a path: laid out loose, then tight,
-/// then with its wide ranks folded narrower and narrower, then packed without room for the links passing a rank;
-/// each time as written, then turned top-down when it flows sideways.
+/// Draws `source` in the first form that fits the width and whose edges find a path: laid out loose, then tight,
+/// then tight with its labels wrapped narrower, then with its wide ranks folded narrower and narrower, the labels
+/// wide then at their narrowest, then packed without room for the links passing a rank; each time as written, then
+/// turned top-down when it flows sideways.
 pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Drawing, Error> {
     let max_width = settings.max_width;
-    let read = Diagram::read(source)?;
-    let written = if settings.long_words == LongWords::Break { read } else { read.wrapped(Wrap::wide(settings.long_words)) };
-    let turned = written.flows_sideways().then(|| written.turned_top_down());
+    let wide = Wrap::wide(settings.long_words);
+    let written = Diagram::read(source)?;
     let columns = |eighths: i32| i32::from(max_width) * eighths / 8;
     let folded = FOLDED.map(|eighths| Fit::Folded { columns: columns(eighths) });
+    let folded_narrowest = FOLDED_NARROWEST.map(|eighths| Fit::Folded { columns: columns(eighths) });
     let packed = PACKED.map(|eighths| Fit::Packed { columns: columns(eighths) });
-    let fits = [Fit::Loose, Fit::Tight].into_iter().chain(folded).chain(packed);
-    let forms = fits.flat_map(|fit| std::iter::once(&written).chain(&turned).map(move |diagram| (diagram, fit)));
+    let ladder: [(Wrap, &[Fit]); 6] = [
+        (wide, &[Fit::Loose, Fit::Tight]),
+        (wide.narrowed(NARROW), &[Fit::Tight]),
+        (wide.narrowed(NARROWEST), &[Fit::Tight]),
+        (wide, &folded),
+        (wide.narrowed(NARROWEST), &folded_narrowest),
+        (wide, &packed),
+    ];
     let mut drawing = Err(Error::TooWide { width: usize::MAX, max_width });
-    for (diagram, fit) in forms {
+    for (wrap, fits) in ladder {
         if !may_fit_tighter(&drawing) {
             break;
         }
-        drawing = drawn(diagram, layout::place(diagram, fit), max_width);
+        let wrapped = written.wrapped(wrap);
+        let turned = wrapped.flows_sideways().then(|| wrapped.turned_top_down());
+        for (diagram, fit) in fits.iter().flat_map(|fit| std::iter::once(&wrapped).chain(&turned).map(move |diagram| (diagram, *fit))) {
+            if !may_fit_tighter(&drawing) {
+                break;
+            }
+            drawing = drawn(diagram, layout::place(diagram, fit), max_width);
+        }
     }
     drawing
 }
@@ -113,6 +133,7 @@ mod tests {
     use super::measure::{rows, violations};
     use super::*;
     use crate::error::MAX_SOURCE_BYTES;
+    use crate::settings::LongWords;
 
     /// Wide enough for every spike flowchart: the comparison with mermaid-text judges the width.
     const WIDTH: u16 = 400;
@@ -142,7 +163,9 @@ mod tests {
             .into_iter()
             .flat_map(|(name, source)| {
                 let drawing = render(&source, WIDTH).unwrap();
-                violations(&Diagram::read(&source).unwrap(), &drawing).into_iter().map(move |found| format!("{name}: {found}"))
+                violations(&Diagram::read(&source).unwrap().wrapped(drawing.wrap), &drawing)
+                    .into_iter()
+                    .map(move |found| format!("{name}: {found}"))
             })
             .collect();
 
@@ -262,7 +285,7 @@ mod tests {
 
     #[test]
     fn a_flowchart_too_dense_to_fold_is_packed_without_room_for_its_links() {
-        let source = include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-life-choices.mmd");
+        let source = include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-project-sox2.mmd");
         let diagram = Diagram::read(source).unwrap();
 
         let folded = drawn(&diagram, layout::place(&diagram, Fit::Folded { columns: 40 }), 80);
@@ -270,6 +293,19 @@ mod tests {
 
         assert!(matches!(folded, Err(Error::TooWide { .. })), "{:?}", folded.map(|drawing| rows(&drawing.canvas)));
         assert!(packed.is_ok());
+    }
+
+    #[test]
+    fn a_flowchart_too_wide_wraps_its_labels_narrower_before_it_folds() {
+        let source = include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-life-choices.mmd");
+        let diagram = Diagram::read(source).unwrap();
+
+        let wide = drawn(&diagram, layout::place(&diagram, Fit::Tight), 100);
+        let narrowed = render(source, 100).unwrap();
+
+        assert!(matches!(wide, Err(Error::TooWide { .. })));
+        assert_eq!(narrowed.wrap.columns, NARROWEST);
+        assert!(rows(&narrowed.canvas).len() < 60 && measure::measure(source, 100).unwrap().crossings < 2);
     }
 
     #[test]
@@ -298,7 +334,7 @@ mod tests {
 
     #[test]
     fn a_drawing_wider_than_allowed_is_refused() {
-        let source = "flowchart LR\n  A[A long first label] --> B[A long second label]";
+        let source = "flowchart LR\n  A[One-word-too-long-to-wrap] --> B[A long second label]";
 
         assert!(matches!(render(source, 20), Err(Error::TooWide { max_width: 20, .. })));
     }

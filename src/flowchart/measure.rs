@@ -29,7 +29,7 @@ pub struct Measures {
 /// Draws `source` as [`render`](crate::render) does, then measures the drawing.
 pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
     let drawing = render(source, max_width)?;
-    let diagram = Diagram::read(source)?;
+    let diagram = Diagram::read(source)?.wrapped(drawing.wrap);
     Ok(Measures {
         crossings: crossings(&drawing),
         bends: bends(&drawing),

@@ -33,6 +33,11 @@ impl Wrap {
     pub(crate) const fn wide(long_words: LongWords) -> Self {
         Self { columns: MAX_WRAPPED_COLUMNS, long_words }
     }
+
+    /// The same with lines of at most `columns`, never wider than a wide one's.
+    pub(crate) fn narrowed(self, columns: usize) -> Self {
+        Self { columns: columns.min(MAX_WRAPPED_COLUMNS), ..self }
+    }
 }
 
 impl Label {
@@ -49,8 +54,9 @@ impl Label {
         Self::new(lines, max_width)
     }
 
-    /// Lines break where the source asks and wrap at spaces past the columns of `wrap`; a word longer than
-    /// [`MAX_WRAPPED_COLUMNS`] is broken over lines, or keeps one line the drawing cuts, as `wrap` says.
+    /// Lines break where the source asks and wrap at spaces past the columns of `wrap`; a word keeps its line while
+    /// it is no longer than [`MAX_WRAPPED_COLUMNS`], then is broken over lines, or keeps one line the drawing cuts,
+    /// as `wrap` says.
     pub(crate) fn wrapped_as(text: &str, wrap: Wrap) -> Self {
         let whole = |word: &str| vec![word.to_owned()];
         let broken = |word: &str| if wrap.long_words == LongWords::Break { pieces(word, MAX_WRAPPED_COLUMNS) } else { whole(word) };
@@ -170,6 +176,16 @@ mod tests {
 
         assert_eq!(label.lines, ["see", "state-diagram-new-arrow-florbs-and-more", "now"]);
         assert_eq!(label.width, 30);
+    }
+
+    #[test]
+    fn a_narrowed_label_wraps_sooner_and_keeps_a_word_no_longer_than_a_wide_line_whole() {
+        let narrowed = Wrap::wide(LongWords::Break).narrowed(14);
+
+        let label = Label::wrapped_as("Sleep and chill at home SAM.CommonFA.FMESummary", narrowed);
+
+        assert_eq!(label.lines, ["Sleep and", "chill at home", "SAM.CommonFA.FMESummary"]);
+        assert_eq!(label.width, 23);
     }
 
     #[test]

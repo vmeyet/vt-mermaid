@@ -60,7 +60,7 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
             canvas.text_cut(Point::new(rect.x, rect.y), &label.lines[0], rect.width, Role::Label);
         }
     }
-    Ok(Drawing { canvas, nodes: parts.nodes, groups: parts.groups, routes: parts.routes, labels: parts.labels })
+    Ok(Drawing { canvas, nodes: parts.nodes, groups: parts.groups, routes: parts.routes, labels: parts.labels, wrap: diagram.wrap })
 }
 
 /// The smallest rectangle holding every part.

@@ -8,6 +8,7 @@ use super::parse::{self, Arrow, Flowchart, Limits, Stroke};
 use super::shape;
 use crate::error::Error;
 use crate::label::{Label, Wrap};
+use crate::settings::LongWords;
 
 /// A flowchart as the parser reads it, its text already cut into lines.
 #[derive(Debug, Clone)]
@@ -18,6 +19,8 @@ pub(super) struct Diagram {
     /// Links that shape the layout and are never drawn (`A ~~~ B`).
     pub(super) invisible: Vec<Invisible>,
     pub(super) flow: Direction,
+    /// How its nodes' text is cut into lines.
+    pub(super) wrap: Wrap,
 }
 
 #[derive(Debug, Clone)]
@@ -75,7 +78,7 @@ impl Diagram {
     /// Its nodes' text cut into lines again, as `wrap` says.
     pub(super) fn wrapped(&self, wrap: Wrap) -> Self {
         let nodes = self.nodes.iter().map(|node| Node { label: Label::wrapped_as(&node.text, wrap), ..node.clone() }).collect();
-        Self { nodes, ..self.clone() }
+        Self { nodes, wrap, ..self.clone() }
     }
 
     /// Its ranks and those of its groups going down where they go sideways.
@@ -118,7 +121,7 @@ impl Diagram {
         let (hidden, drawn): (Vec<_>, Vec<_>) = links.into_iter().partition(|(_, _, edge)| edge.link.stroke == Stroke::Invisible);
         let edges = drawn.into_iter().map(|(from, to, edge)| self::edge(from, to, edge)).collect();
         let invisible = hidden.into_iter().map(|(from, to, _)| Invisible { from, to }).collect();
-        Self { nodes, groups, edges, invisible, flow }
+        Self { nodes, groups, edges, invisible, flow, wrap: Wrap::wide(LongWords::Break) }
     }
 
     /// The direction ranks go in the group holding `end`.
