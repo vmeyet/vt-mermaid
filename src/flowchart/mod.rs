@@ -6,6 +6,8 @@ mod draw;
 mod edge_label;
 mod invisible;
 mod label;
+#[cfg_attr(not(test), expect(dead_code, reason = "flowcharts are drawn with this layout once it beats the snapped one"))]
+mod layout;
 #[cfg(any(test, feature = "measure"))]
 pub(crate) mod measure;
 #[cfg_attr(not(test), expect(dead_code, reason = "flowcharts switch to this parser once it agrees with mermaid"))]
