@@ -15,8 +15,8 @@
       "100": {"status":"timed_out","reason":"","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"the flowchart has 201 nodes, over the 200 limit","score":0},
-      "100": {"status":"refused","reason":"the flowchart has 201 nodes, over the 200 limit","score":0}
+      "80": {"status":"refused","reason":"the diagram has 201 nodes, over the 200 limit","score":0},
+      "100": {"status":"refused","reason":"the diagram has 201 nodes, over the 200 limit","score":0}
     }
   }
 }

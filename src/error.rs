@@ -2,9 +2,9 @@ use std::fmt;
 
 /// Longest source [`render`](crate::render) reads, in bytes.
 pub const MAX_SOURCE_BYTES: usize = 64 * 1024;
-/// Most nodes a flowchart may have.
+/// Most nodes a flowchart or a state diagram may have.
 pub const MAX_NODES: usize = 200;
-/// Most edges a flowchart may have: each one is a path search over the whole grid.
+/// Most edges a flowchart or a state diagram may have: each one is a path search over the whole grid.
 pub const MAX_EDGES: usize = 150;
 /// Most cells of the grid edges are routed on, margins included.
 pub const MAX_AREA: usize = 250_000;
@@ -29,12 +29,12 @@ pub enum Error {
     },
     /// The source is a Mermaid diagram of a kind not drawn yet.
     Unsupported,
-    /// The flowchart has more than [`MAX_NODES`] nodes.
+    /// The flowchart or state diagram has more than [`MAX_NODES`] nodes.
     TooManyNodes {
         /// How many it has.
         nodes: usize,
     },
-    /// The flowchart has more than [`MAX_EDGES`] edges.
+    /// The flowchart or state diagram has more than [`MAX_EDGES`] edges.
     TooManyEdges {
         /// How many it has.
         edges: usize,
@@ -78,8 +78,8 @@ impl fmt::Display for Error {
             Self::TooLong { bytes } => write!(f, "the diagram is {bytes} bytes, over the {MAX_SOURCE_BYTES} byte limit"),
             Self::Invalid { reason } => write!(f, "the diagram does not parse: {reason}"),
             Self::Unsupported => write!(f, "this kind of diagram is not drawn as text yet"),
-            Self::TooManyNodes { nodes } => write!(f, "the flowchart has {nodes} nodes, over the {MAX_NODES} limit"),
-            Self::TooManyEdges { edges } => write!(f, "the flowchart has {edges} edges, over the {MAX_EDGES} limit"),
+            Self::TooManyNodes { nodes } => write!(f, "the diagram has {nodes} nodes, over the {MAX_NODES} limit"),
+            Self::TooManyEdges { edges } => write!(f, "the diagram has {edges} edges, over the {MAX_EDGES} limit"),
             Self::TooManyParticipants { participants } => {
                 write!(f, "the sequence diagram has {participants} participants, over the {MAX_PARTICIPANTS} limit")
             }
