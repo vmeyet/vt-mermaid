@@ -102,7 +102,7 @@ pub(crate) enum Head {
     /// An arrow on the cell next to the node, a flowchart's `-->`.
     Arrow,
     /// Tips on the cells next to the node, the nearest first: a class relation's head, a crow's foot.
-    #[expect(dead_code, reason = "class diagrams draw tips once drawn")]
+    #[cfg_attr(not(test), expect(dead_code, reason = "class diagrams draw tips once drawn"))]
     Tips(&'static [Tip]),
 }
 
@@ -114,6 +114,12 @@ impl Head {
             Self::Tips(tips) => tips.len() as u16,
             Self::None | Self::Arrow => 0,
         }
+    }
+
+    /// Whether the edges ending on this head at one side of a node gather into one trunk with one head, as UML
+    /// draws inheritance: a hollow head does.
+    pub(crate) const fn gathers(self) -> bool {
+        matches!(self, Self::Tips([Tip::Hollow]))
     }
 }
 

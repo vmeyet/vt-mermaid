@@ -559,8 +559,9 @@ impl Search<'_> {
     /// nothing where the trunk turns already, else for the junction it adds.
     fn ways_off(&self, tap: Tap) -> impl Iterator<Item = (Point, Direction, u32)> + '_ {
         let along = self.routes[tap.route].as_ref().and_then(|route| directions_at(route, tap.position));
+        let past_the_tips = !within(tap.cell, self.from, self.straight.from);
         HEADINGS.into_iter().filter_map(move |heading| {
-            let (arriving, leaving) = along?;
+            let (arriving, leaving) = along.filter(|_| past_the_tips)?;
             let free = heading != leaving && heading != opposite(arriving);
             free.then_some((tap.cell, heading, if arriving == leaving { JUNCTION } else { 0 }))
         })

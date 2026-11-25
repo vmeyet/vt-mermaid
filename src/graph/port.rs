@@ -139,15 +139,21 @@ struct Unit {
 
 /// Each end a unit while the side has a cell for each and the layout does not ask them to share; else the ends that draw alike, all leaving
 /// or all arriving with one kind of line and head, share a unit, so they share a trunk; an edge with a head at its start shares none.
+/// Ends whose head gathers (a hollow head) share a unit whatever the room.
 fn units(diagram: &Diagram, waiting: &[Waiting], side: Side, shares_ways: bool) -> Vec<Unit> {
     let alone = |end: &Waiting| Unit { ends: vec![*end], towards: end.towards };
     let towards: Vec<u16> = waiting.iter().map(|end| end.towards).collect();
-    if !shares_ways && spread(side, &towards).is_some() {
+    let here = |end: &Waiting| if end.leaves { diagram.edges[end.edge].start } else { diagram.edges[end.edge].end };
+    let shares = shares_ways || spread(side, &towards).is_none();
+    if !shares && !waiting.iter().any(|end| here(end).gathers()) {
         return waiting.iter().map(alone).collect();
     }
     let alike = |end: &Waiting| {
         let edge = &diagram.edges[end.edge];
-        (edge.start == Head::None).then_some((end.leaves, edge.kind, edge.end))
+        if here(end).gathers() {
+            return Some((true, end.leaves, edge.kind, here(end)));
+        }
+        (shares && edge.start == Head::None).then_some((false, end.leaves, edge.kind, edge.end))
     };
     let mut units: Vec<Unit> = Vec::new();
     for end in waiting {
@@ -262,6 +268,8 @@ fn spread_from(middle: i32, towards: &[u16], spread: Spread) -> Vec<i32> {
 
 #[cfg(test)]
 mod tests {
+    use vt_canvas::Tip;
+
     use super::*;
     use crate::flowchart;
     use crate::graph::layout::{self, Fit};
@@ -298,6 +306,21 @@ mod tests {
 
         assert_eq!(joins[0].exit, joins[1].exit);
         assert!(joins[0].exit.trunk.is_some());
+    }
+
+    #[test]
+    fn edges_leaving_on_a_hollow_head_gather_into_one_trunk_on_a_side_with_room() {
+        let mut diagram = flowchart::read("flowchart TB\n  A[A parent wide enough] --> B & C & D").unwrap();
+        let apart = joins(&diagram, &layout::place(&diagram, Fit::Loose));
+        for edge in &mut diagram.edges[..2] {
+            edge.start = Head::Tips(&[Tip::Hollow]);
+        }
+
+        let gathered = joins(&diagram, &layout::place(&diagram, Fit::Loose));
+
+        assert!(apart.iter().all(|joins| joins.exit.trunk.is_none()));
+        assert_eq!(gathered[0].exit, gathered[1].exit);
+        assert!(gathered[0].exit.trunk.is_some() && gathered[2].exit.trunk.is_none());
     }
 
     #[test]
