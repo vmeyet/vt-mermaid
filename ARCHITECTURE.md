@@ -71,7 +71,8 @@ Two modules rewrite what mmdr 0.3.1 misreads before it reads the source, with `s
 - Route: shortest edges first; a step costs 1, a bend 4, crossing another line 6, and leaving or entering a node through a side other than the flow's 4, plus half the distance from the middle of that side.
   Lines cross only at a right angle, never where one turns or ends, and never run along a node's border or another line.
   The arrow sits on the cell before the target; a line may turn there into `▾` or `▴`, never into `▸` or `◂`.
-- Edge labels go across the longest straight run that has room, centred, or slid sideways on a vertical run as long as they still cover the line; else beside the run; else nowhere.
+- Edge labels go across the longest straight run that has room, centred, or slid sideways on a vertical run as long as they still cover the line; else beside the run; else the same anywhere along a run, the nearest to its middle first; else nowhere.
+  A label slid along a horizontal run keeps a line cell on each side, so it never touches a crossing.
 - Two lines crossing draw `┼` (vt-canvas).
 
 ## Dependency direction

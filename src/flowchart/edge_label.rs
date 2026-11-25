@@ -1,4 +1,5 @@
-//! Where each edge's label goes: on the longest straight run of its path that has room, else beside it.
+//! Where each edge's label goes: on the longest straight run of its path that has room, else beside it, at the
+//! middle of the run before anywhere along it.
 
 use vt_canvas::{Point, Rect};
 
@@ -26,8 +27,11 @@ pub(super) fn place(diagram: &Diagram, routes: &[Route], grid: &Grid) -> Vec<Opt
 fn spot(grid: &Grid, route: &Route, width: u16) -> Option<Rect> {
     let mut runs: Vec<Run> = route.corners().windows(2).map(|ends| Run::new(ends[0], ends[1])).collect();
     runs.sort_by_key(|run| std::cmp::Reverse(run.inner));
-    let on = runs.iter().find_map(|run| run.on(grid, width));
-    on.or_else(|| runs.iter().find_map(|run| run.beside(grid, width)))
+    let middle = || runs.iter().map(|run| (run, 0));
+    let slid = || runs.iter().flat_map(|run| run.slides().map(move |slide| (run, slide)));
+    let on = |(run, slide): (&Run, i32)| run.on(grid, width, slide);
+    let beside = |(run, slide): (&Run, i32)| run.beside(grid, width, slide);
+    middle().find_map(on).or_else(|| middle().find_map(beside)).or_else(|| slid().find_map(on)).or_else(|| slid().find_map(beside))
 }
 
 /// A straight piece of a path, its ends left out.
@@ -47,15 +51,24 @@ impl Run {
         Self { from, horizontal, inner: length.saturating_sub(1) }
     }
 
-    /// Across a horizontal run, with a line cell left on each side; across a vertical run, in its lower half, centred
-    /// on the line when there is room, else slid sideways as long as it still covers the line.
-    fn on(self, grid: &Grid, width: u16) -> Option<Rect> {
+    /// Cells a label may move along the run from its middle, the nearest first, each way in turn.
+    fn slides(self) -> impl Iterator<Item = i32> {
+        (1..=i32::from(self.inner)).flat_map(|cells| [cells, -cells])
+    }
+
+    /// Across a horizontal run, with a cell left on each side; across a vertical run, in its lower half, centred on
+    /// the line when there is room, else moved sideways as long as it still covers the line; `slide` cells along the
+    /// run from there.
+    fn on(self, grid: &Grid, width: u16, slide: i32) -> Option<Rect> {
         if self.horizontal {
             let room = self.inner.checked_sub(width + 2)?;
-            let rect = Rect::new(self.from.x + 2 + room / 2, self.from.y, width, 1);
-            return cells(rect).all(|cell| grid.get(cell) == Use::Line { horizontal: true }).then_some(rect);
+            let rect = Rect::new(self.from.x + 2 + slid(room / 2, slide, 0..=room)?, self.from.y, width, 1);
+            // In the middle the run's ends keep the label clear; slid, it could touch a crossing.
+            let clear = if slide == 0 { Some(rect) } else { padded(rect) };
+            return clear.filter(|clear| cells(*clear).all(|cell| grid.get(cell) == Use::Line { horizontal: true })).map(|_| rect);
         }
-        let line = Point::new(self.from.x, self.from.y + 1 + self.inner / 2);
+        let last = self.inner.checked_sub(1)?;
+        let line = Point::new(self.from.x, self.from.y + 1 + slid(self.inner / 2, slide, 0..=last)?);
         if self.inner < 2 || grid.get(line) != (Use::Line { horizontal: false }) {
             return None;
         }
@@ -68,14 +81,15 @@ impl Run {
             .find(|rect| padded(*rect).is_some_and(|padded| cells(padded).all(|cell| cell == line || grid.get(cell) == Use::Free)))
     }
 
-    /// Next to the middle of the run: right of a vertical run, else left; above a horizontal run, else below.
-    fn beside(self, grid: &Grid, width: u16) -> Option<Rect> {
-        let middle = 1 + self.inner / 2;
+    /// Next to the run, `slide` cells along it from its middle: right of a vertical run, else left; above a
+    /// horizontal run, else below.
+    fn beside(self, grid: &Grid, width: u16, slide: i32) -> Option<Rect> {
+        let along = slid(1 + self.inner / 2, slide, 1..=self.inner.max(1))?;
         let spots = if self.horizontal {
-            let x = (self.from.x + middle).checked_sub(width / 2);
+            let x = (self.from.x + along).checked_sub(width / 2);
             [x.zip(self.from.y.checked_sub(1)), x.map(|x| (x, self.from.y + 1))]
         } else {
-            let y = self.from.y + middle;
+            let y = self.from.y + along;
             [Some((self.from.x + 2, y)), self.from.x.checked_sub(width + 1).map(|x| (x, y))]
         };
         spots
@@ -84,6 +98,11 @@ impl Run {
             .map(|(x, y)| Rect::new(x, y, width, 1))
             .find(|rect| padded(*rect).is_some_and(|padded| cells(padded).all(|cell| grid.get(cell) == Use::Free)))
     }
+}
+
+/// `middle` moved by `slide` cells, when that stays `within` the run.
+fn slid(middle: u16, slide: i32, within: std::ops::RangeInclusive<u16>) -> Option<u16> {
+    u16::try_from(i32::from(middle) + slide).ok().filter(|moved| within.contains(moved))
 }
 
 /// `rect` and one cell more on its left and right, so a label never touches another drawing.
@@ -144,6 +163,38 @@ mod tests {
         let (grid, route) = grid_with_run(Point::new(4, 5), Point::new(10, 5));
 
         assert_eq!(spot(&grid, &route, 6), Some(Rect::new(4, 4, 6, 1)));
+    }
+
+    #[test]
+    fn a_label_slides_along_a_horizontal_run_past_a_crossing_in_its_middle() {
+        let (mut grid, route) = grid_with_run(Point::new(0, 5), Point::new(12, 5));
+        grid.set(Point::new(6, 5), Use::Blocked);
+        for y in [4, 6] {
+            for x in 0..30 {
+                grid.set(Point::new(x, y), Use::Blocked);
+            }
+        }
+
+        assert_eq!(spot(&grid, &route, 3), Some(Rect::new(8, 5, 3, 1)));
+    }
+
+    #[test]
+    fn a_label_slides_along_a_vertical_run_to_the_nearest_row_with_room() {
+        let (mut grid, route) = grid_with_run(Point::new(10, 0), Point::new(10, 8));
+        for y in [3, 4, 5] {
+            for x in [8, 12] {
+                grid.set(Point::new(x, y), Use::Blocked);
+            }
+        }
+
+        assert_eq!(spot(&grid, &route, 3), Some(Rect::new(9, 6, 3, 1)));
+    }
+
+    #[test]
+    fn a_label_goes_beside_a_run_with_no_cell_between_its_ends() {
+        let (grid, route) = grid_with_run(Point::new(4, 5), Point::new(5, 5));
+
+        assert_eq!(spot(&grid, &route, 2), Some(Rect::new(4, 4, 2, 1)));
     }
 
     #[test]

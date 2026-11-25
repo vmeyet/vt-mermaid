@@ -112,12 +112,8 @@ mod tests {
         }
     }
 
-    /// Level C is not reachable everywhere: a long label between close parallel edges has nowhere to go, and
-    /// mmdr misreads L1138's markdown strings into an edge squeezed between two others.
-    const KNOWN_VIOLATIONS: [&str; 2] = [
-        "docs--community-e2e-tests--L81: edge 2 start → push_develop label found no room",
-        "docs--syntax-flowchart--L1138: edge 1 in → d label found no room",
-    ];
+    /// Level C is not reachable everywhere: a long label between close parallel edges has nowhere to go.
+    const KNOWN_VIOLATIONS: [&str; 1] = ["docs--community-e2e-tests--L81: edge 2 start → push_develop label found no room"];
 
     #[test]
     fn spike_flowcharts_keep_the_level_c_invariants_but_the_known_ones() {

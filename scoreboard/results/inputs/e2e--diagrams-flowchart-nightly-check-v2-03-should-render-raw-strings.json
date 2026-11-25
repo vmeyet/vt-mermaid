@@ -15,7 +15,7 @@
       "100": {"status":"refused","reason":"rendered diagram is 125 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":65,"rows":27,"area":1755,"fits":true,"node_labels":6,"edge_labels":1,"arrows":2,"crossings":1,"bends":0},"score":63,"exact":{"crossings":0,"bends":0,"edge_cells":17,"violations":["node broken has 1 label lines not drawn whole","edge 0 mermaid --> v11 → broken label found no room"]}},
+      "80": {"status":"rendered","drawn":{"width":65,"rows":27,"area":1755,"fits":true,"node_labels":6,"edge_labels":1,"arrows":2,"crossings":1,"bends":0},"score":63,"exact":{"crossings":0,"bends":0,"edge_cells":17,"violations":["node broken has 1 label lines not drawn whole"]}},
       "100": {"status":"rendered","drawn":{"width":90,"rows":28,"area":2520,"fits":true,"node_labels":6,"edge_labels":1,"arrows":2,"crossings":1,"bends":0},"score":63,"exact":{"crossings":0,"bends":0,"edge_cells":18,"violations":["node broken has 1 label lines not drawn whole"]}}
     }
   }
