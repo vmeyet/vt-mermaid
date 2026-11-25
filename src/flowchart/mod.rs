@@ -1,12 +1,8 @@
 //! Flowcharts: laid out in layers on the grid, edges routed on it, then drawn.
 
-#[cfg_attr(not(test), expect(dead_code, reason = "the parser replaces it; deleted next"))]
-mod attributes;
 mod diagram;
 mod draw;
 mod edge_label;
-#[cfg_attr(not(test), expect(dead_code, reason = "the parser replaces it; deleted next"))]
-mod invisible;
 mod label;
 mod layout;
 #[cfg(any(test, feature = "measure"))]
@@ -15,8 +11,6 @@ mod parse;
 mod port;
 mod route;
 mod shape;
-#[cfg_attr(not(test), expect(dead_code, reason = "the parser replaces it; deleted next"))]
-mod source;
 
 use vt_canvas::{Canvas, Rect};
 
