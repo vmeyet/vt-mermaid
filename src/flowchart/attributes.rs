@@ -4,80 +4,8 @@ use std::collections::HashMap;
 
 use vt_canvas::Shape;
 
+use super::shape;
 use super::source;
-
-/// Mermaid's shape names, each drawn as the closest vt-canvas shape; any other name is a rectangle.
-const SHAPES: [(&str, Shape); 53] = [
-    ("rounded", Shape::Rounded),
-    ("event", Shape::Rounded),
-    ("delay", Shape::Rounded),
-    ("half-rounded-rectangle", Shape::Rounded),
-    ("stadium", Shape::Stadium),
-    ("pill", Shape::Stadium),
-    ("terminal", Shape::Stadium),
-    ("bow-rect", Shape::Stadium),
-    ("bow-tie-rectangle", Shape::Stadium),
-    ("stored-data", Shape::Stadium),
-    ("circle", Shape::Circle),
-    ("circ", Shape::Circle),
-    ("sm-circ", Shape::Circle),
-    ("small-circle", Shape::Circle),
-    ("start", Shape::Circle),
-    ("f-circ", Shape::Circle),
-    ("filled-circle", Shape::Circle),
-    ("junction", Shape::Circle),
-    ("cross-circ", Shape::Circle),
-    ("crossed-circle", Shape::Circle),
-    ("summary", Shape::Circle),
-    ("dbl-circ", Shape::DoubleCircle),
-    ("double-circle", Shape::DoubleCircle),
-    ("doublecircle", Shape::DoubleCircle),
-    ("fr-circ", Shape::DoubleCircle),
-    ("framed-circle", Shape::DoubleCircle),
-    ("stop", Shape::DoubleCircle),
-    ("subroutine", Shape::Subroutine),
-    ("subproc", Shape::Subroutine),
-    ("subprocess", Shape::Subroutine),
-    ("fr-rect", Shape::Subroutine),
-    ("framed-rectangle", Shape::Subroutine),
-    ("cyl", Shape::Cylinder),
-    ("cylinder", Shape::Cylinder),
-    ("database", Shape::Cylinder),
-    ("db", Shape::Cylinder),
-    ("lin-cyl", Shape::Cylinder),
-    ("lined-cylinder", Shape::Cylinder),
-    ("disk", Shape::Cylinder),
-    ("diam", Shape::Diamond),
-    ("diamond", Shape::Diamond),
-    ("decision", Shape::Diamond),
-    ("question", Shape::Diamond),
-    ("hex", Shape::Hexagon),
-    ("hexagon", Shape::Hexagon),
-    ("prepare", Shape::Hexagon),
-    ("lean-r", Shape::LeanRight),
-    ("lean-right", Shape::LeanRight),
-    ("in-out", Shape::LeanRight),
-    ("lean-l", Shape::LeanLeft),
-    ("lean-left", Shape::LeanLeft),
-    ("out-in", Shape::LeanLeft),
-    ("odd", Shape::Asymmetric),
-];
-
-/// Mermaid's trapezoid names: `b` is wide at the bottom, `t` at the top.
-const TRAPEZOIDS: [(&str, Shape); 12] = [
-    ("trap-b", Shape::Trapezoid),
-    ("trapezoid", Shape::Trapezoid),
-    ("trapezoid-bottom", Shape::Trapezoid),
-    ("priority", Shape::Trapezoid),
-    ("tri", Shape::Trapezoid),
-    ("triangle", Shape::Trapezoid),
-    ("extract", Shape::Trapezoid),
-    ("trap-t", Shape::InvertedTrapezoid),
-    ("trapezoid-top", Shape::InvertedTrapezoid),
-    ("inv-trapezoid", Shape::InvertedTrapezoid),
-    ("manual", Shape::InvertedTrapezoid),
-    ("flip-tri", Shape::InvertedTrapezoid),
-];
 
 /// Keys only a node's block has; a block without any belongs to an edge or a group, which mmdr cannot use.
 const NODE_KEYS: [&str; 4] = ["shape", "label", "icon", "img"];
@@ -121,16 +49,12 @@ pub(super) fn rewrite(source: &str) -> Rewritten {
             text.push_str(&body[copied..block.start]);
         }
         if let Some(name) = block.attributes.get("shape") {
-            shapes.insert(block.id.to_owned(), shape_named(name));
+            shapes.insert(block.id.to_owned(), shape::named(Some(name)));
         }
         copied = block.end;
     }
     text.push_str(&body[copied..]);
     Rewritten { source: text, shapes }
-}
-
-fn shape_named(name: &str) -> Shape {
-    SHAPES.iter().chain(&TRAPEZOIDS).find(|(known, _)| *known == name).map_or(Shape::Rectangle, |&(_, shape)| shape)
 }
 
 /// The block's label in brackets, on one line as mmdr reads a statement, unless the node has one already.
