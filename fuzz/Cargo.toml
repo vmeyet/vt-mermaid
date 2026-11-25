@@ -1,0 +1,33 @@
+[package]
+name = "vt-mermaid-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+# Its own workspace, so the library's build, tests and scripts/check never see it.
+[workspace]
+members = ["."]
+
+[dependencies]
+libfuzzer-sys = "0.4.10"
+# Measures each drawn character independently of vt-canvas, so the width check does not trust the code it checks.
+unicode-width = "0.2.3"
+vt-mermaid = { path = ".." }
+
+[[bin]]
+name = "render"
+path = "fuzz_targets/render.rs"
+test = false
+doc = false
+bench = false
+
+# Overflow and debug checks on vt-mermaid's code; mmdr's debug assertions grade its own layout, as in the library's dev profile.
+[profile.release]
+debug-assertions = true
+overflow-checks = true
+
+[profile.release.package.mermaid-rs-renderer]
+debug-assertions = false
