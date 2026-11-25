@@ -9,9 +9,9 @@ expression: "rows(&render(&source, 100).unwrap().canvas).join(\"\\n\")"
 │ -name : string │⬦──carries──┤     Student      │
 └────────────────┘          1 ├──────────────────┤
                             ┌─┤ -idCard : IdCard │
-┌────────────────┐          │ └──────────────────┘
-│      Bike      │ 1        │                     
-├────────────────┤⬦──rides──┘                     
+┌────────────────┐ 1        │ └──────────────────┘
+│      Bike      │⬦──rides──┘                     
+├────────────────┤                                
 │ -id : int      │                                
 │ -name : string │                                
 └────────────────┘

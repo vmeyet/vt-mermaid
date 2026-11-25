@@ -51,15 +51,24 @@ fn draw_outlined(canvas: &mut Canvas, rect: Rect, shape: Shape, label: &Label, c
         let text_width = to_u16(vt_canvas::width(text)).min(width);
         canvas.text_cut(Point::new(left + (width - text_width) / 2, row), text, width, Role::Label);
     }
-    let mut row = rect.y + inset.top + label.height();
-    for lines in compartments {
-        let rule = (Point::new(rect.x, row), Point::new(rect.x + rect.width.saturating_sub(1), row));
-        canvas.line(rule.0, rule.1, LineKind::Light, Role::Node).unwrap_or_default();
-        for (line_row, text) in (row + 1..).zip(lines) {
+    for (rule, lines) in rules(rect, shape, label, compartments).zip(compartments) {
+        canvas
+            .line(Point::new(rect.x, rule), Point::new(rect.x + rect.width.saturating_sub(1), rule), LineKind::Light, Role::Node)
+            .unwrap_or_default();
+        for (line_row, text) in (rule + 1..).zip(lines) {
             canvas.text_cut(Point::new(left, line_row), text, width, Role::Label);
         }
-        row += 1 + to_u16(lines.len());
     }
+}
+
+/// The rows of the rules above each compartment of a node outlined by `shape` on `rect`: no edge joins its sides there.
+pub(super) fn rules<'a>(rect: Rect, shape: Shape, label: &Label, compartments: &'a [Vec<String>]) -> impl Iterator<Item = u16> + 'a {
+    let first = rect.y + shape.inset().top + label.height();
+    compartments.iter().scan(first, |row, lines| {
+        let rule = *row;
+        *row += 1 + to_u16(lines.len());
+        Some(rule)
+    })
 }
 
 /// Columns past which a compartment's line is cut, so one long member or attribute does not widen the drawing past

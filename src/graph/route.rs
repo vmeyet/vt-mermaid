@@ -6,9 +6,10 @@ use std::ops::Range;
 
 use vt_canvas::{Direction, Point, Rect};
 
-use super::diagram::{Diagram, End, GroupKind};
+use super::diagram::{Diagram, End, Figure, GroupKind};
 use super::layout::{Divider, Placement};
 use super::port::{self, Join, Joins};
+use super::shape;
 use crate::error::Error;
 
 /// A step; every other price is counted in steps, and what is left under one step only tells equal paths apart.
@@ -128,8 +129,14 @@ impl Grid {
         for divider in &placement.dividers {
             grid.divider(*divider);
         }
-        for rect in &placement.nodes {
+        for (node, rect) in diagram.nodes.iter().zip(&placement.nodes) {
             grid.node(*rect);
+            if let Figure::Shape(shape) = node.figure {
+                for row in shape::rules(*rect, shape, &node.label, &node.compartments) {
+                    grid.set(Point::new(rect.x, row), Use::Blocked);
+                    grid.set(Point::new(rect.x + rect.width.saturating_sub(1), row), Use::Blocked);
+                }
+            }
         }
         for (edge, (rect, end)) in
             placement.labels.iter().zip(&diagram.edges).enumerate().filter_map(|(edge, (rect, ends))| Some((edge, ((*rect)?, ends.from))))

@@ -248,10 +248,9 @@ fn size(diagram: &Diagram, item: Item, content: &Arrangement) -> (i32, i32) {
 /// Cells between a block's sides and what it holds: a frame keeps one more than an edge's tips take at one end, so
 /// the edge turns before it crosses the frame.
 fn padding(diagram: &Diagram, item: Item) -> i32 {
-    let tips = diagram.edges.iter().map(|edge| i32::from(edge.start.straight().max(edge.end.straight()))).max().unwrap_or(0);
     match item {
         Item::Node(_) => 0,
-        Item::Group(index) if diagram.groups[index].kind == GroupKind::Framed => GROUP_PADDING.max(tips + 1),
+        Item::Group(index) if diagram.groups[index].kind == GroupKind::Framed => GROUP_PADDING.max(tips(diagram).one_end + 1),
         Item::Group(_) => 0,
     }
 }
@@ -262,22 +261,32 @@ fn span(width: i32, height: i32, vertical: bool) -> Span {
 
 /// Room for a bend and an arrow between ranks, and a cell for a bend each side of a label; going down a loose fit
 /// keeps blocks four columns apart and links two, a tight one two and one.
-/// Ranks keep room for the tips of an edge at both ends and a cell between them; tips taking two cells or more at
-/// the two ends together keep a line cell beside each end's too, so the middle may hold a label and the line still
-/// shows whether it is dashed.
-fn gaps(vertical: bool, fit: Fit, tips: i32) -> Gaps {
+/// Ranks keep room for the tips of an edge at both ends and a cell between them; tips of two cells or more at one end
+/// (crow's feet) keep a line cell beside them too, before a label or another end's tips, so the line still shows
+/// whether it is dashed.
+fn gaps(vertical: bool, fit: Fit, tips: Tips) -> Gaps {
     let gaps = match (vertical, fit) {
         (true, Fit::Loose) => Gaps { rank: 3, around_label: 1, apart: Apart { blocks: 4, links: 2 } },
         (true, _) => Gaps { rank: 3, around_label: 1, apart: Apart { blocks: 2, links: 1 } },
         (false, _) => Gaps { rank: 6, around_label: 2, apart: Apart { blocks: 1, links: 1 } },
     };
-    let room = if tips >= 2 { tips + 3 } else { tips + 1 };
-    Gaps { rank: gaps.rank.max(room), ..gaps }
+    let (rank, around_label) = if tips.one_end >= 2 { (tips.both + 3, tips.one_end + 1) } else { (tips.both + 1, 0) };
+    Gaps { rank: gaps.rank.max(rank), around_label: gaps.around_label.max(around_label), ..gaps }
 }
 
-/// The most cells the tips of an edge take at its two ends together.
-fn tips(diagram: &Diagram) -> i32 {
-    diagram.edges.iter().map(|edge| i32::from(edge.start.straight() + edge.end.straight())).max().unwrap_or(0)
+/// The most cells an edge's tips take at its two ends together, and at one end.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Tips {
+    both: i32,
+    one_end: i32,
+}
+
+fn tips(diagram: &Diagram) -> Tips {
+    let ends = diagram.edges.iter().map(|edge| (i32::from(edge.start.straight()), i32::from(edge.end.straight())));
+    ends.fold(Tips { both: 0, one_end: 0 }, |most, (start, end)| Tips {
+        both: most.both.max(start + end),
+        one_end: most.one_end.max(start.max(end)),
+    })
 }
 
 /// The room a label takes between two ranks: a row going down; going sideways its columns and one more, so a
@@ -516,5 +525,19 @@ mod tests {
 
         let gap = |placement: &Placement| placement.nodes[1].y - (placement.nodes[0].y + placement.nodes[0].height);
         assert_eq!((gap(&plain), gap(&tipped)), (3, 7));
+    }
+
+    #[test]
+    fn a_label_between_crow_s_feet_keeps_a_line_cell_from_each_end_s() {
+        let (mut diagram, plain) = placed("flowchart TB\n  A -->|has| B", Fit::Loose);
+        diagram.edges[0].start = Head::Tips(&[Tip::Bar, Tip::Bar]);
+        diagram.edges[0].end = Head::Tips(&[Tip::Fork, Tip::Ring]);
+
+        let tipped = place(&diagram, Fit::Loose);
+
+        let above = |placement: &Placement| placement.labels[0].unwrap().y - (placement.nodes[0].y + placement.nodes[0].height);
+        let below = |placement: &Placement| placement.nodes[1].y - placement.labels[0].unwrap().y - 1;
+        assert_eq!((above(&plain), below(&plain)), (1, 1));
+        assert_eq!((above(&tipped), below(&tipped)), (3, 3));
     }
 }
