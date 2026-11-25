@@ -41,7 +41,7 @@ This page says how the code is laid out today; when a module or a boundary chang
   Ten minutes of the sequence parser alone, 9.2 million inputs, and twenty of `render` seeded with sequence diagrams, 4.9 million, found none either.
 - The `measure` feature adds `measure(source, max_width)`: crossings, bends, edge cells, cells beside a node and level C violations, read from where each part went.
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
-- The `fuzz` feature adds `read_flowchart(source)` and `read_sequence(source)`, each parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
+- The `fuzz` feature adds `read_flowchart(source)`, `read_sequence(source)` and `read_class(source)`, each parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
 
 ## Every kind
 
@@ -140,6 +140,17 @@ Every pattern runs in one pass over the text: no regex, no backtracking on the s
 `parse::agreement`, a test, compares it with the oracle on every corpus state diagram: it accepts and refuses the 279 as mermaid does (level A), and reads the 276 mermaid accepts into the same nodes (id, shape, label, descriptions, parent, direction, note side) and edges (ends, label, head) (level B).
 Drawing comes next: `render` refuses a state diagram mermaid reads as `Error::Unsupported`.
 
+## Class diagrams
+
+`parse` is mermaid's own class parser rewritten by hand, in three steps after the shared preparation:
+`lexer` applies the rules of `classDiagram.jison` in their order, the first that matches winning, each start condition a state on a stack, so a keyword inside a generic type or backquotes is still a keyword and a line naming a `direction` is one, wherever the lexer stands;
+`grammar` reads the tokens top-down, accepting what mermaid's LALR parser accepts and calling the db in the order its actions do;
+`db` does what `classDb.ts` does: a class is added the first time a relation, a `class` statement or a member names it, its generic type read from its name, a class named alone adds nothing, an end written `()` facing no other end is a lollipop, and a namespace's dotted name makes its parents; an annotation on a class not there yet, and a method with no `(` after its name, are refused as mermaid fails on them.
+`member` reads an attribute or a method as `ClassMember` does: the method's pattern is one pass over the text, never a backtracking regex.
+A class diagram counts its classes, lollipops, notes and namespaces against `MAX_NODES`, its relations and the links of notes to classes against `MAX_EDGES`.
+`parse::agreement`, a test, compares it with the oracle on every corpus class diagram: it accepts and refuses the 372 as mermaid does (level A), and reads the 315 mermaid accepts into the same classes, members, namespaces, relations and notes (level B).
+Drawing comes next: `render` refuses a class diagram mermaid reads as `Error::Unsupported`.
+
 ## Dependency direction
 
 ```
@@ -157,7 +168,7 @@ vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its 
 - `tests/sequence/diagrams.txt`: sequence diagrams from the corpus and `tests/sequence/checkout.mmd`, each an insta snapshot at 100 columns; every corpus diagram mermaid accepts is drawn within 80 columns but two with eight and ten participants side by side.
 - `tests/spike/flowcharts.txt`: the 20 flowcharts of the spike, 19 from the corpus and `tests/spike/cached.mmd`; each is an insta snapshot and passes the level C checks of `measure` (every node and label drawn whole, every edge joining both ends, nothing overlapping).
 - [`scoreboard/`](scoreboard/README.md): every corpus flowchart and sequence diagram drawn by vt-mermaid and three other text renderers, measured the same way, results committed; a dev-only example, run by hand.
-- `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`, seeded from `corpus/flowchart`, and from `corpus/sequence` for sequence diagrams; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits; `cargo +nightly fuzz run parse` feeds it to the parser alone, through `read_flowchart` behind the `fuzz` feature, and checks it never panics and keeps the limits; `parse_sequence` does the same for the sequence parser through `read_sequence`.
+- `fuzz/`: a cargo-fuzz crate, its own workspace, out of the library's build and of `scripts/check`, seeded from `corpus/flowchart`, and from `corpus/sequence` and `corpus/class` for those kinds; `cargo +nightly fuzz run render` feeds any source to `render` and checks it never panics and every row fits; `cargo +nightly fuzz run parse` feeds it to the parser alone, through `read_flowchart` behind the `fuzz` feature, and checks it never panics and keeps the limits; `parse_sequence` and `parse_class` do the same for the sequence and class parsers through `read_sequence` and `read_class`.
   On stable, build a target with `cargo build --release --target <host>` and the sanitizer-coverage `RUSTFLAGS` cargo-fuzz passes, then run the binary.
 - `benches/`: `limits` times a typical flowchart and sequence diagram and inputs built at each limit with divan, `corpus` times every corpus flowchart and sequence diagram and prints the spread of each kind; both run with `cargo bench` only.
 - `examples/compare.rs`: prints each spike flowchart drawn by mermaid-text, then by vt-mermaid; mermaid-text is a dev-dependency only.
