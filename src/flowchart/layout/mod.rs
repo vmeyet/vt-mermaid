@@ -142,7 +142,7 @@ fn arrange(diagram: &Diagram, container: Option<usize>, fit: Fit) -> Arrangement
         let along = if matches!(flow, Direction::Up | Direction::Left) { length - position.along - span.length } else { position.along };
         if vertical { (position.across, along) } else { (along, position.across) }
     };
-    let labels = links
+    let labels: Vec<Kept> = links
         .iter()
         .zip(&placed.labels)
         .filter_map(|(&(link, edge), position)| {
@@ -160,8 +160,9 @@ fn arrange(diagram: &Diagram, container: Option<usize>, fit: Fit) -> Arrangement
             Child { item, x, y, width, height, content }
         })
         .collect();
-    let width = children.iter().map(|child| child.x + child.width).max().unwrap_or(0);
-    let height = children.iter().map(|child| child.y + child.height).max().unwrap_or(0);
+    let ends = children.iter().map(|child| (child.x + child.width, child.y + child.height));
+    let label_ends = labels.iter().map(|label| (label.x + label.width, label.y + 1));
+    let (width, height) = ends.chain(label_ends).fold((0, 0), |(width, height), (right, bottom)| (width.max(right), height.max(bottom)));
     Arrangement { width, height, children, labels }
 }
 
@@ -378,6 +379,15 @@ mod tests {
         let b = node(&diagram, &placement, "B");
         assert_eq!(placement.labels[0], Some(Rect::new(b.x + 1, b.y - 2, 3, 1)));
         assert_eq!(placement.labels.len(), 2);
+    }
+
+    #[test]
+    fn a_label_wider_than_the_blocks_widens_the_drawing() {
+        let (_, placement) = placed("flowchart TB\n  A -->|a label far wider than its nodes| B", Fit::Loose);
+
+        let label = placement.labels[0].unwrap();
+        assert_eq!(label.width, 32);
+        assert!(label.x + label.width + MARGIN <= placement.size.width, "{placement:?}");
     }
 
     #[test]
