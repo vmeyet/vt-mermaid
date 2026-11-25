@@ -12,6 +12,8 @@ mod layout;
 pub(crate) mod measure;
 #[cfg_attr(not(test), expect(dead_code, reason = "flowcharts switch to this parser once it agrees with mermaid"))]
 mod parse;
+#[cfg_attr(not(test), expect(dead_code, reason = "edges are routed with these joins once the layered layout draws"))]
+mod port;
 mod route;
 mod shape;
 mod snap;
