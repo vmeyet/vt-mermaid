@@ -313,7 +313,7 @@ mod tests {
         let mut diagram = flowchart::read("flowchart TB\n  A[A parent wide enough] --> B & C & D").unwrap();
         let apart = joins(&diagram, &layout::place(&diagram, Fit::Loose));
         for edge in &mut diagram.edges[..2] {
-            edge.start = Head::Tips(&[Tip::Hollow]);
+            edge.start = Head::Tips(&[Tip::Triangle]);
         }
 
         let gathered = joins(&diagram, &layout::place(&diagram, Fit::Loose));

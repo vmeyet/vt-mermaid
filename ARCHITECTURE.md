@@ -15,7 +15,8 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 - Reads files, the environment or the clock; prints; exits the process.
 - Writes ANSI escapes or picks colours: it hands back cells with colour roles, the caller maps them and writes the terminal.
-- Lets a dependency's type into a public signature, except vt-canvas's `Canvas`, `GlyphSet`, `Role` and `Run`: the cell format every vt crate hands back, re-exported so a caller needs no second dependency.
+- Lets a dependency's type into a public signature, except vt-canvas's `Canvas`, `GlyphSet` and `Run`: the cell format every vt crate hands back, re-exported so a caller needs no second dependency.
+  The roles in its cells are vt-mermaid's own `Role` (`role`): `Node`, `Edge`, `Label`, `Group`, and `Plain` for empty cells.
 
 ## Contract
 
@@ -57,6 +58,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 `source` holds what every diagram kind shares before its own parser: mermaid's preparation of the text, its entities, the YAML of `@{ … }` blocks, and the kind a source is, read from its first word once the front matter, directives and comment lines are left out.
 `render` checks the length, reads the kind and hands the source to that kind's module; a kind mermaid knows but not drawn here is `Error::Unsupported`.
+`role` holds `Role`, what each cell of a drawing is drawn for.
 
 ## Flowcharts
 
@@ -88,7 +90,7 @@ mermaid-rs-renderer's parser, which it replaces, accepts and refuses 908 of them
 - Compartments: a node may hold lines under its label, each list in a compartment below a rule (`├───┤`), from the left; flowcharts have none, class and ER diagrams draw their members and attributes so; a line past 60 columns, as wide as an edge label gets, is cut with `⋯`.
 - Shapes: vt-canvas draws each outline (`Canvas::shape`), so every glyph follows the glyph set.
   A group is framed with its title, a concurrent region without a frame (dashed lines between regions), or bare, without a frame or room around, only keeping its blocks together (`graph::diagram::GroupKind`).
-  A node is a figure (`graph::diagram::Figure`): an outline around its label, a marker on one cell (`Canvas::marker`) or a heavy bar across the flow of its group, both without their label; every edge joins a marker's cell, from any side, and a bar's cells each way across it.
+  A node is a figure (`graph::diagram::Figure`): an outline around its label, a symbol on one cell (`Canvas::symbol`) or a heavy bar across the flow of its group, both without their label; every edge joins a symbol's cell, from any side, and a bar's cells each way across it.
   A shape a node's brackets or its `@{ shape: … }` block names maps to the closest one, `doc`, `flag` or any name without a close match to a rectangle; `((text))` is a circle, `(((text)))` a double circle; only a pointed head draws an arrow.
   A node named like a subgraph is that subgraph, as mermaid merges them; a subgraph whose id an edge names inside another subgraph moves into it, as mermaid draws it.
   A node is its label plus a space and the shape's inset on each side.

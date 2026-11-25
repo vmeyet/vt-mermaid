@@ -9,6 +9,7 @@ use vt_canvas::{Canvas, GlyphSet, Point, Rect};
 use super::Drawing;
 use super::diagram::{self, Diagram, GroupKind};
 use super::route::Route;
+use crate::Role;
 
 /// How a drawing is laid out, counted on its own geometry.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -83,8 +84,8 @@ fn beside_nodes(diagram: &Diagram, drawing: &Drawing) -> usize {
     cells.len()
 }
 
-pub(crate) fn rows(canvas: &Canvas) -> Vec<String> {
-    canvas.rows(GlyphSet::Unicode).map(|runs| runs.into_iter().map(|run| run.text).collect()).collect()
+pub(crate) fn rows(canvas: &Canvas<Role>) -> Vec<String> {
+    canvas.lines(GlyphSet::Unicode).collect()
 }
 
 /// The text of `rect`'s first row as drawn.

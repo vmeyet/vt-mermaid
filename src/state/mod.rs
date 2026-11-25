@@ -5,12 +5,13 @@ mod parse;
 
 use vt_canvas::Canvas;
 
+use crate::Role;
 use crate::error::Error;
 use crate::graph;
 use crate::settings::Settings;
 
 /// Draws `source` as a graph, in the first form that fits.
-pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Canvas, Error> {
+pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Canvas<Role>, Error> {
     graph::render(&diagram::read(source)?, settings).map(|drawing| drawing.canvas)
 }
 
@@ -71,7 +72,7 @@ mod tests {
     fn a_diagram_draws_in_ascii_too() {
         let canvas = render_with("stateDiagram-v2\n  state c <<choice>>\n  [*] --> c\n  c --> A\n  A --> [*]", Settings::new(40)).unwrap();
 
-        let ascii: Vec<String> = canvas.rows(GlyphSet::Ascii).map(|runs| runs.into_iter().map(|run| run.text).collect()).collect();
+        let ascii: Vec<String> = canvas.lines(GlyphSet::Ascii).collect();
         insta::assert_snapshot!(ascii.join("\n"));
     }
 

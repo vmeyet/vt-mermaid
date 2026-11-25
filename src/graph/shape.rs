@@ -1,6 +1,7 @@
-use vt_canvas::{Canvas, LineKind, Point, Rect, Role, Shape};
+use vt_canvas::{Canvas, LineKind, Point, Rect, Shape};
 
 use super::diagram::Figure;
+use crate::Role;
 use crate::label::Label;
 
 /// Columns and rows a block covers.
@@ -15,7 +16,7 @@ pub(crate) struct Size {
 pub(super) fn size(figure: Figure, label: &Label, compartments: &[Vec<String>], vertical: bool) -> Size {
     match figure {
         Figure::Shape(shape) => outlined(shape, label, compartments),
-        Figure::Marker(_) => Size { width: 1, height: 1 },
+        Figure::Symbol(_) => Size { width: 1, height: 1 },
         Figure::Bar { length } if vertical => Size { width: length, height: 1 },
         Figure::Bar { length } => Size { width: 1, height: length },
     }
@@ -25,36 +26,34 @@ fn outlined(shape: Shape, label: &Label, compartments: &[Vec<String>]) -> Size {
     let inset = shape.inset();
     let rows: usize = compartments.iter().map(|lines| 1 + lines.len()).sum();
     Size {
-        width: inner_width(label, compartments) + 2 * (inset.side + 1),
+        width: inner_width(label, compartments) + 2 * (inset.sides + 1),
         height: label.height() + to_u16(rows) + inset.top + inset.bottom,
     }
 }
 
 /// The figure on `rect`, with its label and compartments when it shows them.
-pub(super) fn draw(canvas: &mut Canvas, rect: Rect, figure: Figure, label: &Label, compartments: &[Vec<String>]) {
+pub(super) fn draw(canvas: &mut Canvas<Role>, rect: Rect, figure: Figure, label: &Label, compartments: &[Vec<String>]) {
     match figure {
         Figure::Shape(shape) => draw_outlined(canvas, rect, shape, label, compartments),
-        Figure::Marker(marker) => canvas.marker(Point::new(rect.x, rect.y), marker, Role::Node),
-        Figure::Bar { .. } => {
-            let end = Point::new(rect.x + rect.width.saturating_sub(1), rect.y + rect.height.saturating_sub(1));
-            canvas.line(Point::new(rect.x, rect.y), end, LineKind::Heavy, Role::Node).unwrap_or_default();
+        Figure::Symbol(symbol) => canvas.symbol(Point::new(rect.x, rect.y), symbol, Role::Node),
+        Figure::Bar { .. } if rect.width > 1 => {
+            canvas.horizontal(rect.y, rect.x, rect.x + rect.width - 1, LineKind::Heavy, Role::Node);
         }
+        Figure::Bar { .. } => canvas.vertical(rect.x, rect.y, rect.y + rect.height.saturating_sub(1), LineKind::Heavy, Role::Node),
     }
 }
 
 /// The outline, each line of the label centred inside it, then each compartment under a rule, its lines from the left.
-fn draw_outlined(canvas: &mut Canvas, rect: Rect, shape: Shape, label: &Label, compartments: &[Vec<String>]) {
+fn draw_outlined(canvas: &mut Canvas<Role>, rect: Rect, shape: Shape, label: &Label, compartments: &[Vec<String>]) {
     canvas.shape(rect, shape, Role::Node);
     let inset = shape.inset();
-    let (left, width) = (rect.x + inset.side + 1, inner_width(label, compartments));
+    let (left, width) = (rect.x + inset.sides + 1, inner_width(label, compartments));
     for (row, text) in (rect.y + inset.top..).zip(&label.lines) {
-        let text_width = to_u16(vt_canvas::width(text)).min(width);
+        let text_width = to_u16(vt_canvas::text_width(text)).min(width);
         canvas.text_cut(Point::new(left + (width - text_width) / 2, row), text, width, Role::Label);
     }
     for (rule, lines) in rules(rect, shape, label, compartments).zip(compartments) {
-        canvas
-            .line(Point::new(rect.x, rule), Point::new(rect.x + rect.width.saturating_sub(1), rule), LineKind::Light, Role::Node)
-            .unwrap_or_default();
+        canvas.horizontal(rule, rect.x, rect.x + rect.width.saturating_sub(1), LineKind::Light, Role::Node);
         for (line_row, text) in (rule + 1..).zip(lines) {
             canvas.text_cut(Point::new(left, line_row), text, width, Role::Label);
         }
@@ -78,7 +77,7 @@ const COMPARTMENT_COLUMNS: u16 = 60;
 /// Columns between the spaces inside the outline: the widest of the label and the compartments' lines, each at most
 /// [`COMPARTMENT_COLUMNS`].
 fn inner_width(label: &Label, compartments: &[Vec<String>]) -> u16 {
-    let widest = compartments.iter().flatten().map(|line| to_u16(vt_canvas::width(line)).min(COMPARTMENT_COLUMNS)).max().unwrap_or(0);
+    let widest = compartments.iter().flatten().map(|line| to_u16(vt_canvas::text_width(line)).min(COMPARTMENT_COLUMNS)).max().unwrap_or(0);
     label.width.max(widest)
 }
 
@@ -100,7 +99,7 @@ mod tests {
         let size = size(figure, label, compartments, true);
         let mut canvas = Canvas::new(size.width, size.height).unwrap();
         draw(&mut canvas, Rect::new(0, 0, size.width, size.height), figure, label, compartments);
-        canvas.rows(GlyphSet::Unicode).map(|runs| runs.into_iter().map(|run| run.text).collect()).collect()
+        canvas.lines(GlyphSet::Unicode).collect()
     }
 
     #[test]
@@ -129,12 +128,12 @@ mod tests {
     }
 
     #[test]
-    fn a_marker_takes_one_cell_and_a_bar_lies_across_the_flow() {
-        let marker = Figure::Marker(vt_canvas::Marker::Dot);
+    fn a_symbol_takes_one_cell_and_a_bar_lies_across_the_flow() {
+        let symbol = Figure::Symbol(vt_canvas::Symbol::Dot);
         let bar = Figure::Bar { length: 5 };
 
         let sizes =
-            [size(marker, &Label::default(), &[], true), size(bar, &Label::default(), &[], true), size(bar, &Label::default(), &[], false)];
+            [size(symbol, &Label::default(), &[], true), size(bar, &Label::default(), &[], true), size(bar, &Label::default(), &[], false)];
 
         assert_eq!(sizes, [Size { width: 1, height: 1 }, Size { width: 5, height: 1 }, Size { width: 1, height: 5 }]);
         assert_eq!(drawn(bar, &Label::default()), ["━━━━━"]);
@@ -168,6 +167,6 @@ mod tests {
         let rows = drawn_with(Figure::Shape(Shape::Rectangle), &Label::wrapped("A"), &[vec![line]]);
 
         assert_eq!(rows[3], format!("│ +{}wor⋯ │", "word ".repeat(11)));
-        assert_eq!(vt_canvas::width(&rows[3]), 64);
+        assert_eq!(vt_canvas::text_width(&rows[3]), 64);
     }
 }

@@ -171,8 +171,8 @@ pub(crate) fn render_in_process(name: &str, width: u16) -> Result<(), Box<dyn st
     Ok(())
 }
 
-pub(crate) fn text_of(canvas: &vt_mermaid::Canvas) -> String {
-    canvas.rows(GlyphSet::Unicode).map(|runs| runs.into_iter().map(|run| run.text).collect::<String>()).collect::<Vec<_>>().join("\n")
+pub(crate) fn text_of(canvas: &vt_mermaid::Canvas<vt_mermaid::Role>) -> String {
+    canvas.lines(GlyphSet::Unicode).collect::<Vec<_>>().join("\n")
 }
 
 fn mermaid_text(source: &str, width: u16) -> Result<String, String> {

@@ -12,6 +12,7 @@ mod shape;
 
 use vt_canvas::{Canvas, Rect};
 
+use crate::Role;
 use crate::error::{Error, MAX_AREA};
 use crate::label::Wrap;
 use crate::settings::Settings;
@@ -23,7 +24,7 @@ use route::Route;
 #[derive(Debug, Clone)]
 #[cfg_attr(not(any(test, feature = "measure")), expect(dead_code, reason = "the parts are read by the measures"))]
 pub(crate) struct Drawing {
-    pub(crate) canvas: Canvas,
+    pub(crate) canvas: Canvas<Role>,
     pub(crate) nodes: Vec<Rect>,
     pub(crate) groups: Vec<Rect>,
     routes: Vec<Route>,

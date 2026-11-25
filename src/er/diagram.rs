@@ -106,7 +106,7 @@ fn rows(attributes: &[Attribute]) -> Vec<String> {
             [&attribute.kind, &attribute.name, &attribute.keys.join(","), &attribute.comment].map(|cell| entity::decoded(cell))
         })
         .collect();
-    let widths: [usize; 4] = std::array::from_fn(|column| cells.iter().map(|row| vt_canvas::width(&row[column])).max().unwrap_or(0));
+    let widths: [usize; 4] = std::array::from_fn(|column| cells.iter().map(|row| vt_canvas::text_width(&row[column])).max().unwrap_or(0));
     let before_comments: usize = widths[..3].iter().filter(|&&width| width > 0).map(|width| width + GAP.len()).sum();
     let comment_columns = ROW_COLUMNS.saturating_sub(before_comments).max(COMMENT_COLUMNS).min(widths[3]);
     let widths = [widths[0], widths[1], widths[2], comment_columns];
@@ -130,7 +130,7 @@ fn table_rows(row: &[String; 4], widths: [usize; 4]) -> Vec<String> {
             let comment = comment.get(line).map_or("", String::as_str);
             let columns = cells.into_iter().chain([comment]).zip(widths).filter(|&(_, width)| width > 0);
             let padded: Vec<String> =
-                columns.map(|(cell, width)| format!("{cell}{}", " ".repeat(width.saturating_sub(vt_canvas::width(cell))))).collect();
+                columns.map(|(cell, width)| format!("{cell}{}", " ".repeat(width.saturating_sub(vt_canvas::text_width(cell))))).collect();
             padded.join(GAP).trim_end().to_owned()
         })
         .collect()

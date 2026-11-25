@@ -36,7 +36,7 @@ fn graph(diagram: &ClassDiagram) -> Diagram {
         .collect();
     let classes = diagram.classes.iter().map(|class| class_node(class, group_of(class.namespace.as_deref())));
     let interfaces = diagram.interfaces.iter().map(|interface| node(&interface.id, &interface.label, Shape::Stadium, None));
-    let notes = diagram.notes.iter().map(|note| node(&note.id, &note.text, Shape::Rounded, group_of(note.namespace.as_deref())));
+    let notes = diagram.notes.iter().map(|note| node(&note.id, &note.text, Shape::RoundedRectangle, group_of(note.namespace.as_deref())));
     let nodes: Vec<Node> = classes.chain(interfaces).chain(notes).enumerate().map(|(order, node)| Node { order, ..node }).collect();
     let index: HashMap<&str, usize> = nodes.iter().enumerate().map(|(position, node)| (node.id.as_str(), position)).collect();
     let end = |id: &str| index.get(id).copied().map(End::Node);
@@ -95,7 +95,7 @@ fn note_link(note: End, class: End) -> Edge {
 fn head(end: Option<RelationType>) -> Head {
     match end {
         None => Head::None,
-        Some(RelationType::Extension) => Head::Tips(&[Tip::Hollow]),
+        Some(RelationType::Extension) => Head::Tips(&[Tip::Triangle]),
         Some(RelationType::Composition) => Head::Tips(&[Tip::FilledDiamond]),
         Some(RelationType::Aggregation) => Head::Tips(&[Tip::Diamond]),
         Some(RelationType::Dependency) => Head::Arrow,
@@ -144,7 +144,7 @@ mod tests {
         assert_eq!(
             heads,
             [
-                (Head::Tips(&[Tip::Hollow]), LineKind::Light, Head::None),
+                (Head::Tips(&[Tip::Triangle]), LineKind::Light, Head::None),
                 (Head::Tips(&[Tip::FilledDiamond]), LineKind::Dashed, Head::None),
                 (Head::Tips(&[Tip::Diamond]), LineKind::Light, Head::Arrow),
                 (Head::Tips(&[Tip::Ring]), LineKind::Light, Head::None),

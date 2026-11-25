@@ -61,7 +61,7 @@ impl Drawn {
         let heads = kind.heads();
         let rows = trimmed_rows(text);
         let grid: Vec<Vec<char>> = rows.iter().map(|row| row.chars().collect()).collect();
-        let width = rows.iter().map(|row| vt_canvas::width(row)).max().unwrap_or(0);
+        let width = rows.iter().map(|row| vt_canvas::text_width(row)).max().unwrap_or(0);
         let all = rows.join("\n");
         let shown = without_markup(&all);
         let found = |labels: &[Vec<String>]| labels.iter().filter(|words| words.iter().all(|word| shown.contains(word.as_str()))).count();

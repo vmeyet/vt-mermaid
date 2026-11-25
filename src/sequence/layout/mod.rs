@@ -423,7 +423,7 @@ impl<'a> Rows<'a> {
         let (left, right) = held.unwrap_or((first, last));
         let (left, right) = (left - FRAME_PADDING, right + FRAME_PADDING);
         let titles = std::iter::once(&open.title).chain(open.dividers.iter().map(|divider| &divider.title));
-        let title_width = titles.map(|title| vt_canvas::width(title).min(self.title_room)).max().unwrap_or(0);
+        let title_width = titles.map(|title| vt_canvas::text_width(title).min(self.title_room)).max().unwrap_or(0);
         let right = right.max(left + i32::try_from(title_width).unwrap_or(i32::MAX) + 5);
         let area = Area { left, top: open.top, right, bottom: self.cursor };
         self.extents[open.event] = Some((left, right));

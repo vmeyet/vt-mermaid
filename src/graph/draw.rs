@@ -1,4 +1,4 @@
-use vt_canvas::{Canvas, Corner, Frame, LineKind, Point, Rect, Role};
+use vt_canvas::{Canvas, Corner, LineKind, Point, Rect};
 
 use super::Drawing;
 use super::diagram::{Diagram, Edge, GroupKind, Head};
@@ -6,6 +6,7 @@ use super::edge_label::EndLabels;
 use super::layout::Divider;
 use super::route::{Route, opposite};
 use super::shape;
+use crate::Role;
 use crate::error::Error;
 
 /// Where each part goes on the routing grid.
@@ -32,10 +33,15 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
     let mut canvas = Canvas::new(bounds.width, bounds.height)
         .map_err(|_canvas_error| Error::TooLarge { width: usize::from(bounds.width), height: usize::from(bounds.height) })?;
     for (_, rect) in diagram.groups.iter().zip(&parts.groups).filter(|(group, _)| group.kind == GroupKind::Framed) {
-        canvas.frame(*rect, Frame { kind: LineKind::Light, corner: Corner::Rounded, title: None, role: Role::Group });
+        canvas.frame(*rect, LineKind::Light, Corner::Rounded, Role::Group);
     }
     for divider in &parts.dividers {
-        canvas.line(divider.from, divider.to, LineKind::Dashed, Role::Group).unwrap_or_default();
+        let Divider { from, to } = *divider;
+        if from.y == to.y {
+            canvas.horizontal(from.y, from.x, to.x, LineKind::Dashed, Role::Group);
+        } else {
+            canvas.vertical(from.x, from.y, to.y, LineKind::Dashed, Role::Group);
+        }
     }
     for (node, rect) in diagram.nodes.iter().zip(&parts.nodes) {
         shape::draw(&mut canvas, *rect, node.figure, &node.label, &node.compartments);
@@ -64,7 +70,7 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
 }
 
 /// The line, then its heads: a line meets a node's border only where it draws no head there.
-fn draw_edge(canvas: &mut Canvas, edge: &Edge, route: &Route) {
+fn draw_edge(canvas: &mut Canvas<Role>, edge: &Edge, route: &Route) {
     let mut points = route.corners();
     if edge.end == Head::None {
         points.push(route.end);
@@ -76,10 +82,8 @@ fn draw_edge(canvas: &mut Canvas, edge: &Edge, route: &Route) {
     let ends = [(edge.end, route.cells.iter().rev().copied().collect::<Vec<_>>(), route.arrival())];
     let starts = [(edge.start, route.cells.iter().skip(1).copied().collect::<Vec<_>>(), opposite(route.departure()))];
     for (head, cells, heading) in ends.into_iter().chain(starts) {
-        match head {
-            Head::None => {}
-            Head::Arrow => cells.first().into_iter().for_each(|&cell| canvas.arrow(cell, heading, Role::Edge)),
-            Head::Tips(tips) => tips.iter().zip(&cells).for_each(|(&tip, &cell)| canvas.tip(cell, heading, tip, Role::Edge)),
+        for (&tip, &cell) in head.tips().iter().zip(&cells) {
+            canvas.tip(cell, heading, tip, Role::Edge);
         }
     }
 }

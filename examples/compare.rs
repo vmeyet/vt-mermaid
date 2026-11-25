@@ -34,11 +34,7 @@ fn without_front_matter(source: &str) -> &str {
 
 fn vt_mermaid(source: &str, width: u16) -> String {
     match vt_mermaid::render(source, width) {
-        Ok(canvas) => canvas
-            .rows(GlyphSet::Unicode)
-            .map(|runs| runs.into_iter().map(|run| run.text).collect::<String>())
-            .collect::<Vec<_>>()
-            .join("\n"),
+        Ok(canvas) => canvas.lines(GlyphSet::Unicode).collect::<Vec<_>>().join("\n"),
         Err(error) => format!("error: {error}"),
     }
 }

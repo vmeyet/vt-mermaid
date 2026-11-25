@@ -7,6 +7,7 @@ mod parse;
 
 use vt_canvas::Canvas;
 
+use crate::Role;
 use crate::error::Error;
 use crate::label::Wrap;
 use crate::settings::Settings;
@@ -20,7 +21,7 @@ const CUTS: std::ops::RangeInclusive<usize> = 6..=30;
 
 /// Draws `source` in the first form that fits: labels as written, then wrapped narrower and narrower at spaces, then
 /// the same with heads closer together, then with words wider than the lines broken or cut as `settings` say.
-pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Canvas, Error> {
+pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Canvas<Role>, Error> {
     let diagram = Diagram::read(source)?;
     let max_width = settings.max_width;
     let wraps = |gap| WRAPS.map(move |columns| Fit { wrap: Wrap::to(columns, settings.long_words), gap });
@@ -62,11 +63,11 @@ mod tests {
     use super::*;
     use crate::settings::LongWords;
 
-    fn rows(canvas: &Canvas, glyphs: GlyphSet) -> Vec<String> {
-        canvas.rows(glyphs).map(|runs| runs.into_iter().map(|run| run.text).collect()).collect()
+    fn rows(canvas: &Canvas<Role>, glyphs: GlyphSet) -> Vec<String> {
+        canvas.lines(glyphs).collect()
     }
 
-    fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
+    fn render(source: &str, max_width: u16) -> Result<Canvas<Role>, Error> {
         render_with(source, Settings::new(max_width))
     }
 
@@ -103,7 +104,7 @@ mod tests {
         for entry in fs::read_dir(root).unwrap() {
             let path = entry.unwrap().path();
             match render(&fs::read_to_string(&path).unwrap(), 80) {
-                Ok(canvas) => assert!(rows(&canvas, GlyphSet::Unicode).iter().all(|row| vt_canvas::width(row) <= 80), "{path:?}"),
+                Ok(canvas) => assert!(rows(&canvas, GlyphSet::Unicode).iter().all(|row| vt_canvas::text_width(row) <= 80), "{path:?}"),
                 Err(Error::TooWide { .. }) => too_wide.push(path.file_name().unwrap().to_string_lossy().into_owned()),
                 Err(_) => {}
             }
@@ -127,7 +128,7 @@ mod tests {
         let narrow = rows(&render(source, 30).unwrap(), GlyphSet::Unicode);
 
         assert_eq!(wide.len(), 10);
-        assert!(narrow.len() > 10 && narrow.iter().all(|row| vt_canvas::width(row) <= 30), "{narrow:#?}");
+        assert!(narrow.len() > 10 && narrow.iter().all(|row| vt_canvas::text_width(row) <= 30), "{narrow:#?}");
         assert!(narrow.iter().any(|row| row.contains("Alice")), "{narrow:#?}");
     }
 

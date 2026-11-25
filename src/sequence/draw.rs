@@ -2,11 +2,12 @@
 //!
 //! A message, a frame's border or a note passes in front of a lifeline: the lifeline stops there instead of crossing.
 
-use vt_canvas::{Canvas, Corner, Direction, Frame, LineKind, Point, Rect, Role, Shape};
+use vt_canvas::{Canvas, Corner, Direction, LineKind, Point, Rect, Shape};
 
 use super::diagram::Figure;
 use super::layout::{Area, Cell, Frame as Block, Head, Layout, Lifeline, Message};
 use super::parse::Tip;
+use crate::Role;
 use crate::error::Error;
 use crate::label::Label;
 
@@ -14,7 +15,7 @@ use crate::label::Label;
 const PERSON: [&str; 3] = [" o ", "/|\\", "/ \\"];
 
 /// Draws `layout`, refused when wider than `max_width`.
-pub(super) fn draw(layout: &Layout, max_width: u16) -> Result<Canvas, Error> {
+pub(super) fn draw(layout: &Layout, max_width: u16) -> Result<Canvas<Role>, Error> {
     let bounds = bounds(layout);
     let (width, height) = (bounds.right - bounds.left + 1, bounds.bottom - bounds.top + 1);
     if width > i32::from(max_width) {
@@ -48,7 +49,7 @@ pub(super) fn draw(layout: &Layout, max_width: u16) -> Result<Canvas, Error> {
         pen.message(message);
     }
     for cross in &layout.crosses {
-        pen.canvas.cross(pen.point(cross.x, cross.y), Role::Edge);
+        pen.canvas.tip(pen.point(cross.x, cross.y), Direction::Right, vt_canvas::Tip::Cross, Role::Edge);
     }
     Ok(pen.canvas)
 }
@@ -56,7 +57,7 @@ pub(super) fn draw(layout: &Layout, max_width: u16) -> Result<Canvas, Error> {
 /// The canvas and where the placement's origin falls on it.
 #[derive(Debug)]
 struct Pen {
-    canvas: Canvas,
+    canvas: Canvas<Role>,
     origin: (i32, i32),
 }
 
@@ -77,15 +78,20 @@ impl Pen {
         self.canvas.text(at, text, role);
     }
 
-    fn line(&mut self, from: (i32, i32), to: (i32, i32), kind: LineKind, role: Role) {
-        let (from, to) = (self.point(from.0, from.1), self.point(to.0, to.1));
-        self.canvas.line(from, to, kind, role).unwrap_or_default();
+    fn horizontal(&mut self, y: i32, from_x: i32, to_x: i32, kind: LineKind, role: Role) {
+        let (from, to) = (self.point(from_x, y), self.point(to_x, y));
+        self.canvas.horizontal(from.y, from.x, to.x, kind, role);
+    }
+
+    fn vertical(&mut self, x: i32, from_y: i32, to_y: i32, kind: LineKind, role: Role) {
+        let (from, to) = (self.point(x, from_y), self.point(x, to_y));
+        self.canvas.vertical(from.x, from.y, to.y, kind, role);
     }
 
     /// A frame with its title in the top border after `┌─ `, cut with an ellipsis to leave ` ─┐`.
     fn frame(&mut self, area: Area, kind: LineKind, corner: Corner, title: Option<&str>) {
         let rect = self.rect(area);
-        self.canvas.frame(rect, Frame { kind, corner, title: None, role: Role::Group });
+        self.canvas.frame(rect, kind, corner, Role::Group);
         if let Some(title) = title {
             self.title(area, area.top, title);
         }
@@ -96,7 +102,7 @@ impl Pen {
         let kind = if block.dashed { LineKind::Dashed } else { LineKind::Light };
         self.frame(block.area, kind, Corner::Square, Some(block.title.as_str()));
         for divider in &block.dividers {
-            self.line((block.area.left, divider.row), (block.area.right, divider.row), LineKind::Dashed, Role::Group);
+            self.horizontal(divider.row, block.area.left, block.area.right, LineKind::Dashed, Role::Group);
             self.title(block.area, divider.row, &divider.title);
         }
     }
@@ -107,7 +113,7 @@ impl Pen {
         if title.is_empty() || room <= 0 {
             return;
         }
-        let written = i32::try_from(vt_canvas::width(title)).unwrap_or(i32::MAX).min(room);
+        let written = i32::try_from(vt_canvas::text_width(title)).unwrap_or(i32::MAX).min(room);
         let at = self.point(area.left + 3, y);
         self.canvas.text_cut(at, title, u16::try_from(room).unwrap_or(0), Role::Group);
         self.text(area.left + 2, y, " ", Role::Group);
@@ -117,7 +123,7 @@ impl Pen {
     /// Each line of `label` centred in `width` columns from `left`, cut with an ellipsis to the label's width.
     fn centred(&mut self, label: &Label, left: i32, top: i32, width: i32, role: Role) {
         for (row, line) in (top..).zip(&label.lines) {
-            let line_width = i32::try_from(vt_canvas::width(line)).unwrap_or(i32::MAX).min(i32::from(label.width));
+            let line_width = i32::try_from(vt_canvas::text_width(line)).unwrap_or(i32::MAX).min(i32::from(label.width));
             let at = self.point(left + (width - line_width).max(0) / 2, row);
             self.canvas.text_cut(at, line, label.width, role);
         }
@@ -136,10 +142,10 @@ impl Pen {
         if lifeline.bottom <= lifeline.top {
             return;
         }
-        self.line((lifeline.x, lifeline.top), (lifeline.x, lifeline.bottom), LineKind::Light, Role::Edge);
+        self.vertical(lifeline.x, lifeline.top, lifeline.bottom, LineKind::Light, Role::Edge);
         for span in lifeline.active.iter().filter(|span| span.top < lifeline.bottom) {
             let (start, end) = (span.top.max(lifeline.top), span.bottom.max(span.top + 1).min(lifeline.bottom));
-            self.line((lifeline.x, start), (lifeline.x, end), LineKind::Heavy, Role::Edge);
+            self.vertical(lifeline.x, start, end, LineKind::Heavy, Role::Edge);
         }
     }
 
@@ -149,7 +155,7 @@ impl Pen {
         match head.figure {
             Figure::Box => {
                 let rect = self.rect(area);
-                self.canvas.frame(rect, Frame { kind: LineKind::Light, corner: Corner::Square, title: None, role: Role::Node });
+                self.canvas.frame(rect, LineKind::Light, Corner::Square, Role::Node);
                 self.centred(&head.label, area.left + 2, area.top + 1, width - 4, Role::Label);
             }
             Figure::Database => {
@@ -179,19 +185,20 @@ impl Pen {
             return;
         }
         let (forward, back) = if end >= start { (Direction::Right, Direction::Left) } else { (Direction::Left, Direction::Right) };
-        self.line((start, row), (end, row), kind, Role::Edge);
+        self.horizontal(row, start, end, kind, Role::Edge);
         self.tip(message.tip, (end, row), forward);
         self.tip(message.back_tip, (start, row), back);
         self.centred(&message.label, message.label_at.x, message.label_at.y, i32::from(message.label.width), Role::Label);
     }
 
     fn tip(&mut self, tip: Tip, (x, y): (i32, i32), direction: Direction) {
+        let drawn = match tip {
+            Tip::None => return,
+            Tip::Arrow => vt_canvas::Tip::Arrow,
+            Tip::Cross => vt_canvas::Tip::Cross,
+        };
         let at = self.point(x, y);
-        match tip {
-            Tip::None => {}
-            Tip::Arrow => self.canvas.arrow(at, direction, Role::Edge),
-            Tip::Cross => self.canvas.cross(at, Role::Edge),
-        }
+        self.canvas.tip(at, direction, drawn, Role::Edge);
     }
 }
 

@@ -1,7 +1,7 @@
 //! A graph as a diagram kind reads it: nodes, groups, edges and invisible links, laid out and drawn alike whatever
 //! the kind.
 
-use vt_canvas::{Direction, LineKind, Marker, Shape, Tip};
+use vt_canvas::{Direction, LineKind, Shape, Symbol, Tip};
 
 use crate::label::{Label, Wrap};
 
@@ -40,7 +40,7 @@ pub(crate) enum Figure {
     /// An outline around its label.
     Shape(Shape),
     /// One cell, its label left out: every edge joins that cell, from any side.
-    Marker(Marker),
+    Symbol(Symbol),
     /// A heavy bar across the flow of the group holding it, `length` cells long, its label left out.
     Bar { length: u16 },
 }
@@ -115,10 +115,19 @@ impl Head {
         }
     }
 
+    /// What it draws on the cells next to the node, the nearest first.
+    pub(crate) const fn tips(self) -> &'static [Tip] {
+        match self {
+            Self::None => &[],
+            Self::Arrow => &[Tip::Arrow],
+            Self::Tips(tips) => tips,
+        }
+    }
+
     /// Whether the edges ending on this head at one side of a node gather into one trunk with one head, as UML
     /// draws inheritance: a hollow head does.
     pub(crate) const fn gathers(self) -> bool {
-        matches!(self, Self::Tips([Tip::Hollow]))
+        matches!(self, Self::Tips([Tip::Triangle]))
     }
 }
 

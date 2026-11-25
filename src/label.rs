@@ -1,6 +1,6 @@
 //! Text cut into the lines it is drawn on: where the source breaks it, then wrapped at spaces.
 
-use vt_canvas::width;
+use vt_canvas::text_width;
 
 use crate::settings::LongWords;
 
@@ -81,7 +81,7 @@ impl Label {
     }
 
     fn new(lines: Vec<String>, max_width: usize) -> Self {
-        let widest = lines.iter().map(|line| width(line)).max().unwrap_or(0).min(max_width);
+        let widest = lines.iter().map(|line| text_width(line)).max().unwrap_or(0).min(max_width);
         Self { lines, width: u16::try_from(widest).unwrap_or(u16::MAX) }
     }
 }
@@ -120,7 +120,7 @@ fn filled(pieces: impl Iterator<Item = String>, max_width: usize) -> Vec<String>
     let mut lines: Vec<String> = Vec::new();
     for piece in pieces {
         match lines.last_mut() {
-            Some(last) if width(last) + 1 + width(&piece) <= max_width => {
+            Some(last) if text_width(last) + 1 + text_width(&piece) <= max_width => {
                 last.push(' ');
                 last.push_str(&piece);
             }
@@ -150,7 +150,7 @@ fn cut(word: &str, max_width: usize) -> Option<usize> {
     let mut fitting: Vec<(usize, char, usize)> = Vec::new();
     for (start, character) in word.char_indices() {
         let end = start + character.len_utf8();
-        columns += width(&word[start..end]);
+        columns += text_width(&word[start..end]);
         if columns > max_width {
             let &(last, ..) = fitting.last()?;
             let after_separator =

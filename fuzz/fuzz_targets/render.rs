@@ -11,6 +11,6 @@ const MAX_WIDTH: u16 = 100;
 
 fuzz_target!(|source: &str| {
     let Ok(canvas) = vt_mermaid::render(source, MAX_WIDTH) else { return };
-    let widths: Vec<usize> = canvas.rows(GlyphSet::Unicode).map(|runs| runs.iter().map(|run| run.text.width()).sum()).collect();
+    let widths: Vec<usize> = canvas.lines(GlyphSet::Unicode).map(|line| line.width()).collect();
     assert!(widths.iter().all(|&width| width == widths[0] && width <= usize::from(MAX_WIDTH)), "row widths {widths:?}");
 });

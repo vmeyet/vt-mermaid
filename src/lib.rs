@@ -2,9 +2,8 @@
 //!
 //! ```
 //! let canvas = vt_mermaid::render("flowchart LR\n  A --> B", 80)?;
-//! let rows: Vec<String> =
-//!     canvas.rows(vt_mermaid::GlyphSet::Unicode).map(|runs| runs.into_iter().map(|run| run.text).collect()).collect();
-//! assert_eq!(rows.len(), 3);
+//! let lines: Vec<String> = canvas.lines(vt_mermaid::GlyphSet::Unicode).collect();
+//! assert_eq!(lines.len(), 3);
 //! # Ok::<(), vt_mermaid::Error>(())
 //! ```
 
@@ -14,14 +13,16 @@ mod error;
 mod flowchart;
 mod graph;
 mod label;
+mod role;
 mod sequence;
 mod settings;
 mod source;
 mod state;
 
 pub use error::{Error, MAX_AREA, MAX_EDGES, MAX_MESSAGES, MAX_NODES, MAX_PARTICIPANTS, MAX_SOURCE_BYTES};
+pub use role::Role;
 pub use settings::{LongWords, Settings};
-pub use vt_canvas::{Canvas, GlyphSet, Role, Run};
+pub use vt_canvas::{Canvas, GlyphSet, Run};
 
 /// Exact measures of a drawing, for the scoreboard: not part of the API, behind the `measure` feature.
 #[cfg(feature = "measure")]
@@ -73,7 +74,7 @@ pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
 pub use er::{Counts as ErCounts, counts as read_er};
 
 /// Draws the diagram in `source` no wider than `max_width` columns.
-pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
+pub fn render(source: &str, max_width: u16) -> Result<Canvas<Role>, Error> {
     render_with(source, Settings::new(max_width))
 }
 
@@ -87,7 +88,7 @@ pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
 /// assert_eq!(canvas.rows(vt_mermaid::GlyphSet::Unicode).count(), 3);
 /// # Ok::<(), vt_mermaid::Error>(())
 /// ```
-pub fn render_with(source: &str, settings: Settings) -> Result<Canvas, Error> {
+pub fn render_with(source: &str, settings: Settings) -> Result<Canvas<Role>, Error> {
     match source::Kind::of(source)? {
         source::Kind::Flowchart => flowchart::render_with(source, settings).map(|drawing| drawing.canvas),
         source::Kind::Sequence => sequence::render_with(source, settings),

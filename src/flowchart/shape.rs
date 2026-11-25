@@ -5,15 +5,15 @@ use vt_canvas::Shape;
 /// Mermaid's shape names, from brackets or a block, each drawn as the closest vt-canvas shape; any other name is a
 /// rectangle.
 const SHAPES: [(&str, Shape); 57] = [
-    ("round", Shape::Rounded),
+    ("round", Shape::RoundedRectangle),
     ("ellipse", Shape::Circle),
     ("doublecircle", Shape::DoubleCircle),
     ("lean_right", Shape::LeanRight),
     ("lean_left", Shape::LeanLeft),
-    ("rounded", Shape::Rounded),
-    ("event", Shape::Rounded),
-    ("delay", Shape::Rounded),
-    ("half-rounded-rectangle", Shape::Rounded),
+    ("rounded", Shape::RoundedRectangle),
+    ("event", Shape::RoundedRectangle),
+    ("delay", Shape::RoundedRectangle),
+    ("half-rounded-rectangle", Shape::RoundedRectangle),
     ("stadium", Shape::Stadium),
     ("pill", Shape::Stadium),
     ("terminal", Shape::Stadium),
@@ -95,6 +95,6 @@ mod tests {
     fn a_shape_name_maps_to_the_closest_shape_and_an_unknown_one_to_a_rectangle() {
         let shapes = [Some("round"), Some("trap-t"), Some("database"), Some("cloud"), None].map(named);
 
-        assert_eq!(shapes, [Shape::Rounded, Shape::InvertedTrapezoid, Shape::Cylinder, Shape::Rectangle, Shape::Rectangle]);
+        assert_eq!(shapes, [Shape::RoundedRectangle, Shape::InvertedTrapezoid, Shape::Cylinder, Shape::Rectangle, Shape::Rectangle]);
     }
 }

@@ -91,7 +91,7 @@ mod tests {
     fn a_diagram_draws_in_ascii_too() {
         let drawing = render("erDiagram\n  CUSTOMER ||--o{ ORDER : places\n  ORDER }|..|| INVOICE : \"billed in\"", 60).unwrap();
 
-        let ascii: Vec<String> = drawing.canvas.rows(GlyphSet::Ascii).map(|runs| runs.into_iter().map(|run| run.text).collect()).collect();
+        let ascii: Vec<String> = drawing.canvas.lines(GlyphSet::Ascii).collect();
         insta::assert_snapshot!(ascii.join("\n"));
     }
 
@@ -104,7 +104,7 @@ mod tests {
         for (name, source) in sources("corpus/er") {
             let Ok(read) = diagram::read(&source) else { continue };
             let drawing = render(&source, 80).unwrap_or_else(|error| panic!("{name}: {error}"));
-            assert!(rows(&drawing.canvas).iter().all(|row| vt_canvas::width(row) <= 80), "{name}");
+            assert!(rows(&drawing.canvas).iter().all(|row| vt_canvas::text_width(row) <= 80), "{name}");
             found.extend(violations(&read.wrapped(drawing.wrap), &drawing).into_iter().map(|found| format!("{name}: {found}")));
         }
 

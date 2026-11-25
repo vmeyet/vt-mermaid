@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use vt_canvas::{Direction, LineKind, Marker, Shape};
+use vt_canvas::{Direction, LineKind, Shape, Symbol};
 
 use super::parse::{self, Limits, Shape as Kind};
 use crate::error::Error;
@@ -130,11 +130,11 @@ fn group(node: &parse::Node) -> Group {
 /// A state is a rectangle, its descriptions under its label below a rule, as mermaid draws them; a note is rounded.
 fn node(node: &parse::Node, shape: Option<Kind>, order: usize, bar: u16) -> Node {
     let figure = match shape {
-        Some(Kind::Start) => Figure::Marker(Marker::Dot),
-        Some(Kind::End) => Figure::Marker(Marker::RingedDot),
-        Some(Kind::Choice) => Figure::Marker(Marker::Diamond),
+        Some(Kind::Start) => Figure::Symbol(Symbol::Dot),
+        Some(Kind::End) => Figure::Symbol(Symbol::RingedDot),
+        Some(Kind::Choice) => Figure::Symbol(Symbol::FilledDiamond),
         Some(Kind::Fork | Kind::Join) => Figure::Bar { length: bar },
-        Some(Kind::Note) => Figure::Shape(Shape::Rounded),
+        Some(Kind::Note) => Figure::Shape(Shape::RoundedRectangle),
         _ => Figure::Shape(Shape::Rectangle),
     };
     let text = entity::decoded(&node.label);
@@ -194,12 +194,12 @@ mod tests {
         assert_eq!(
             figures(&diagram),
             [
-                ("c", Figure::Marker(Marker::Diamond)),
+                ("c", Figure::Symbol(Symbol::FilledDiamond)),
                 ("f", Figure::Bar { length: SHORTEST_BAR }),
-                ("root_start", Figure::Marker(Marker::Dot)),
+                ("root_start", Figure::Symbol(Symbol::Dot)),
                 ("A", Figure::Shape(Shape::Rectangle)),
                 ("B", Figure::Shape(Shape::Rectangle)),
-                ("root_end", Figure::Marker(Marker::RingedDot)),
+                ("root_end", Figure::Symbol(Symbol::RingedDot)),
             ]
         );
         assert!(diagram.nodes.iter().filter(|node| !node.figure.shows_label()).all(|node| node.label.lines.is_empty()));
