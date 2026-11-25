@@ -64,9 +64,9 @@ Lines joined end to end are one network; a `┼` joins only the cells it lies be
 - Shared arrowheads: a network with an arrowhead counts an arrow for each end it has on a rectangle's side beyond its arrowheads, so a fan-in merged into one line counts one per edge.
   A line that ends only on rectangles and crosses a line with an arrowhead gathers into it: each of its ends counts one more.
 - Trunk crossings: a `┼` is not a crossing when the line across it leads only to arrowheads, two or more (a trunk parting both ways), or gathers as above.
-- Where it is wrong: a line cut by its label, by a frame's title or ending on a shape that is no rectangle is followed no further, so its edges count as before;
-  an open link (`---`) or a `<-->` edge crossing an arrow edge reads as a trunk;
-  a tool that draws a line onto a frame's side gets an arrow too many.
+- Where it is wrong: a line cut by its label, by a frame's title or ending on a shape that is no rectangle is followed no further, so its edges count as before.
+  An open link (`---`) or a `<-->` edge crossing an arrow edge reads as a trunk.
+  A tool that draws a line onto a frame's side gets an arrow too many.
 
 The second table per width compares layout only where it can: on the inputs every tool drew.
 

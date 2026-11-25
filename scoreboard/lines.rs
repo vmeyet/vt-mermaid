@@ -34,7 +34,7 @@ pub(crate) struct Lines {
 
 /// A closed rectangle of the drawing, a node or a frame, in rows and columns.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct Box {
+pub(crate) struct Rectangle {
     top: usize,
     left: usize,
     bottom: usize,
@@ -69,7 +69,7 @@ impl Network {
 }
 
 impl Lines {
-    pub(crate) fn of(grid: &[Vec<char>], boxes: &[Box]) -> Self {
+    pub(crate) fn of(grid: &[Vec<char>], boxes: &[Rectangle]) -> Self {
         let borders: HashSet<(usize, usize)> = boxes.iter().flat_map(|found| found.border()).collect();
         let networks = networks(grid, &borders);
         let through: HashMap<Place, &Network> =
@@ -96,8 +96,10 @@ fn networks(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>) -> Vec<Networ
     for (row, cells) in grid.iter().enumerate() {
         for (column, &glyph) in cells.iter().enumerate() {
             for start in [false, true].map(|level| (row, column, level && CROSSINGS.contains(glyph))) {
-                if ways(glyph) != 0 && !borders.contains(&(row, column)) && seen.insert(start) {
-                    networks.push(network(grid, borders, start, &mut seen));
+                if ways(glyph) != 0 && !borders.contains(&(row, column)) && !seen.contains(&start) {
+                    let (network, places) = network(grid, borders, start);
+                    seen.extend(places);
+                    networks.push(network);
                 }
             }
         }
@@ -105,7 +107,7 @@ fn networks(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>) -> Vec<Networ
     networks
 }
 
-impl Box {
+impl Rectangle {
     fn border(self) -> impl Iterator<Item = (usize, usize)> {
         let rows = (self.left..=self.right).flat_map(move |column| [(self.top, column), (self.bottom, column)]);
         let columns = (self.top..=self.bottom).flat_map(move |row| [(row, self.left), (row, self.right)]);
@@ -114,7 +116,7 @@ impl Box {
 }
 
 /// Closed rectangles: a top-left corner whose row reaches a top-right corner, with sides down to the two bottom corners.
-pub(crate) fn boxes(grid: &[Vec<char>]) -> Vec<Box> {
+pub(crate) fn boxes(grid: &[Vec<char>]) -> Vec<Rectangle> {
     let is = |row: usize, column: usize, glyphs: &str| glyphs.contains(at(grid, row, column));
     let mut found = Vec::new();
     for (top, cells) in grid.iter().enumerate() {
@@ -132,16 +134,17 @@ pub(crate) fn boxes(grid: &[Vec<char>]) -> Vec<Box> {
                 && is(bottom, left, BOTTOM_LEFT)
                 && is(bottom, right, BOTTOM_RIGHT)
             {
-                found.push(Box { top, left, bottom, right });
+                found.push(Rectangle { top, left, bottom, right });
             }
         }
     }
     found
 }
 
-/// Every cell joined to `start`, and what its lines end on.
-fn network(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>, start: Place, seen: &mut HashSet<Place>) -> Network {
+/// What the lines joined to `start` end on, and every place they run through.
+fn network(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>, start: Place) -> (Network, HashSet<Place>) {
     let mut network = Network::default();
+    let mut seen = HashSet::from([start]);
     let mut waiting = vec![start];
     while let Some((row, column, level)) = waiting.pop() {
         let glyph = at(grid, row, column);
@@ -167,7 +170,7 @@ fn network(grid: &[Vec<char>], borders: &HashSet<(usize, usize)>, start: Place, 
             }
         }
     }
-    network
+    (network, seen)
 }
 
 fn at(grid: &[Vec<char>], row: usize, column: usize) -> char {
