@@ -43,7 +43,7 @@ pub use sequence::{Counts as SequenceCounts, read as read_sequence};
 /// `fuzz` feature.
 #[cfg(feature = "fuzz")]
 #[doc(hidden)]
-pub use class::{Counts as ClassCounts, read as read_class};
+pub use class::{Counts as ClassCounts, counts as read_class};
 
 /// Reads a state diagram as `render` does, without laying it out, for the fuzzer: not part of the API, behind the
 /// `fuzz` feature.

@@ -32,7 +32,7 @@ pub struct Counts {
 
 /// Reads `source` within the limits `render` draws.
 #[cfg(feature = "fuzz")]
-pub fn read(source: &str) -> Result<Counts, Error> {
+pub fn counts(source: &str) -> Result<Counts, Error> {
     let diagram = parse::parse(source, parse::Limits::DRAWN)?;
     let nodes = diagram.classes.len() + diagram.interfaces.len() + diagram.notes.len() + diagram.namespaces.len();
     Ok(Counts { nodes, edges: diagram.relations.len() })
