@@ -5,6 +5,7 @@ use std::mem;
 
 use super::db::{Db, Flowchart, Header, Item, LinkData, Position, Text, TextKind};
 use super::lexer::{Kind, Token, line_of};
+use super::prepare::Config;
 use super::{Direction, Invalid, Limits, link};
 use crate::error::Error;
 
@@ -89,10 +90,9 @@ const BRACKETS: [Bracket; 13] = [
     Bracket { opening: &[Kind::InvTrapStart], closings: &[(&[Kind::InvTrapEnd], "inv_trapezoid"), (&[Kind::TrapEnd], "lean_left")] },
 ];
 
-/// Reads `tokens` of `text` into the db; with `inherits_direction`, a subgraph without its own direction takes the
-/// flowchart's.
-pub(super) fn parse(text: &str, tokens: &[Token], limits: Limits, inherits_direction: bool) -> Result<Flowchart, Error> {
-    let mut parser = Parser { text, tokens, at: 0, db: Db::new(limits, inherits_direction), opened: 0 };
+/// Reads `tokens` of `text` into the db.
+pub(super) fn parse(text: &str, tokens: &[Token], limits: Limits, config: Config) -> Result<Flowchart, Error> {
+    let mut parser = Parser { text, tokens, at: 0, db: Db::new(limits, config), opened: 0 };
     parser.header()?;
     parser.document()?;
     Ok(parser.db.into_flowchart())

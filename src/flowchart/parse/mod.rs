@@ -112,7 +112,7 @@ pub(super) fn parse(source: &str, limits: Limits) -> Result<Flowchart, Error> {
         return Err(if OTHER_KINDS.iter().any(|kind| text.starts_with(kind)) { Error::Unsupported } else { Invalid::NoDiagram.into() });
     }
     let tokens = lexer::tokens(&text)?;
-    grammar::parse(&text, &tokens, limits, prepared.inherits_direction)
+    grammar::parse(&text, &tokens, limits, prepared.config)
 }
 
 /// A character of a JavaScript regex `\s`, the space mermaid's patterns mean.

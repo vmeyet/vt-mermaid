@@ -6,10 +6,17 @@ use super::is_space;
 pub(super) const ENTITY_START: &str = "ﬂ°";
 pub(super) const ENTITY_END: &str = "¶ß";
 
-/// The text the lexer reads, and whether the configuration has subgraphs inherit the flowchart's direction.
+/// The text the lexer reads and what the configuration changes in its meaning.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct Prepared {
     pub(super) text: String,
+    pub(super) config: Config,
+}
+
+/// The settings of a front matter or a directive that change what a flowchart means.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(super) struct Config {
+    /// `inheritDir`: a subgraph without its own direction takes the flowchart's.
     pub(super) inherits_direction: bool,
 }
 
@@ -22,7 +29,7 @@ pub(super) fn prepare(source: &str) -> Prepared {
     let code = without_comment_lines(&code);
     let styled = without_last_semicolon(&without_last_semicolon(&code, "style"), "classDef");
     let text = with_braces_ending_lines(&format!("{}\n", with_entities_marked(&styled)));
-    Prepared { text, inherits_direction: inherits_direction(front_matter) || inherits_direction(&directives) }
+    Prepared { text, config: Config { inherits_direction: inherits_direction(front_matter) || inherits_direction(&directives) } }
 }
 
 /// `inheritDir: true` in a front matter's YAML or a directive's JSON, the one setting that changes a flowchart's meaning.
@@ -231,7 +238,7 @@ mod tests {
 
     #[test]
     fn inherit_dir_is_read_from_the_front_matter_or_a_directive() {
-        let inherits = |source: &str| prepare(source).inherits_direction;
+        let inherits = |source: &str| prepare(source).config.inherits_direction;
 
         assert!(inherits("---\nconfig:\n  flowchart:\n    inheritDir: true\n---\ngraph TD"));
         assert!(inherits("%%{init: {\"flowchart\": { \"inheritDir\": true }}}%%\ngraph TD"));

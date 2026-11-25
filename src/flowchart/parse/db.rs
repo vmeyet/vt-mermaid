@@ -3,6 +3,7 @@
 use std::collections::{HashMap, HashSet};
 
 use super::link::Link;
+use super::prepare::Config;
 use super::shape_data::{self, SHAPES, Value};
 use super::{Direction, Invalid, Limits, is_space};
 use crate::error::Error;
@@ -114,11 +115,11 @@ pub(super) struct Db {
     subgraphs: Vec<Subgraph>,
     classes: Vec<Class>,
     untitled: usize,
-    inherits_direction: bool,
+    config: Config,
 }
 
 impl Db {
-    pub(super) fn new(limits: Limits, inherits_direction: bool) -> Self {
+    pub(super) fn new(limits: Limits, config: Config) -> Self {
         Self {
             limits,
             direction: Direction::TB,
@@ -129,7 +130,7 @@ impl Db {
             subgraphs: Vec::new(),
             classes: Vec::new(),
             untitled: 0,
-            inherits_direction,
+            config,
         }
     }
 
@@ -263,7 +264,7 @@ impl Db {
     pub(super) fn add_subgraph(&mut self, header: Header, items: Vec<Item>) -> Result<String, Error> {
         self.check_subgraph()?;
         let (nodes, direction) = listed(items);
-        let direction = direction.or(self.inherits_direction.then_some(self.direction));
+        let direction = direction.or(self.config.inherits_direction.then_some(self.direction));
         let id = if header.title.is_none() && header.id.value.contains(is_space) {
             format!("subGraph{}", self.untitled)
         } else {
@@ -360,7 +361,7 @@ mod tests {
 
     #[test]
     fn a_node_is_created_once_and_keeps_what_each_mention_adds() {
-        let mut db = Db::new(LIMITS, false);
+        let mut db = Db::new(LIMITS, Config::default());
 
         db.add_vertex("A", None, None, None).unwrap();
         db.add_vertex("A", Some(text(" \"Hello\" ")), Some("round"), None).unwrap();
@@ -373,7 +374,7 @@ mod tests {
 
     #[test]
     fn a_link_makes_an_edge_from_every_start_to_every_end_and_one_takes_its_id() {
-        let mut db = Db::new(LIMITS, false);
+        let mut db = Db::new(LIMITS, Config::default());
         let data = LinkData { id: Some("e1".to_owned()), ..arrow() };
 
         db.add_link(&names(&["A", "B"]), &names(&["C", "D"]), &data).unwrap();
@@ -387,7 +388,7 @@ mod tests {
 
     #[test]
     fn edges_over_the_limit_are_refused_before_they_are_made() {
-        let mut db = Db::new(LIMITS, false);
+        let mut db = Db::new(LIMITS, Config::default());
 
         assert_eq!(db.add_link(&names(&["A", "B", "C"]), &names(&["D", "E", "F", "G"]), &arrow()), Err(Error::TooManyEdges { edges: 12 }));
         assert_eq!(db.into_flowchart().edges, []);
@@ -395,7 +396,7 @@ mod tests {
 
     #[test]
     fn a_subgraph_keeps_only_the_nodes_no_earlier_subgraph_holds() {
-        let mut db = Db::new(LIMITS, false);
+        let mut db = Db::new(LIMITS, Config::default());
         let header = |id: &str| Header { id: Text { value: id.to_owned(), kind: TextKind::Text }, title: None, opened: 0 };
 
         db.add_subgraph(header("one"), vec![Item::Nodes(names(&["B", "A"]))]).unwrap();
@@ -414,7 +415,7 @@ mod tests {
 
     #[test]
     fn a_link_style_must_name_an_edge_as_written() {
-        let mut db = Db::new(LIMITS, false);
+        let mut db = Db::new(LIMITS, Config::default());
         db.add_link(&names(&["A"]), &names(&["B"]), &arrow()).unwrap();
 
         assert_eq!(db.style_links(&[Position::Index("0".to_owned()), Position::Default], &[]), Ok(()));
@@ -426,7 +427,7 @@ mod tests {
     fn a_subgraph_takes_its_last_direction_or_with_inherit_dir_the_flowcharts() {
         let header = Header { id: Text { value: "one".to_owned(), kind: TextKind::Text }, title: None, opened: 0 };
         let directions = |inherits: bool, items: Vec<Item>| {
-            let mut db = Db::new(LIMITS, inherits);
+            let mut db = Db::new(LIMITS, Config { inherits_direction: inherits });
             db.set_direction(Direction::LR);
             db.add_subgraph(header.clone(), items).unwrap();
             db.into_flowchart().subgraphs[0].direction
@@ -439,7 +440,7 @@ mod tests {
 
     #[test]
     fn styles_and_classes_are_kept() {
-        let mut db = Db::new(LIMITS, false);
+        let mut db = Db::new(LIMITS, Config::default());
 
         db.add_styles("A", names(&["fill:#f00"])).unwrap();
         db.add_class("hot,cold", &names(&["fill:#f00", "stroke:a\\,b"]));
@@ -455,7 +456,7 @@ mod tests {
 
     #[test]
     fn a_block_sets_the_shape_and_label_and_refuses_an_unknown_shape() {
-        let mut db = Db::new(LIMITS, false);
+        let mut db = Db::new(LIMITS, Config::default());
 
         db.add_vertex("A", None, None, Some(" shape: hex, label: Six ")).unwrap();
         db.add_vertex("B", None, None, Some(" icon: 'fa:user' ")).unwrap();

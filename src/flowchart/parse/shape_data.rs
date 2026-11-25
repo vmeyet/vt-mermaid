@@ -164,6 +164,13 @@ pub(super) const SHAPES: [&str; 156] = [
     "lined-document",
 ];
 
+/// How a block's pairs are written: inline between braces, where `,` and brackets end a plain value, or one per line.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Mapping {
+    Flow,
+    Block,
+}
+
 /// A value as YAML's JSON schema resolves it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum Value {
@@ -209,10 +216,10 @@ fn flow_pairs(block: &str) -> Result<Vec<(String, Value)>, Invalid> {
     let mut pairs = Vec::new();
     let mut rest = block.trim_matches(is_space);
     while !rest.is_empty() {
-        let (key, after_key) = scalar(rest, true)?;
+        let (key, after_key) = scalar(rest, Mapping::Flow)?;
         let after_colon = after_key.trim_start_matches(is_space).strip_prefix(':');
         let (value, after_value) = match after_colon {
-            Some(after) => value(after.trim_start_matches(is_space), true)?,
+            Some(after) => value(after.trim_start_matches(is_space), Mapping::Flow)?,
             None => (Value::Null, after_key),
         };
         pairs.push((key.text().unwrap_or_default(), value));
@@ -259,9 +266,9 @@ fn block_pairs(block: &str) -> Result<Vec<(String, Value)>, Invalid> {
             return Err(Invalid::ShapeData);
         }
         indent = Some(depth);
-        let (key, after_key) = scalar(content, false)?;
+        let (key, after_key) = scalar(content, Mapping::Block)?;
         let after_colon = after_key.trim_start_matches(is_space).strip_prefix(':').ok_or(Invalid::ShapeData)?;
-        let (value, rest) = value(after_colon.trim_start_matches(is_space), false)?;
+        let (value, rest) = value(after_colon.trim_start_matches(is_space), Mapping::Block)?;
         if !rest.trim_matches(is_space).is_empty() {
             return Err(Invalid::ShapeData);
         }
@@ -310,26 +317,27 @@ fn without_comment(line: &str) -> &str {
     line
 }
 
-fn value(text: &str, flow: bool) -> Result<(Value, &str), Invalid> {
+fn value(text: &str, mapping: Mapping) -> Result<(Value, &str), Invalid> {
     if let Some(open) = text.chars().next().filter(|char| matches!(char, '{' | '[')) {
         return nested(text, open).map(|rest| (Value::Nested, rest));
     }
-    scalar(text, flow)
+    scalar(text, mapping)
 }
 
 /// A quoted or plain scalar and the text after it; a plain one ends at `: `, and in a flow mapping at `,` or `}`.
-fn scalar(text: &str, flow: bool) -> Result<(Value, &str), Invalid> {
+fn scalar(text: &str, mapping: Mapping) -> Result<(Value, &str), Invalid> {
     match text.chars().next() {
         Some('"') => double_quoted(&text[1..]).map(|(inside, rest)| (Value::Text(inside), rest)),
         Some('\'') => single_quoted(&text[1..]).map(|(inside, rest)| (Value::Text(inside), rest)),
         _ => {
-            let end = plain_end(text, flow);
+            let end = plain_end(text, mapping);
             Ok((resolved(text[..end].trim_end_matches(is_space)), &text[end..]))
         }
     }
 }
 
-fn plain_end(text: &str, flow: bool) -> usize {
+fn plain_end(text: &str, mapping: Mapping) -> usize {
+    let flow = mapping == Mapping::Flow;
     let mut chars = text.char_indices().peekable();
     while let Some((at, char)) = chars.next() {
         let next = chars.peek().map(|&(_, next)| next);
