@@ -30,7 +30,7 @@ This page says how the code is laid out today; when a module or a boundary chang
   - Peak memory stays under 24 MB, the most on the 233000-cell grid.
   - Fuzzing found a 27 KiB flowchart, 19 subgraphs and 107 edges, that takes 35 s to lay out before the area limit refuses it (`benches/inputs/fuzzed-subgraphs.mmd`).
 - No count bounds mermaid-rs-renderer's time: it grows with edges, subgraphs and label sizes together, and 25 edges between 20 nodes already take 0.9 s.
-  The library has no clock, so the deadline belongs to the caller: run `render` on a thread of its own and give up on it after 2 s, which spares all but one corpus flowchart, then fall back.
+  The library has no clock, so the deadline belongs to the caller: run `render` on a thread of its own and give up on it after 2 s, which spares every corpus flowchart, the slowest at 1.7 s, then fall back.
 - mermaid-rs-renderer never loads a font: it lays out a stand-in graph whose labels are `n`s, measured with its fast metrics, so the drawing is the same on every machine.
 - mermaid-rs-renderer may panic on input it misreads; the caller catches it, as mrk does with `mermaid::catch::caught`.
   Thirty minutes of fuzzing found no such panic in a release build, only its debug assertions, which grade its own layout: the dev profile turns them off, and a caller's debug build should too.
