@@ -62,9 +62,14 @@ fn draw_outlined(canvas: &mut Canvas, rect: Rect, shape: Shape, label: &Label, c
     }
 }
 
-/// Columns between the spaces inside the outline: the widest of the label and the compartments' lines.
+/// Columns past which a compartment's line is cut, so one long member or attribute does not widen the drawing past
+/// fitting: as wide as an edge label gets.
+const COMPARTMENT_COLUMNS: u16 = 60;
+
+/// Columns between the spaces inside the outline: the widest of the label and the compartments' lines, each at most
+/// [`COMPARTMENT_COLUMNS`].
 fn inner_width(label: &Label, compartments: &[Vec<String>]) -> u16 {
-    let widest = compartments.iter().flatten().map(|line| to_u16(vt_canvas::width(line))).max().unwrap_or(0);
+    let widest = compartments.iter().flatten().map(|line| to_u16(vt_canvas::width(line)).min(COMPARTMENT_COLUMNS)).max().unwrap_or(0);
     label.width.max(widest)
 }
 
@@ -145,5 +150,15 @@ mod tests {
                 "└───────────────┘"
             ]
         );
+    }
+
+    #[test]
+    fn a_compartment_line_past_sixty_columns_is_cut() {
+        let line = format!("+{}", "word ".repeat(13));
+
+        let rows = drawn_with(Figure::Shape(Shape::Rectangle), &Label::wrapped("A"), &[vec![line]]);
+
+        assert_eq!(rows[3], format!("│ +{}wor⋯ │", "word ".repeat(11)));
+        assert_eq!(vt_canvas::width(&rows[3]), 64);
     }
 }

@@ -245,11 +245,13 @@ fn size(diagram: &Diagram, item: Item, content: &Arrangement) -> (i32, i32) {
     }
 }
 
-/// Cells between a block's sides and what it holds.
+/// Cells between a block's sides and what it holds: a frame keeps one more than an edge's tips take at one end, so
+/// the edge turns before it crosses the frame.
 fn padding(diagram: &Diagram, item: Item) -> i32 {
+    let tips = diagram.edges.iter().map(|edge| i32::from(edge.start.straight().max(edge.end.straight()))).max().unwrap_or(0);
     match item {
         Item::Node(_) => 0,
-        Item::Group(index) if diagram.groups[index].kind == GroupKind::Framed => GROUP_PADDING,
+        Item::Group(index) if diagram.groups[index].kind == GroupKind::Framed => GROUP_PADDING.max(tips + 1),
         Item::Group(_) => 0,
     }
 }
@@ -383,8 +385,11 @@ fn to_cells(value: i32) -> u16 {
 
 #[cfg(test)]
 mod tests {
+    use vt_canvas::Tip;
+
     use super::*;
     use crate::flowchart;
+    use crate::graph::diagram::Head;
 
     fn placed(source: &str, fit: Fit) -> (Diagram, Placement) {
         let diagram = flowchart::read(source).unwrap();
@@ -484,5 +489,17 @@ mod tests {
         let rows: Vec<u16> = ["B", "C", "D"].map(|id| node(&diagram, &placement, id).y).to_vec();
         assert!(rows[0] == rows[1] && rows[2] > rows[1], "{rows:?}");
         assert!(placement.groups[0].width <= 44 && packed.groups[0].width <= placement.groups[0].width);
+    }
+
+    #[test]
+    fn a_frame_keeps_room_for_the_tips_of_the_edges_leaving_what_it_holds() {
+        let source = "flowchart TB\n  subgraph G\n    A\n  end\n  A --> B";
+        let (mut diagram, plain) = placed(source, Fit::Loose);
+        diagram.edges[0].start = Head::Tips(&[Tip::Bar, Tip::Ring]);
+
+        let tipped = place(&diagram, Fit::Loose);
+
+        let room = |placement: &Placement| placement.nodes[0].x - placement.groups[0].x;
+        assert_eq!((room(&plain), room(&tipped)), (2, 3));
     }
 }
