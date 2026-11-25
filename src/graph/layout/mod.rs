@@ -262,14 +262,17 @@ fn span(width: i32, height: i32, vertical: bool) -> Span {
 
 /// Room for a bend and an arrow between ranks, and a cell for a bend each side of a label; going down a loose fit
 /// keeps blocks four columns apart and links two, a tight one two and one.
-/// Ranks keep room for the tips of an edge at both ends and a cell between them.
+/// Ranks keep room for the tips of an edge at both ends and a cell between them; tips taking two cells or more at
+/// the two ends together keep a line cell beside each end's too, so the middle may hold a label and the line still
+/// shows whether it is dashed.
 fn gaps(vertical: bool, fit: Fit, tips: i32) -> Gaps {
     let gaps = match (vertical, fit) {
         (true, Fit::Loose) => Gaps { rank: 3, around_label: 1, apart: Apart { blocks: 4, links: 2 } },
         (true, _) => Gaps { rank: 3, around_label: 1, apart: Apart { blocks: 2, links: 1 } },
         (false, _) => Gaps { rank: 6, around_label: 2, apart: Apart { blocks: 1, links: 1 } },
     };
-    Gaps { rank: gaps.rank.max(tips + 1), ..gaps }
+    let room = if tips >= 2 { tips + 3 } else { tips + 1 };
+    Gaps { rank: gaps.rank.max(room), ..gaps }
 }
 
 /// The most cells the tips of an edge take at its two ends together.
@@ -501,5 +504,17 @@ mod tests {
 
         let room = |placement: &Placement| placement.nodes[0].x - placement.groups[0].x;
         assert_eq!((room(&plain), room(&tipped)), (2, 3));
+    }
+
+    #[test]
+    fn ranks_joined_by_crow_s_feet_keep_a_line_cell_beside_each_end_s() {
+        let (mut diagram, plain) = placed("flowchart TB\n  A --> B", Fit::Loose);
+        diagram.edges[0].start = Head::Tips(&[Tip::Bar, Tip::Bar]);
+        diagram.edges[0].end = Head::Tips(&[Tip::Fork, Tip::Ring]);
+
+        let tipped = place(&diagram, Fit::Loose);
+
+        let gap = |placement: &Placement| placement.nodes[1].y - (placement.nodes[0].y + placement.nodes[0].height);
+        assert_eq!((gap(&plain), gap(&tipped)), (3, 7));
     }
 }
