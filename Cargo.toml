@@ -11,9 +11,19 @@ publish = false
 [lib]
 name = "vt_mermaid"
 
-# The agreement report (examples/agreement.rs) runs mmdr's parser on the corpus; serde_json reads the oracle's results.
-[dev-dependencies]
+# mmdr's layout runs about ten times slower unoptimised, which made the spike snapshots take seconds each.
+[profile.dev.package.mermaid-rs-renderer]
+opt-level = 3
+
+[dependencies]
+# Parses and lays out the diagram; vt-mermaid snaps its coordinates to the grid.
 mermaid-rs-renderer = { version = "0.3.1", default-features = false }
+vt-canvas = { path = "../vt-canvas" }
+
+# serde_json reads the oracle's results for examples/agreement.rs; mermaid-text is what examples/compare.rs measures against.
+[dev-dependencies]
+insta = "1.49.0"
+mermaid-text = "0.58"
 serde_json = "1.0.154"
 
 [lints.rust]

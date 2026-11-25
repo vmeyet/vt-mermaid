@@ -1,0 +1,11 @@
+flowchart TB
+    Req[Request] --> Cached{Cached?}
+    subgraph cache [Cache layer]
+        direction LR
+        Cached -->|yes| Hit[(Redis)]
+        Cached -->|no| Fetch[Fetch from origin server]
+    end
+    Fetch --> Store[Store in cache]
+    Store -.-> Hit
+    Hit --> Resp([Response])
+    Resp -. retry .-> Req

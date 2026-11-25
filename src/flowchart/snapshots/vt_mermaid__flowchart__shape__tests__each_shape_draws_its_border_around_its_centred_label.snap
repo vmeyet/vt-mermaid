@@ -1,0 +1,9 @@
+---
+source: src/flowchart/shape.rs
+expression: "rows.join(\"\\n\")"
+---
+┌─────────┐   ╭─────────╮   ╱─────────╲   ╭─────────╮   ┌┬─────────┬┐ 
+│ Cached? │   │ Cached? │   │ Cached? │   ├─────────┤   ││ Cached? ││ 
+│   yes   │   │   yes   │   │   yes   │   │ Cached? │   ││   yes   ││ 
+└─────────┘   ╰─────────╯   ╲─────────╱   │   yes   │   └┴─────────┴┘ 
+                                          ╰─────────╯

@@ -4,7 +4,8 @@ all-features = true
 [advisories]
 version = 2
 ignore = [
-  { id = "RUSTSEC-2026-0192", reason = "ttf-parser is unmaintained with no fixed release; it reaches us through mermaid-rs-renderer and fontdb, a dev-dependency only used by the agreement report" },
+  { id = "RUSTSEC-2026-0192", reason = "ttf-parser is unmaintained with no fixed release; it reaches us through mermaid-rs-renderer and fontdb, which vt-mermaid never lets load a font: the layout measures stand-in ASCII labels with fast metrics" },
+  { id = "RUSTSEC-2026-0543", reason = "chrono is unmaintained, no vulnerability known; it reaches us through mermaid-text, a dev-dependency only used by the comparison example" },
 ]
 
 [licenses]
