@@ -39,6 +39,12 @@ pub use flowchart::{Counts, counts as read_flowchart};
 #[doc(hidden)]
 pub use sequence::{Counts as SequenceCounts, read as read_sequence};
 
+/// Reads a class diagram as `render` does, without laying it out, for the fuzzer: not part of the API, behind the
+/// `fuzz` feature.
+#[cfg(feature = "fuzz")]
+#[doc(hidden)]
+pub use class::{Counts as ClassCounts, read as read_class};
+
 /// Draws the diagram in `source` no wider than `max_width` columns.
 pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
     render_with(source, Settings::new(max_width))

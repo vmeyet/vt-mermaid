@@ -38,6 +38,13 @@ test = false
 doc = false
 bench = false
 
+[[bin]]
+name = "parse_class"
+path = "fuzz_targets/parse_class.rs"
+test = false
+doc = false
+bench = false
+
 # Overflow and debug checks on vt-mermaid's code.
 [profile.release]
 debug-assertions = true
