@@ -29,6 +29,8 @@ const JUNCTION: u32 = 3 * STEP;
 const STRAY: u32 = 15;
 /// Running right beside a node's border, a cell: under a step, so it only tells equal paths apart.
 const HUG: u32 = 16;
+/// Times the edges are routed again, the edge left without a path going first.
+const RETRIES: usize = 3;
 /// Passing behind a frame's title, on top of crossing the frame.
 const BEHIND_A_TITLE: u32 = 4 * STEP;
 const UNREACHED: u32 = u32::MAX;
@@ -292,12 +294,31 @@ pub(super) struct Routed {
     pub(super) titles: Vec<Rect>,
 }
 
-/// Routes every edge, those inside one group before those crossing frames, then shortest first, so the others go
-/// round what these already drew.
+/// Routes every edge, those between close blocks first and those crossing frames later, so the others go round
+/// what these already drew; an edge left without a path goes first on another try.
 pub(super) fn route(diagram: &Diagram, placement: &Placement) -> Result<Routed, Error> {
     let joins = port::joins(diagram, placement);
     let titles = titles(diagram, placement, &joins);
-    let mut grid = Grid::new(diagram, placement, &titles);
+    let empty = Grid::new(diagram, placement, &titles);
+    let mut order = nearest_first(diagram, placement);
+    let mut stuck = None;
+    for _ in 0..=RETRIES {
+        if let Some(stuck) = stuck {
+            order = std::iter::once(stuck).chain(order.into_iter().filter(|&index| index != stuck)).collect();
+        }
+        match laid(diagram, placement, &joins, &empty, &order) {
+            Ok((routes, grid)) => return Ok(Routed { routes, grid, titles }),
+            Err(index) if stuck == Some(index) => break,
+            Err(index) => stuck = Some(index),
+        }
+    }
+    let edge = stuck.map(|index| &diagram.edges[index]);
+    let name = |end: Option<End>| end.map_or_else(String::new, |end| diagram.name(end).to_owned());
+    Err(Error::Unroutable { from: name(edge.map(|edge| edge.from)), to: name(edge.map(|edge| edge.to)) })
+}
+
+/// The edges, those between close blocks first, those crossing frames later.
+fn nearest_first(diagram: &Diagram, placement: &Placement) -> Vec<usize> {
     let rect = |end: End| match end {
         End::Node(index) => placement.nodes[index],
         End::Group(index) => placement.groups[index],
@@ -307,11 +328,22 @@ pub(super) fn route(diagram: &Diagram, placement: &Placement) -> Result<Routed, 
         let edge = &diagram.edges[index];
         distance(rect(edge.from), rect(edge.to)) * (1 + diagram.frames_between(edge.from, edge.to) as u32)
     });
+    order
+}
+
+/// Every edge's route, searched in `order` on `empty`, and the grid they leave; else the first edge left without a
+/// path.
+fn laid(diagram: &Diagram, placement: &Placement, joins: &[Joins], empty: &Grid, order: &[usize]) -> Result<(Vec<Route>, Grid), usize> {
+    let rect = |end: End| match end {
+        End::Node(index) => placement.nodes[index],
+        End::Group(index) => placement.groups[index],
+    };
+    let mut grid = empty.clone();
     let mut trunks = Trunks::default();
     let mut routes: Vec<Option<Route>> = vec![None; diagram.edges.len()];
-    for index in order {
+    for &index in order {
         let edge = &diagram.edges[index];
-        let twin = (0..routes.len()).find(|&other| routes[other].is_some() && twins(diagram, &joins, index, other));
+        let twin = (0..routes.len()).find(|&other| routes[other].is_some() && twins(diagram, joins, index, other));
         let search = Search {
             grid: &grid,
             edge: to_u16(index),
@@ -325,14 +357,12 @@ pub(super) fn route(diagram: &Diagram, placement: &Placement) -> Result<Routed, 
             turns: if joins[index].entry.trunk.is_some() && joins[index].exit.trunk.is_none() { Turns::Late } else { Turns::Early },
         };
         let shared = twin.and_then(|twin| routes[twin].clone()).map(|route| Found { route, own: 0..0, left: None, joined: None });
-        let found = shared
-            .or_else(|| search.run())
-            .ok_or_else(|| Error::Unroutable { from: diagram.name(edge.from).to_owned(), to: diagram.name(edge.to).to_owned() })?;
+        let found = shared.or_else(|| search.run()).ok_or(index)?;
         grid.add(&found.route, &found.own);
         trunks.add(index, &found, joins[index]);
         routes[index] = Some(found.route);
     }
-    Ok(Routed { routes: routes.into_iter().flatten().collect(), grid, titles })
+    Ok((routes.into_iter().flatten().collect(), grid))
 }
 
 /// Whether two edges join the same blocks and share a trunk at both ends: they are then one line all the way.
@@ -589,9 +619,9 @@ impl Search<'_> {
         rows.chain(columns).filter(|cell| self.joinable(*cell)).filter_map(move |cell| side(rect, cell).map(|outward| (cell, outward)))
     }
 
-    /// A node's border or a frame's side no earlier edge joins.
+    /// A node's border or a frame's side no earlier edge joins; under a frame's title too, which the arrow stays clear of.
     fn joinable(&self, cell: Point) -> bool {
-        matches!(self.grid.get(cell), Use::Border | Use::Line { .. } | Use::Trunk { .. })
+        matches!(self.grid.get(cell), Use::Border | Use::Line { .. } | Use::Trunk { .. } | Use::Title)
     }
 
     fn path(&self, previous: &[usize], last: usize) -> Vec<Point> {
@@ -843,6 +873,28 @@ mod tests {
         let (_, rows) = routed("flowchart TB\n  A --> B\n  subgraph G [Group title]\n    B\n  end");
 
         assert_eq!(&rows[5..8], ["    │            ", "╭─ Group title ─╮", "│   ▾           │"]);
+    }
+
+    #[test]
+    fn an_edge_left_without_a_path_goes_first_on_another_try() {
+        let source =
+            include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression.mmd");
+        let diagram = Diagram::read(source).unwrap().turned_top_down();
+        let placement = layout::place(&diagram, Fit::Packed { columns: 50 });
+        let joins = port::joins(&diagram, &placement);
+        let empty = Grid::new(&diagram, &placement, &titles(&diagram, &placement, &joins));
+
+        let nearest_first = laid(&diagram, &placement, &joins, &empty, &nearest_first(&diagram, &placement));
+
+        assert_eq!(nearest_first.err(), Some(11));
+        assert!(route(&diagram, &placement).is_ok());
+    }
+
+    #[test]
+    fn an_edge_to_a_group_joins_its_frame_under_the_title() {
+        let (_, rows) = routed("flowchart TB\n  A --> G\n  subgraph G [Group title]\n    B\n  end");
+
+        assert_eq!(&rows[4..7], ["        │        ", "        ▾        ", "╭─ Group title ─╮"]);
     }
 
     #[test]

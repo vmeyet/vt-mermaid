@@ -87,6 +87,8 @@ mermaid-rs-renderer's parser, which it replaces, accepts and refuses 908 of them
   Equal paths are told apart by where they turn, right after the source, or right before the target for an edge that shares only its way in, and by not running right beside a node.
   Trunks: an edge may leave an earlier edge of its trunk between that one's first two turns or up to 2 cells before, and join one between its last two turns or up to 2 cells after, each edge leaving before any joins, so no line reads as going from one source to another's target; twin edges are one line.
   A group's title moves along its frame off the column an edge comes straight down through; when the frame is no wider than its title, the edge passes behind it.
+  An edge that ends on a group may join its frame under the title: the arrow stands above it.
+  An edge left without a path goes first on another try, three times at most.
   Lines cross only at a right angle, never where one turns or ends, and never run along a node's border or another line they do not share a trunk with.
   The arrow sits on the cell before the target; a line may turn there into `▾` or `▴`, never into `▸` or `◂`.
 - Edge labels go across the straight run through the room the layout kept, else the longest that has room, centred, or slid sideways on a vertical run as long as they still cover the line; else beside the run; else the same anywhere along a run, the nearest to its middle first; else nowhere.
