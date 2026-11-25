@@ -204,11 +204,24 @@ impl Value {
     }
 }
 
+/// A block's keys and values, in order, each key once.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct Block {
+    pairs: Vec<(String, Value)>,
+}
+
+impl Block {
+    /// The value of `key` when JavaScript counts it as given, as mermaid's `if (doc.key)` does.
+    pub(super) fn given(&self, key: &str) -> Option<&Value> {
+        self.pairs.iter().find(|(name, _)| name == key).map(|(_, value)| value).filter(|value| value.is_truthy())
+    }
+}
+
 /// The pairs of a block, as mermaid hands it to YAML: one line is a flow mapping, several a block mapping.
-pub(super) fn read(block: &str) -> Result<Vec<(String, Value)>, Invalid> {
+pub(super) fn read(block: &str) -> Result<Block, Invalid> {
     let pairs = if block.contains('\n') { block_pairs(block)? } else { flow_pairs(block)? };
     let duplicate = pairs.iter().enumerate().any(|(index, (key, _))| pairs[..index].iter().any(|(earlier, _)| earlier == key));
-    if duplicate { Err(Invalid::ShapeData) } else { Ok(pairs) }
+    if duplicate { Err(Invalid::ShapeData) } else { Ok(Block { pairs }) }
 }
 
 /// `{ key: value, key: "value" }`.
@@ -443,7 +456,7 @@ mod tests {
 
     #[test]
     fn an_inline_block_is_a_flow_mapping() {
-        let pairs = read(r#" shape: rect, label: "Hello, \"you\"", w: 40 "#).unwrap();
+        let pairs = read(r#" shape: rect, label: "Hello, \"you\"", w: 40 "#).unwrap().pairs;
 
         assert_eq!(
             pairs,
@@ -457,7 +470,7 @@ mod tests {
 
     #[test]
     fn a_block_over_several_lines_is_a_block_mapping() {
-        let pairs = read("\n    shape: circle\n    other: 'a ''b'''  # note\n    label: a\n      long one\n  ").unwrap();
+        let pairs = read("\n    shape: circle\n    other: 'a ''b'''  # note\n    label: a\n      long one\n  ").unwrap().pairs;
 
         assert_eq!(
             pairs,
@@ -467,10 +480,10 @@ mod tests {
 
     #[test]
     fn a_block_scalar_takes_the_lines_after_its_key() {
-        let pairs = read("\n  label: |\n    This is a\n    multiline string\n  shape: rect\n").unwrap();
+        let pairs = read("\n  label: |\n    This is a\n    multiline string\n  shape: rect\n").unwrap().pairs;
 
         assert_eq!(pairs, [("label".to_owned(), text("This is a\nmultiline string\n")), ("shape".to_owned(), text("rect"))]);
-        assert_eq!(read("\n  label: >-\n    one\n    two\n").unwrap(), [("label".to_owned(), text("one two"))]);
+        assert_eq!(read("\n  label: >-\n    one\n    two\n").unwrap().pairs, [("label".to_owned(), text("one two"))]);
     }
 
     #[test]
@@ -481,8 +494,10 @@ mod tests {
     }
 
     #[test]
-    fn a_nested_value_is_skipped_whole() {
-        assert_eq!(read("a: {b: '}'}, c: d").unwrap(), [("a".to_owned(), Value::Nested), ("c".to_owned(), text("d"))]);
+    fn a_nested_value_is_skipped_whole_and_only_values_javascript_counts_are_given() {
+        let block = read("a: {b: '}'}, c: d, e: ''").unwrap();
+
+        assert_eq!((block.given("a"), block.given("c"), block.given("e")), (Some(&Value::Nested), Some(&text("d")), None));
     }
 
     #[test]

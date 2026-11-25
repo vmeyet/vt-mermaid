@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use super::entity;
 use super::link::Link;
 use super::prepare::Config;
-use super::shape_data::{self, SHAPES, Value};
+use super::shape_data::{self, Block, SHAPES, Value};
 use super::{Direction, Invalid, Limits, is_space};
 use crate::error::Error;
 
@@ -156,8 +156,8 @@ impl Db {
         if id.trim_matches(is_space).is_empty() {
             return Ok(());
         }
-        let pairs = block.map(shape_data::read).transpose()?;
-        if (pairs.is_some() && self.subgraphs.iter().any(|subgraph| subgraph.id == id)) || self.edge_ids.contains(id) {
+        let block = block.map(shape_data::read).transpose()?;
+        if (block.is_some() && self.subgraphs.iter().any(|subgraph| subgraph.id == id)) || self.edge_ids.contains(id) {
             return Ok(());
         }
         let index = self.node(id)?;
@@ -168,8 +168,8 @@ impl Db {
         if let Some(shape) = shape {
             node.shape = Some(shape.to_owned());
         }
-        if let Some(pairs) = pairs {
-            with_block(node, &pairs)?;
+        if let Some(block) = block {
+            with_block(node, &block)?;
         }
         Ok(())
     }
@@ -296,8 +296,8 @@ impl Db {
 }
 
 /// A node's block: its shape, checked; its label, and an icon or image without a label leaves the node unnamed.
-fn with_block(node: &mut Node, pairs: &[(String, Value)]) -> Result<(), Error> {
-    let get = |key: &str| pairs.iter().find(|(name, _)| name == key).map(|(_, value)| value).filter(|value| value.is_truthy());
+fn with_block(node: &mut Node, block: &Block) -> Result<(), Error> {
+    let get = |key: &str| block.given(key);
     if let Some(shape) = get("shape") {
         let Value::Text(name) = shape else { return Err(Invalid::Shape { name: format!("{shape:?}") }.into()) };
         if !SHAPES.contains(&name.as_str()) {
