@@ -2,6 +2,7 @@ use vt_canvas::{Canvas, Corner, Frame, LineKind, Point, Rect, Role};
 
 use super::Drawing;
 use super::diagram::{Diagram, Edge, Head};
+use super::edge_label::EndLabels;
 use super::route::{Route, opposite};
 use super::shape;
 use crate::error::Error;
@@ -15,6 +16,7 @@ pub(super) struct Parts {
     pub(super) titles: Vec<Rect>,
     pub(super) routes: Vec<Route>,
     pub(super) labels: Vec<Option<Rect>>,
+    pub(super) end_labels: Vec<EndLabels>,
 }
 
 /// Cuts the grid down to what was drawn on it, then draws frames, nodes, edges, titles and labels, in that order:
@@ -39,6 +41,13 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
     for (group, at) in diagram.groups.iter().zip(&parts.titles) {
         if let Some(title) = group.title.lines.first().filter(|title| !title.is_empty()) {
             canvas.text_cut(Point::new(at.x + 1, at.y), &format!(" {title} "), group.title.width + 2, Role::Group);
+        }
+    }
+    for (edge, ends) in diagram.edges.iter().zip(&parts.end_labels) {
+        for (label, rect) in [(&edge.start_label, ends.start), (&edge.end_label, ends.end)] {
+            if let (Some(label), Some(rect)) = (label, rect) {
+                canvas.text_cut(Point::new(rect.x, rect.y), &label.lines[0], rect.width, Role::Label);
+            }
         }
     }
     for (edge, rect) in diagram.edges.iter().zip(&parts.labels) {
@@ -72,7 +81,8 @@ fn draw_edge(canvas: &mut Canvas, edge: &Edge, route: &Route) {
 
 /// The smallest rectangle holding every part.
 fn bounds(parts: &Parts) -> Rect {
-    let rects = parts.nodes.iter().chain(&parts.groups).chain(parts.labels.iter().flatten()).copied();
+    let end_labels = parts.end_labels.iter().flat_map(|ends| [ends.start, ends.end]).flatten();
+    let rects = parts.nodes.iter().chain(&parts.groups).chain(parts.labels.iter().flatten()).copied().chain(end_labels);
     let cells = parts.routes.iter().flat_map(|route| route.cells.iter().copied()).map(|cell| Rect::new(cell.x, cell.y, 1, 1));
     let all: Vec<Rect> = rects.chain(cells).collect();
     let left = all.iter().map(|rect| rect.x).min().unwrap_or(0);
@@ -95,5 +105,6 @@ fn moved(parts: Parts, bounds: Rect) -> Parts {
             .map(|route| Route { cells: route.cells.into_iter().map(point).collect(), end: point(route.end) })
             .collect(),
         labels: parts.labels.into_iter().map(|label| label.map(rect)).collect(),
+        end_labels: parts.end_labels.into_iter().map(|ends| EndLabels { start: ends.start.map(rect), end: ends.end.map(rect) }).collect(),
     }
 }

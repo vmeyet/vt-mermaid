@@ -86,7 +86,9 @@ fn drawn(diagram: &Diagram, placement: Placement, max_width: u16) -> Result<Draw
     check_area(usize::from(placement.size.width), usize::from(placement.size.height))?;
     let routed = route::route(diagram, &placement)?;
     let labels = edge_label::place(diagram, &routed.routes, &routed.grid, &placement.labels);
-    let parts = draw::Parts { nodes: placement.nodes, groups: placement.groups, titles: routed.titles, routes: routed.routes, labels };
+    let end_labels = edge_label::place_ends(diagram, &routed.routes, &routed.grid, &labels);
+    let parts =
+        draw::Parts { nodes: placement.nodes, groups: placement.groups, titles: routed.titles, routes: routed.routes, labels, end_labels };
     draw::draw(diagram, parts, max_width)
 }
 
@@ -105,6 +107,7 @@ mod tests {
     use super::measure::rows;
     use super::*;
     use crate::flowchart::{self, render};
+    use crate::label::Label;
     use crate::settings::LongWords;
 
     /// Wide enough for every flowchart here.
@@ -242,5 +245,29 @@ mod tests {
         let source = "flowchart LR\n  A[One-word-too-long-to-wrap] --> B[A long second label]";
 
         assert!(matches!(render(source, 20), Err(Error::TooWide { max_width: 20, .. })));
+    }
+
+    #[test]
+    fn the_texts_at_an_edge_s_ends_stand_beside_it_next_to_each_node() {
+        let mut diagram = flowchart::read("flowchart TB\n  A[Customer] --> B[Ticket]").unwrap();
+        diagram.edges[0].start_label = Some(Label::single_line("1"));
+        diagram.edges[0].end_label = Some(Label::single_line("0..*"));
+
+        let drawing = super::render(&diagram, Settings::new(WIDTH)).unwrap();
+
+        assert_eq!(
+            rows(&drawing.canvas),
+            [
+                "┌──────────┐",
+                "│ Customer │",
+                "└────┬─────┘",
+                "     │ 1    ",
+                "     │      ",
+                "     ▾ 0..* ",
+                " ┌────────┐ ",
+                " │ Ticket │ ",
+                " └────────┘ ",
+            ]
+        );
     }
 }

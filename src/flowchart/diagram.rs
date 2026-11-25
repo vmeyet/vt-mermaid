@@ -120,6 +120,8 @@ fn edge(from: End, to: End, edge: &parse::Edge) -> Edge {
         from,
         to,
         label: (!shown.is_empty()).then(|| Label::single_line(&shown)),
+        start_label: None,
+        end_label: None,
         kind: match edge.link.stroke {
             Stroke::Thick => LineKind::Heavy,
             Stroke::Dotted => LineKind::Dashed,

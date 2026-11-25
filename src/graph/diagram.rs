@@ -55,6 +55,9 @@ pub(crate) struct Edge {
     pub(crate) from: End,
     pub(crate) to: End,
     pub(crate) label: Option<Label>,
+    /// One line of text drawn beside it near its source, and near its target: a class relation's cardinalities.
+    pub(crate) start_label: Option<Label>,
+    pub(crate) end_label: Option<Label>,
     pub(crate) kind: LineKind,
     /// What it draws where it leaves its source, and where it meets its target.
     pub(crate) start: Head,

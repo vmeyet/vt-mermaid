@@ -779,6 +779,7 @@ fn to_u16(value: usize) -> u16 {
 mod tests {
     use super::*;
     use crate::flowchart;
+    use crate::graph::edge_label::EndLabels;
     use crate::graph::layout::{self, Fit};
     use crate::graph::{draw, measure};
 
@@ -875,12 +876,14 @@ mod tests {
         let placement = layout::place(&diagram, Fit::Loose);
         let routed = route(&diagram, &placement).unwrap();
         let labels = vec![None; routed.routes.len()];
+        let end_labels = vec![EndLabels::default(); routed.routes.len()];
         let parts = draw::Parts {
             nodes: placement.nodes,
             groups: placement.groups,
             titles: routed.titles.clone(),
             routes: routed.routes.clone(),
             labels,
+            end_labels,
         };
         let rows = measure::rows(&draw::draw(&diagram, parts, 200).unwrap().canvas);
         (routed, rows)

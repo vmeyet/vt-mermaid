@@ -1,10 +1,21 @@
 //! Where each edge's label goes: on the longest straight run of its path that has room, else beside it, at the
 //! middle of the run before anywhere along it.
 
-use vt_canvas::{Point, Rect};
+use vt_canvas::{Direction, Point, Rect};
 
 use super::diagram::Diagram;
-use super::route::{Grid, Route, Use};
+use super::route::{Grid, Route, Use, step_direction};
+use crate::label::Label;
+
+/// Cells along an end's straight run its text may stand beside, from the cell next to the node.
+const NEAR_AN_END: usize = 4;
+
+/// Where an edge's texts at its ends go.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(super) struct EndLabels {
+    pub(super) start: Option<Rect>,
+    pub(super) end: Option<Rect>,
+}
 
 /// A label's top-left cell for each edge, `None` for an edge without a label or without room for it.
 ///
@@ -26,6 +37,55 @@ pub(super) fn place(diagram: &Diagram, routes: &[Route], grid: &Grid, kept: &[Op
             Some(rect)
         })
         .collect()
+}
+
+/// Each edge's texts at its ends, beside the straight run leaving each end, as near the node as there is room and
+/// clear of the labels `placed` already; `None` where there is none.
+pub(super) fn place_ends(diagram: &Diagram, routes: &[Route], grid: &Grid, placed: &[Option<Rect>]) -> Vec<EndLabels> {
+    let mut grid = grid.clone();
+    for rect in placed.iter().flatten() {
+        block(&mut grid, *rect);
+    }
+    diagram
+        .edges
+        .iter()
+        .zip(routes)
+        .map(|(edge, route)| {
+            let leaving: Vec<Point> = route.cells.iter().skip(1).copied().collect();
+            let arriving: Vec<Point> = route.cells.iter().rev().copied().collect();
+            let mut spot_beside = |label: Option<&Label>, run: &[Point]| {
+                let rect = beside_end(&grid, run, label?.width)?;
+                block(&mut grid, rect);
+                Some(rect)
+            };
+            EndLabels { start: spot_beside(edge.start_label.as_ref(), &leaving), end: spot_beside(edge.end_label.as_ref(), &arriving) }
+        })
+        .collect()
+}
+
+/// Beside the straight run starting at `run`'s first cell, the cell next to the node: right of a vertical run, else
+/// left; above a horizontal run, else below, reaching towards the node.
+fn beside_end(grid: &Grid, run: &[Point], width: u16) -> Option<Rect> {
+    let towards_node = step_direction(*run.get(1)?, run[0]);
+    let straight = run.windows(2).take_while(|pair| step_direction(pair[1], pair[0]) == towards_node).count() + 1;
+    let spots = run.iter().take(straight.min(NEAR_AN_END)).flat_map(|&cell| match towards_node {
+        Direction::Up | Direction::Down => [Some((cell.x + 2, cell.y)), cell.x.checked_sub(width + 1).map(|x| (x, cell.y))],
+        Direction::Right => {
+            let x = (cell.x + 1).checked_sub(width);
+            [x.zip(cell.y.checked_sub(1)), x.map(|x| (x, cell.y + 1))]
+        }
+        Direction::Left => [cell.y.checked_sub(1).map(|y| (cell.x, y)), Some((cell.x, cell.y + 1))],
+    });
+    spots
+        .flatten()
+        .map(|(x, y)| Rect::new(x, y, width, 1))
+        .find(|rect| padded(*rect).is_some_and(|padded| cells(padded).all(|cell| grid.get(cell) == Use::Free)))
+}
+
+fn block(grid: &mut Grid, rect: Rect) {
+    for cell in cells(rect) {
+        grid.set(cell, Use::Blocked);
+    }
 }
 
 /// The run through the room `kept` for the label comes first, then the longest.
