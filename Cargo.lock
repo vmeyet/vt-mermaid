@@ -596,6 +596,7 @@ dependencies = [
  "insta",
  "mermaid-rs-renderer",
  "mermaid-text",
+ "serde",
  "serde_json",
  "vt-canvas",
  "vt-mermaid",

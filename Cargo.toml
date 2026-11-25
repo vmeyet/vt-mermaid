@@ -12,6 +12,11 @@ publish = false
 name = "vt_mermaid"
 
 # mmdr's layout runs about ten times slower unoptimised, which made the spike snapshots take seconds each.
+[[example]]
+name = "scoreboard"
+path = "scoreboard/main.rs"
+test = true
+
 [profile.dev.package.mermaid-rs-renderer]
 opt-level = 3
 
@@ -24,10 +29,12 @@ vt-canvas = { path = "../vt-canvas" }
 # Exact measures of a drawing for scoreboard/, read from its geometry; not part of the API.
 measure = []
 
-# serde_json reads the oracle's results for examples/agreement.rs; mermaid-text is what examples/compare.rs measures against.
+# serde_json reads the oracle's results for examples/agreement.rs and scoreboard/, serde reads them into structs and writes the scoreboard's;
+# mermaid-text is what examples/compare.rs and scoreboard/ measure against, pinned so the scoreboard compares one version.
 [dev-dependencies]
 insta = "1.49.0"
-mermaid-text = "0.58"
+mermaid-text = "=0.58.0"
+serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 # Turns the `measure` feature on for the scoreboard example, so `cargo clippy --all-targets` checks it.
 vt-mermaid = { path = ".", features = ["measure"] }
