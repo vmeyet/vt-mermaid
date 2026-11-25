@@ -2,6 +2,8 @@
 
 #[cfg_attr(not(test), expect(dead_code, reason = "laid out by a later change"))]
 mod diagram;
+#[expect(dead_code, reason = "laid out and drawn by later changes")]
+mod layout;
 #[cfg_attr(not(any(test, feature = "fuzz")), expect(dead_code, reason = "read by the drawing, which lands next"))]
 mod parse;
 
