@@ -3,6 +3,7 @@ use vt_canvas::{Canvas, Corner, Frame, LineKind, Point, Rect, Role};
 use super::Drawing;
 use super::diagram::Diagram;
 use super::route::{Route, opposite};
+use super::shape;
 use crate::error::Error;
 
 /// Where each part goes on the routing grid.
@@ -28,7 +29,7 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
         canvas.frame(*rect, Frame { kind: LineKind::Light, corner: Corner::Rounded, title, role: Role::Group });
     }
     for (node, rect) in diagram.nodes.iter().zip(&parts.nodes) {
-        node.shape.draw(&mut canvas, *rect, &node.label);
+        shape::draw(&mut canvas, *rect, node.shape, &node.label);
     }
     for (edge, route) in diagram.edges.iter().zip(&parts.routes) {
         let mut points = route.corners();

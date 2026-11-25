@@ -3,10 +3,10 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use mermaid_rs_renderer::{self as mmdr, DiagramKind, EdgeStyle, Graph, LayoutConfig, NodeShape, Theme};
-use vt_canvas::{Direction, LineKind};
+use vt_canvas::{Direction, LineKind, Shape};
 
 use super::label::Label;
-use super::shape::Shape;
+use super::shape;
 use crate::error::{Error, MAX_EDGES, MAX_NODES};
 
 /// Pixels of a column once mmdr measures a stand-in label: `n` is 0.512 em at its 16 px measuring size.
@@ -80,7 +80,7 @@ impl Diagram {
 
     fn new(graph: &Graph) -> Self {
         let labels: HashMap<&str, (Label, Shape)> =
-            graph.nodes.iter().map(|(id, node)| (id.as_str(), (Label::wrapped(&node.label), shape(node.shape)))).collect();
+            graph.nodes.iter().map(|(id, node)| (id.as_str(), (Label::wrapped(&node.label), shape_of(node.shape)))).collect();
         let positions = layout(graph, &labels);
         let nodes = nodes(graph, &labels, &positions);
         let groups = groups(graph, &nodes);
@@ -126,13 +126,22 @@ fn check_bounds(graph: &Graph) -> Result<(), Error> {
     Ok(())
 }
 
-fn shape(shape: NodeShape) -> Shape {
+/// mmdr reads both `((text))` and `(((text)))` as a double circle; the single circle is the one people write.
+fn shape_of(shape: NodeShape) -> Shape {
     match shape {
-        NodeShape::RoundRect | NodeShape::Stadium | NodeShape::Circle | NodeShape::DoubleCircle => Shape::Rounded,
-        NodeShape::Diamond => Shape::Diamond,
-        NodeShape::Cylinder => Shape::Cylinder,
+        NodeShape::RoundRect => Shape::Rounded,
+        NodeShape::Stadium => Shape::Stadium,
+        NodeShape::Circle | NodeShape::DoubleCircle => Shape::Circle,
         NodeShape::Subroutine => Shape::Subroutine,
-        _ => Shape::Box,
+        NodeShape::Cylinder => Shape::Cylinder,
+        NodeShape::Diamond => Shape::Diamond,
+        NodeShape::Hexagon => Shape::Hexagon,
+        NodeShape::Parallelogram => Shape::LeanRight,
+        NodeShape::ParallelogramAlt => Shape::LeanLeft,
+        NodeShape::Trapezoid => Shape::Trapezoid,
+        NodeShape::TrapezoidAlt => Shape::InvertedTrapezoid,
+        NodeShape::Asymmetric => Shape::Asymmetric,
+        _ => Shape::Rectangle,
     }
 }
 
@@ -175,12 +184,12 @@ fn layout(graph: &Graph, labels: &HashMap<&str, (Label, Shape)>) -> BTreeMap<Str
 
 /// A node mmdr added for an edge end is a box named after its id.
 fn label_and_shape(labels: &HashMap<&str, (Label, Shape)>, id: &str) -> (Label, Shape) {
-    labels.get(id).cloned().unwrap_or_else(|| (Label::wrapped(id), Shape::Box))
+    labels.get(id).cloned().unwrap_or_else(|| (Label::wrapped(id), Shape::Rectangle))
 }
 
 /// The `n`s filling the space inside a node's border.
 fn stand_in_node(label: &Label, shape: Shape) -> String {
-    let size = shape.size(label);
+    let size = shape::size(shape, label);
     stand_in_lines(size.width.saturating_sub(4), size.height.saturating_sub(2))
 }
 

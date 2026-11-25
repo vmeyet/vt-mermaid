@@ -25,5 +25,5 @@ expression: "rows(&drawing.canvas).join(\"\\n\")"
                     ╎│      │                       ╎
                     ╎└──────┼───▾                   ╎
          ┌──────────┴─────┐ │  ╭──────────╮         ╎
-         │ Store in cache │◂┘  │ Response ├╌╌╌╌╌╌╌╌╌┘
+         │ Store in cache │◂┘  ( Response )╌╌╌╌╌╌╌╌╌┘
          └────────────────┘    ╰──────────╯

@@ -3,7 +3,7 @@
 use vt_canvas::{Direction, Rect};
 
 use super::diagram::{Diagram, PX_PER_COLUMN, PX_PER_ROW};
-use super::shape::Size;
+use super::shape::{self, Size};
 
 /// Empty cells kept around the drawing so edges can go round it.
 pub(super) const MARGIN: u16 = 3;
@@ -109,7 +109,7 @@ fn block(diagram: &Diagram, item: Item, content: &Arrangement, flow: Direction) 
     match item {
         Item::Node(index) => {
             let node = &diagram.nodes[index];
-            let size = node.shape.size(&node.label);
+            let size = shape::size(node.shape, &node.label);
             let (width, height) = (f32::from(size.width), f32::from(size.height));
             let (x, y) = if matches!(flow, Direction::Down | Direction::Up) {
                 (column(node.x + width * PX_PER_COLUMN / 2.0) - i32::from(size.width / 2), row(node.y))

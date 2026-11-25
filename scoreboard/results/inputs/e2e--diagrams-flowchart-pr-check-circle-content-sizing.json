@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"parse error: expected 'graph' or 'flowchart', got 'the'","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":79,"rows":34,"area":2686,"fits":true,"node_labels":10,"edge_labels":0,"arrows":8,"crossings":0,"bends":0},"score":92,"exact":{"crossings":0,"bends":0,"edge_cells":32,"violations":[]}},
-      "100": {"status":"rendered","drawn":{"width":79,"rows":34,"area":2686,"fits":true,"node_labels":10,"edge_labels":0,"arrows":8,"crossings":0,"bends":0},"score":92,"exact":{"crossings":0,"bends":0,"edge_cells":32,"violations":[]}}
+      "80": {"status":"refused","reason":"the drawing needs 83 columns, more than the 80 allowed","score":0},
+      "100": {"status":"rendered","drawn":{"width":83,"rows":34,"area":2822,"fits":true,"node_labels":10,"edge_labels":0,"arrows":8,"crossings":0,"bends":24},"score":92,"exact":{"crossings":0,"bends":0,"edge_cells":32,"violations":[]}}
     }
   }
 }

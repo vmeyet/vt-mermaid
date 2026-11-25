@@ -43,8 +43,9 @@ This page says how the code is laid out today; when a module or a boundary chang
 `measure`, built for tests and the `measure` feature only, counts what a drawing does and checks the level C invariants.
 
 - Text: a node's label breaks at `<br>` and wraps at spaces past 30 columns, a longer word is cut with `⋯`; an edge label or a group title is one line of at most 60 columns; quotes around a label are left out.
-- Shapes: rectangle, rounded (round, stadium, circle), diamond (`╱ ╲` corners), cylinder (a line under the top), subroutine (an inner line down each side); any other shape is a rectangle.
-  A node is its label plus a space and a border on each side.
+- Shapes: vt-canvas draws each outline (`Canvas::shape`), so every glyph follows the glyph set; mmdr's shape maps to the vt-canvas one of the same name, mindmap and text nodes to a rectangle.
+  mmdr reads both `((text))` and `(((text)))` as a double circle; it is drawn as a circle, the one people write.
+  A node is its label plus a space and the shape's inset on each side.
 - Snap: one column is 8.192 layout pixels and one row 24, the size of the stand-in `n` and its line; a rank keeps the layout's start along the flow and centres its nodes across it.
   Blocks of one rank, or one within another's extent, move apart across the flow; a rank too close to the one before moves along, with every later rank.
   Gaps: 3 rows between ranks and 4 columns between siblings when the flow goes down or up; 6 columns, or the widest edge label plus 4, between ranks and 1 row between siblings when it goes sideways.
