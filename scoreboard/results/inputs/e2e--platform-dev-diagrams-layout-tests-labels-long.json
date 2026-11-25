@@ -15,8 +15,8 @@
       "100": {"status":"rendered","drawn":{"width":96,"rows":33,"area":3168,"fits":true,"node_labels":10,"edge_labels":0,"arrows":6,"crossings":132,"bends":39},"score":74}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"no path joins a3 to a9","score":0},
-      "100": {"status":"refused","reason":"no path joins a3 to a9","score":0}
+      "80": {"status":"refused","reason":"no path joins a2 to a5","score":0},
+      "100": {"status":"refused","reason":"no path joins a2 to a8","score":0}
     }
   }
 }

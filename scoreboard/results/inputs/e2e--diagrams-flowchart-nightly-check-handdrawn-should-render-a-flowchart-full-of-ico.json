@@ -15,8 +15,8 @@
       "100": {"status":"refused","reason":"rendered diagram is 145 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
-      "80": {"status":"refused","reason":"no path joins 82072290_1ec3_e711_8c5a_005056ad0002 to 8f102290_1ec3_e711_8c5a_005056ad0002","score":0},
-      "100": {"status":"refused","reason":"the drawing needs 103 columns, more than the 100 allowed","score":0}
+      "80": {"status":"rendered","drawn":{"width":62,"rows":144,"area":8928,"fits":true,"node_labels":18,"edge_labels":0,"arrows":40,"crossings":118,"bends":70},"score":76,"exact":{"crossings":118,"bends":70,"edge_cells":1608,"violations":["node 07132290_1ec3_e711_8c5a_005056ad0002 has 1 label lines not drawn whole","node 0e102290_1ec3_e711_8c5a_005056ad0002 has 1 label lines not drawn whole","node 8f102290_1ec3_e711_8c5a_005056ad0002 has 1 label lines not drawn whole","node b7042290_1ec3_e711_8c5a_005056ad0002 has 1 label lines not drawn whole"]}},
+      "100": {"status":"rendered","drawn":{"width":90,"rows":96,"area":8640,"fits":true,"node_labels":18,"edge_labels":0,"arrows":40,"crossings":66,"bends":78},"score":76,"exact":{"crossings":66,"bends":78,"edge_cells":1223,"violations":["node 07132290_1ec3_e711_8c5a_005056ad0002 has 1 label lines not drawn whole","node 0e102290_1ec3_e711_8c5a_005056ad0002 has 1 label lines not drawn whole","node 8f102290_1ec3_e711_8c5a_005056ad0002 has 1 label lines not drawn whole","node b7042290_1ec3_e711_8c5a_005056ad0002 has 1 label lines not drawn whole"]}}
     }
   }
 }

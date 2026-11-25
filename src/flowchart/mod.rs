@@ -31,25 +31,36 @@ pub(crate) struct Drawing {
     labels: Vec<Option<Rect>>,
 }
 
-/// Draws `source` in the first form that fits `max_width`: with the whole room the layout leaves, then half of it,
-/// then none and its wide ranks folded; each time as written, then turned top-down when it flows sideways.
+/// Columns a folded drawing gets, in eighths of the width allowed: edges going round the blocks take the rest.
+const FOLDS: [i32; 3] = [8, 7, 6];
+
+/// Draws `source` in the first form that fits `max_width` and whose edges find a path: with the whole room the
+/// layout leaves, then half of it, then none and its wide ranks folded; each time as written, then turned top-down
+/// when it flows sideways.
 pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
     if source.len() > MAX_SOURCE_BYTES {
         return Err(Error::TooLong { bytes: source.len() });
     }
     let written = Diagram::read(source)?;
     let as_laid_out = drawn(&written, Room::Whole, max_width);
-    if !matches!(as_laid_out, Err(Error::TooWide { .. })) {
+    if !may_fit_tighter(&as_laid_out) {
         return as_laid_out;
     }
     let turned = if written.flows_sideways() { Some(Diagram::read_top_down(source)?) } else { None };
-    let tighter = [Room::Half, Room::Folded { columns: i32::from(max_width) }]
-        .into_iter()
+    let folds = FOLDS.map(|eighths| Room::Folded { columns: i32::from(max_width) * eighths / 8 });
+    let tighter = std::iter::once(Room::Half)
+        .chain(folds)
         .flat_map(|room| std::iter::once(&written).chain(&turned).map(move |diagram| (diagram, room)));
-    turned.iter().map(|diagram| (diagram, Room::Whole)).chain(tighter).fold(as_laid_out, |drawing, (diagram, room)| match drawing {
-        Err(Error::TooWide { .. }) => drawn(diagram, room, max_width),
-        found => found,
-    })
+    turned
+        .iter()
+        .map(|diagram| (diagram, Room::Whole))
+        .chain(tighter)
+        .fold(as_laid_out, |drawing, (diagram, room)| if may_fit_tighter(&drawing) { drawn(diagram, room, max_width) } else { drawing })
+}
+
+/// A drawing too wide, or one whose blocks leave an edge no path, may come out with the blocks placed another way.
+fn may_fit_tighter(drawing: &Result<Drawing, Error>) -> bool {
+    matches!(drawing, Err(Error::TooWide { .. } | Error::Unroutable { .. }))
 }
 
 fn drawn(diagram: &Diagram, room: Room, max_width: u16) -> Result<Drawing, Error> {
@@ -216,6 +227,28 @@ mod tests {
                 "  └───────────────┘                   ",
             ]
         );
+    }
+
+    #[test]
+    fn a_folded_drawing_whose_edges_go_past_the_width_is_folded_narrower() {
+        let source = "flowchart TB\n  A[Start] --> B[First option] & C[Second option] & D[Third option]";
+
+        let two_in_a_row = render(source, 38).unwrap();
+        let one_in_a_row = render(source, 37).unwrap();
+
+        let size = |drawing: &Drawing| (rows(&drawing.canvas)[0].chars().count(), rows(&drawing.canvas).len());
+        assert_eq!(size(&two_in_a_row), (38, 15));
+        assert_eq!(size(&one_in_a_row), (19, 21));
+    }
+
+    #[test]
+    fn only_a_drawing_too_wide_or_with_an_edge_without_a_path_is_tried_tighter() {
+        let no_path = Error::Unroutable { from: "A".to_owned(), to: "B".to_owned() };
+
+        assert!(may_fit_tighter(&Err(Error::TooWide { width: 90, max_width: 80 })));
+        assert!(may_fit_tighter(&Err(no_path)));
+        assert!(!may_fit_tighter(&Err(Error::TooLarge { width: 60, height: 5_000 })));
+        assert!(!may_fit_tighter(&render("flowchart LR\n  A --> B", WIDTH)));
     }
 
     #[test]

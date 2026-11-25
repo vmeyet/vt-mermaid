@@ -295,24 +295,25 @@ impl Span {
     }
 }
 
-/// Each rank wider than `columns` cut into rows no wider, in the layout's order; a new row moves every later rank along.
+/// Rows no wider than `columns`: as long as a block ends past them, it moves under the blocks it stands beside, and
+/// takes along the rest of its rank and every later rank.
 fn folded(spans: &[Span], gaps: Gaps, columns: i32) -> Vec<Span> {
-    let mut order: Vec<usize> = (0..spans.len()).collect();
-    order.sort_by_key(|&index| (spans[index].along, spans[index].across));
     let mut folded = spans.to_vec();
-    let mut added = 0;
-    for rank in order.chunk_by(|&a, &b| spans[a].along == spans[b].along) {
-        let (mut right, mut tallest) = (0, 0);
-        for &index in rank {
-            let span = spans[index];
-            if right > 0 && right + span.breadth > columns {
-                added += tallest + gaps.rank;
-                (right, tallest) = (0, 0);
-            }
-            folded[index].along = span.along + added;
-            right += span.breadth + gaps.sibling;
-            tallest = tallest.max(span.length);
-        }
+    for _ in 0..spans.len() {
+        let starts: Vec<Start> = folded.iter().map(|span| Start { along: span.along, across: 0 }).collect();
+        let across = spread_across(&folded, &starts, gaps.sibling);
+        let place = |index: usize| (folded[index].along, folded[index].across);
+        let too_wide = |&index: &usize| across[index] > 0 && across[index] + folded[index].breadth > columns;
+        let Some(wide) = (0..folded.len()).filter(too_wide).min_by_key(|&index| place(index)) else {
+            break;
+        };
+        let beside = (0..folded.len()).filter(|&other| across[other] < across[wide] && side_by_side(folded[wide], folded[other]));
+        let under = beside.map(|other| folded[other].along + folded[other].length).max().unwrap_or(0) + gaps.rank;
+        let (moved, from) = (under - folded[wide].along, place(wide));
+        folded = folded
+            .iter()
+            .map(|&span| if (span.along, span.across) >= from { Span { along: span.along + moved, ..span } } else { span })
+            .collect();
     }
     folded
 }
@@ -453,6 +454,21 @@ mod tests {
         let blocks = [block(0, 0, 10, 3), block(20, 0, 10, 3), block(40, 0, 10, 3), block(0, 10, 10, 3)];
 
         assert_eq!(separate(&blocks, &[], down(Room::Folded { columns: 25 })), [(0, 0), (14, 0), (0, 6), (0, 16)]);
+    }
+
+    #[test]
+    fn a_block_beside_a_taller_one_moves_under_it_when_both_are_too_wide() {
+        let (tall, beside) = (block(0, 0, 20, 12), block(24, 6, 10, 3));
+
+        assert_eq!(separate(&[tall, beside], &[], down(Room::Folded { columns: 34 })), [(0, 0), (24, 6)]);
+        assert_eq!(separate(&[tall, beside], &[], down(Room::Folded { columns: 33 })), [(0, 0), (0, 15)]);
+    }
+
+    #[test]
+    fn a_block_wider_than_the_columns_stays_alone_on_its_row() {
+        let blocks = [block(0, 0, 30, 3), block(40, 0, 30, 3)];
+
+        assert_eq!(separate(&blocks, &[], down(Room::Folded { columns: 20 })), [(0, 0), (0, 6)]);
     }
 
     #[test]
