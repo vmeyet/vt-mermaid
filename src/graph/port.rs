@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 
 use vt_canvas::{Direction, Point, Rect};
 
-use super::diagram::{Diagram, End};
+use super::diagram::{Diagram, End, Head};
 use super::layout::Placement;
 use super::route::opposite;
 
@@ -138,7 +138,7 @@ struct Unit {
 }
 
 /// Each end a unit while the side has a cell for each and the layout does not ask them to share; else the ends that draw alike, all leaving
-/// or all arriving with one kind of line and arrow, share a unit, so they share a trunk.
+/// or all arriving with one kind of line and head, share a unit, so they share a trunk; an edge with a head at its start shares none.
 fn units(diagram: &Diagram, waiting: &[Waiting], side: Side, shares_ways: bool) -> Vec<Unit> {
     let alone = |end: &Waiting| Unit { ends: vec![*end], towards: end.towards };
     let towards: Vec<u16> = waiting.iter().map(|end| end.towards).collect();
@@ -147,7 +147,7 @@ fn units(diagram: &Diagram, waiting: &[Waiting], side: Side, shares_ways: bool) 
     }
     let alike = |end: &Waiting| {
         let edge = &diagram.edges[end.edge];
-        (!edge.arrow_start).then_some((end.leaves, edge.kind, edge.arrow_end))
+        (edge.start == Head::None).then_some((end.leaves, edge.kind, edge.end))
     };
     let mut units: Vec<Unit> = Vec::new();
     for end in waiting {

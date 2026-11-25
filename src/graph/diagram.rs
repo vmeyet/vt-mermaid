@@ -1,7 +1,7 @@
 //! A graph as a diagram kind reads it: nodes, groups, edges and invisible links, laid out and drawn alike whatever
 //! the kind.
 
-use vt_canvas::{Direction, LineKind, Shape};
+use vt_canvas::{Direction, LineKind, Shape, Tip};
 
 use crate::label::{Label, Wrap};
 
@@ -53,8 +53,21 @@ pub(crate) struct Edge {
     pub(crate) to: End,
     pub(crate) label: Option<Label>,
     pub(crate) kind: LineKind,
-    pub(crate) arrow_start: bool,
-    pub(crate) arrow_end: bool,
+    /// What it draws where it leaves its source, and where it meets its target.
+    pub(crate) start: Head,
+    pub(crate) end: Head,
+}
+
+/// What an edge draws where it meets a node.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Head {
+    /// The line runs on to the node's border.
+    None,
+    /// An arrow on the cell next to the node, a flowchart's `-->`.
+    Arrow,
+    /// Tips on the cells next to the node, the nearest first: a class relation's head, a crow's foot.
+    #[expect(dead_code, reason = "class diagrams draw tips once drawn")]
+    Tips(&'static [Tip]),
 }
 
 /// An invisible link between two nodes or groups.

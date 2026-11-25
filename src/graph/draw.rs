@@ -1,7 +1,7 @@
 use vt_canvas::{Canvas, Corner, Frame, LineKind, Point, Rect, Role};
 
 use super::Drawing;
-use super::diagram::Diagram;
+use super::diagram::{Diagram, Edge, Head};
 use super::route::{Route, opposite};
 use super::shape;
 use crate::error::Error;
@@ -34,21 +34,7 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
         shape::draw(&mut canvas, *rect, node.shape, &node.label);
     }
     for (edge, route) in diagram.edges.iter().zip(&parts.routes) {
-        let mut points = route.corners();
-        if !edge.arrow_end {
-            points.push(route.end);
-        }
-        canvas.path(&points, edge.kind, Role::Edge).unwrap_or_default();
-        if edge.arrow_end
-            && let Some(&last) = route.cells.last()
-        {
-            canvas.arrow(last, route.arrival(), Role::Edge);
-        }
-        if edge.arrow_start
-            && let Some(&first_out) = route.cells.get(1)
-        {
-            canvas.arrow(first_out, opposite(route.departure()), Role::Edge);
-        }
+        draw_edge(&mut canvas, edge, route);
     }
     for (group, at) in diagram.groups.iter().zip(&parts.titles) {
         if let Some(title) = group.title.lines.first().filter(|title| !title.is_empty()) {
@@ -61,6 +47,27 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
         }
     }
     Ok(Drawing { canvas, nodes: parts.nodes, groups: parts.groups, routes: parts.routes, labels: parts.labels, wrap: diagram.wrap })
+}
+
+/// The line, then its heads: a line meets a node's border only where it draws no head there.
+fn draw_edge(canvas: &mut Canvas, edge: &Edge, route: &Route) {
+    let mut points = route.corners();
+    if edge.end == Head::None {
+        points.push(route.end);
+    }
+    if let (Head::Tips(_), Some(&first_out)) = (edge.start, route.cells.get(1)) {
+        points[0] = first_out;
+    }
+    canvas.path(&points, edge.kind, Role::Edge).unwrap_or_default();
+    let ends = [(edge.end, route.cells.iter().rev().copied().collect::<Vec<_>>(), route.arrival())];
+    let starts = [(edge.start, route.cells.iter().skip(1).copied().collect::<Vec<_>>(), opposite(route.departure()))];
+    for (head, cells, heading) in ends.into_iter().chain(starts) {
+        match head {
+            Head::None => {}
+            Head::Arrow => cells.first().into_iter().for_each(|&cell| canvas.arrow(cell, heading, Role::Edge)),
+            Head::Tips(tips) => tips.iter().zip(&cells).for_each(|(&tip, &cell)| canvas.tip(cell, heading, tip, Role::Edge)),
+        }
+    }
 }
 
 /// The smallest rectangle holding every part.

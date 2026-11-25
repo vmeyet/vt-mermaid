@@ -7,7 +7,7 @@ use vt_canvas::{Direction, LineKind};
 use super::parse::{self, Arrow, Flowchart, Limits, Stroke};
 use super::shape;
 use crate::error::Error;
-use crate::graph::diagram::{Diagram, Edge, End, Group, Invisible, Node};
+use crate::graph::diagram::{Diagram, Edge, End, Group, Head, Invisible, Node};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
 
@@ -124,8 +124,8 @@ fn edge(from: End, to: End, edge: &parse::Edge) -> Edge {
             Stroke::Dotted => LineKind::Dashed,
             Stroke::Normal | Stroke::Invisible | Stroke::Invalid => LineKind::Light,
         },
-        arrow_start: edge.link.arrow == Arrow::DoublePoint,
-        arrow_end: matches!(edge.link.arrow, Arrow::Point | Arrow::DoublePoint),
+        start: if edge.link.arrow == Arrow::DoublePoint { Head::Arrow } else { Head::None },
+        end: if matches!(edge.link.arrow, Arrow::Point | Arrow::DoublePoint) { Head::Arrow } else { Head::None },
     }
 }
 
@@ -188,8 +188,15 @@ mod tests {
     fn edge_styles_become_line_kinds_and_arrows() {
         let diagram = read("flowchart LR\n  A --> B\n  B -.- C\n  C <==> D").unwrap();
 
-        let edges: Vec<(LineKind, bool, bool)> = diagram.edges.iter().map(|edge| (edge.kind, edge.arrow_start, edge.arrow_end)).collect();
-        assert_eq!(edges, [(LineKind::Light, false, true), (LineKind::Dashed, false, false), (LineKind::Heavy, true, true)]);
+        let edges: Vec<(LineKind, Head, Head)> = diagram.edges.iter().map(|edge| (edge.kind, edge.start, edge.end)).collect();
+        assert_eq!(
+            edges,
+            [
+                (LineKind::Light, Head::None, Head::Arrow),
+                (LineKind::Dashed, Head::None, Head::None),
+                (LineKind::Heavy, Head::Arrow, Head::Arrow)
+            ]
+        );
     }
 
     fn ids(diagram: &Diagram) -> Vec<&str> {
@@ -279,7 +286,7 @@ mod tests {
         let diagram = read("flowchart LR\n  A(((one))) --> B((two)) --o C --x D").unwrap();
 
         assert_eq!((node(&diagram, "A").shape, node(&diagram, "B").shape), (Shape::DoubleCircle, Shape::Circle));
-        assert_eq!(diagram.edges.iter().map(|edge| edge.arrow_end).collect::<Vec<_>>(), [true, false, false]);
+        assert_eq!(diagram.edges.iter().map(|edge| edge.end).collect::<Vec<_>>(), [Head::Arrow, Head::None, Head::None]);
     }
 
     #[test]
