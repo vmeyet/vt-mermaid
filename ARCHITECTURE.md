@@ -24,7 +24,7 @@ This page says how the code is laid out today; when a module or a boundary chang
   That is at most ten placements, each routed only when its blocks fit; one still too wide is `Error::TooWide`, so the caller can fall back.
 - Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`).
 - Time, measured on an Apple M5 in a release build with `cargo bench --bench limits` and `cargo bench --bench corpus`, the fastest of a few runs on a shared machine:
-  - The corpus's 946 flowcharts at 100 columns: median 1 ms, p95 143 ms, p99 295 ms, slowest 3.1 s (`e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression`, too wide, so laid out twice).
+  - The corpus's 946 flowcharts at 100 columns: median 0.5 ms, p95 60 ms, p99 143 ms, slowest 1.7 s (`e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression`, too wide, so laid out twice and placed ten times).
   - mermaid-rs-renderer's parse and layout take 99% of that time, nearly all of it in its own edge routing and path cleanup, whose paths vt-mermaid does not use; the grid routing takes 1% (95 ms at most), snapping and drawing under 1 ms.
   - At each limit: 64 KiB of edges is refused by the counts after 14 ms of parsing; 200 nodes with 150 edges take 0.8 s; 150 edges between 20 nodes 4.4 s; a sideways tree routed on 233000 cells 2.5 s, 0.25 s of it routing.
   - Peak memory stays under 24 MB, the most on the 233000-cell grid.
