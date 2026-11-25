@@ -11,11 +11,14 @@ use crate::error::Error;
 pub(super) struct Parts {
     pub(super) nodes: Vec<Rect>,
     pub(super) groups: Vec<Rect>,
+    /// Where each group's title goes on its frame, a line cell and a space each side of it included.
+    pub(super) titles: Vec<Rect>,
     pub(super) routes: Vec<Route>,
     pub(super) labels: Vec<Option<Rect>>,
 }
 
-/// Cuts the grid down to what was drawn on it, then draws groups, nodes, edges and labels, in that order.
+/// Cuts the grid down to what was drawn on it, then draws frames, nodes, edges, titles and labels, in that order:
+/// an edge crossing a frame under its title passes behind it.
 pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Drawing, Error> {
     let bounds = bounds(&parts);
     let parts = moved(parts, bounds);
@@ -24,9 +27,8 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
     }
     let mut canvas = Canvas::new(bounds.width, bounds.height)
         .map_err(|_canvas_error| Error::TooLarge { width: usize::from(bounds.width), height: usize::from(bounds.height) })?;
-    for (group, rect) in diagram.groups.iter().zip(&parts.groups) {
-        let title = group.title.lines.first().map(String::as_str).filter(|title| !title.is_empty());
-        canvas.frame(*rect, Frame { kind: LineKind::Light, corner: Corner::Rounded, title, role: Role::Group });
+    for rect in &parts.groups {
+        canvas.frame(*rect, Frame { kind: LineKind::Light, corner: Corner::Rounded, title: None, role: Role::Group });
     }
     for (node, rect) in diagram.nodes.iter().zip(&parts.nodes) {
         shape::draw(&mut canvas, *rect, node.shape, &node.label);
@@ -46,6 +48,11 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
             && let Some(&first_out) = route.cells.get(1)
         {
             canvas.arrow(first_out, opposite(route.departure()), Role::Edge);
+        }
+    }
+    for (group, at) in diagram.groups.iter().zip(&parts.titles) {
+        if let Some(title) = group.title.lines.first().filter(|title| !title.is_empty()) {
+            canvas.text_cut(Point::new(at.x + 1, at.y), &format!(" {title} "), group.title.width + 2, Role::Group);
         }
     }
     for (edge, rect) in diagram.edges.iter().zip(&parts.labels) {
@@ -74,6 +81,7 @@ fn moved(parts: Parts, bounds: Rect) -> Parts {
     Parts {
         nodes: parts.nodes.into_iter().map(rect).collect(),
         groups: parts.groups.into_iter().map(rect).collect(),
+        titles: parts.titles.into_iter().map(rect).collect(),
         routes: parts
             .routes
             .into_iter()

@@ -160,14 +160,12 @@ impl Diagram {
 
     /// The direction ranks go in the innermost group holding both ends, which is where an edge between them is
     /// laid out.
-    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
     pub(super) fn flow_between(&self, from: End, to: End) -> Direction {
         let around_to = self.holders(to);
         self.holders(from).into_iter().find(|group| around_to.contains(group)).map_or(self.flow, |group| self.groups[group].flow)
     }
 
     /// How many group frames an edge between the ends crosses.
-    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
     pub(super) fn frames_between(&self, from: End, to: End) -> usize {
         let (around_from, around_to) = (self.holders(from), self.holders(to));
         let only = |groups: &[usize], others: &[usize]| groups.iter().filter(|group| !others.contains(group)).count();
@@ -175,7 +173,6 @@ impl Diagram {
     }
 
     /// The groups holding `end`, the innermost first.
-    #[cfg_attr(not(test), expect(dead_code, reason = "read by the layered layout, not drawn with yet"))]
     fn holders(&self, end: End) -> Vec<usize> {
         let container = match end {
             End::Node(node) => self.nodes[node].group,

@@ -12,7 +12,6 @@ mod layout;
 pub(crate) mod measure;
 #[cfg_attr(not(test), expect(dead_code, reason = "flowcharts switch to this parser once it agrees with mermaid"))]
 mod parse;
-#[cfg_attr(not(test), expect(dead_code, reason = "edges are routed with these joins once the layered layout draws"))]
 mod port;
 mod route;
 mod shape;
@@ -73,9 +72,10 @@ fn drawn(diagram: &Diagram, room: Room, max_width: u16) -> Result<Drawing, Error
     let placement = snap::place(diagram, room);
     check_width(&placement, max_width)?;
     check_area(usize::from(placement.size.width), usize::from(placement.size.height))?;
-    let (routes, grid) = route::route(diagram, &placement)?;
-    let labels = edge_label::place(diagram, &routes, &grid);
-    draw::draw(diagram, draw::Parts { nodes: placement.nodes, groups: placement.groups, routes, labels }, max_width)
+    let routed = route::route(diagram, &placement)?;
+    let labels = edge_label::place(diagram, &routed.routes, &routed.grid, &placement.labels);
+    let parts = draw::Parts { nodes: placement.nodes, groups: placement.groups, titles: routed.titles, routes: routed.routes, labels };
+    draw::draw(diagram, parts, max_width)
 }
 
 /// Blocks wider than allowed are refused before their edges are routed: routes only add to the width.
@@ -118,11 +118,8 @@ mod tests {
         }
     }
 
-    /// Level C is not reachable everywhere: a long label between close parallel edges has nowhere to go.
-    const KNOWN_VIOLATIONS: [&str; 1] = ["docs--community-e2e-tests--L81: edge 2 start → push_develop label found no room"];
-
     #[test]
-    fn spike_flowcharts_keep_the_level_c_invariants_but_the_known_ones() {
+    fn spike_flowcharts_keep_the_level_c_invariants() {
         let found: Vec<String> = spike()
             .into_iter()
             .flat_map(|(name, source)| {
@@ -131,7 +128,7 @@ mod tests {
             })
             .collect();
 
-        assert_eq!(found, KNOWN_VIOLATIONS);
+        assert_eq!(found, [""; 0]);
     }
 
     #[test]
@@ -212,21 +209,21 @@ mod tests {
         assert_eq!(
             rows(&folded.canvas),
             [
-                "  ┌───────┐                           ",
-                "┌─┤ Start ├────────────┐              ",
-                "│ └───┬───┘            │              ",
-                "│     │                │              ",
-                "│     │                │              ",
-                "│     ▾                ▾              ",
-                "│ ┌──────────────┐    ┌──────────────┐",
-                "│ │ First option │    │ Third option │",
-                "│ └──────────────┘    └──────────────┘",
-                "│                                     ",
-                "│                                     ",
-                "│                                     ",
-                "│ ┌───────────────┐                   ",
-                "└▸│ Second option │                   ",
-                "  └───────────────┘                   ",
+                " ┌───────┐                           ",
+                " │ Start │                           ",
+                " └┬┬───┬─┘                           ",
+                "┌─┘│   └────────────────────┐        ",
+                "│  │                        │        ",
+                "│  ▾                        ▾        ",
+                "│┌──────────────┐    ┌──────────────┐",
+                "││ First option │    │ Third option │",
+                "│└──────────────┘    └──────────────┘",
+                "│                                    ",
+                "└────────┐                           ",
+                "         ▾                           ",
+                " ┌───────────────┐                   ",
+                " │ Second option │                   ",
+                " └───────────────┘                   ",
             ]
         );
     }
@@ -236,11 +233,11 @@ mod tests {
         let source = "flowchart TB\n  A[Start] --> B[First option] & C[Second option] & D[Third option]";
 
         let two_in_a_row = render(source, 38).unwrap();
-        let one_in_a_row = render(source, 37).unwrap();
+        let one_in_a_row = render(source, 30).unwrap();
 
         let size = |drawing: &Drawing| (rows(&drawing.canvas)[0].chars().count(), rows(&drawing.canvas).len());
-        assert_eq!(size(&two_in_a_row), (38, 15));
-        assert_eq!(size(&one_in_a_row), (19, 21));
+        assert_eq!(size(&two_in_a_row), (37, 15));
+        assert_eq!(size(&one_in_a_row).1, 21);
     }
 
     #[test]

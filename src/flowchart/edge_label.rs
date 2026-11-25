@@ -7,15 +7,19 @@ use super::diagram::Diagram;
 use super::route::{Grid, Route, Use};
 
 /// A label's top-left cell for each edge, `None` for an edge without a label or without room for it.
-pub(super) fn place(diagram: &Diagram, routes: &[Route], grid: &Grid) -> Vec<Option<Rect>> {
+///
+/// The room the layout kept for a label is free for that label only, until it is placed.
+pub(super) fn place(diagram: &Diagram, routes: &[Route], grid: &Grid, kept: &[Option<Rect>]) -> Vec<Option<Rect>> {
     let mut grid = grid.clone();
     diagram
         .edges
         .iter()
         .zip(routes)
-        .map(|(edge, route)| {
+        .enumerate()
+        .map(|(index, (edge, route))| {
             let width = edge.label.as_ref()?.width;
-            let rect = spot(&grid, route, width)?;
+            grid.release(index);
+            let rect = spot(&grid, route, width, kept[index])?;
             for x in rect.x..rect.x + rect.width {
                 grid.set(Point::new(x, rect.y), Use::Blocked);
             }
@@ -24,9 +28,10 @@ pub(super) fn place(diagram: &Diagram, routes: &[Route], grid: &Grid) -> Vec<Opt
         .collect()
 }
 
-fn spot(grid: &Grid, route: &Route, width: u16) -> Option<Rect> {
+/// The run through the room `kept` for the label comes first, then the longest.
+fn spot(grid: &Grid, route: &Route, width: u16, kept: Option<Rect>) -> Option<Rect> {
     let mut runs: Vec<Run> = route.corners().windows(2).map(|ends| Run::new(ends[0], ends[1])).collect();
-    runs.sort_by_key(|run| std::cmp::Reverse(run.inner));
+    runs.sort_by_key(|run| std::cmp::Reverse((kept.is_some_and(|kept| run.passes(kept)), run.inner)));
     let middle = || runs.iter().map(|run| (run, 0));
     let slid = || runs.iter().flat_map(|run| run.slides().map(move |slide| (run, slide)));
     let on = |(run, slide): (&Run, i32)| run.on(grid, width, slide);
@@ -51,6 +56,16 @@ impl Run {
         Self { from, horizontal, inner: length.saturating_sub(1) }
     }
 
+    /// Whether the run goes through `rect`, its ends left out.
+    fn passes(self, rect: Rect) -> bool {
+        let (x, y) = (self.from.x, self.from.y);
+        if self.horizontal {
+            y == rect.y && x < rect.x + rect.width && rect.x < x + self.inner + 1
+        } else {
+            (rect.x..rect.x + rect.width).contains(&x) && (y + 1..=y + self.inner).contains(&rect.y)
+        }
+    }
+
     /// Cells a label may move along the run from its middle, the nearest first, each way in turn.
     fn slides(self) -> impl Iterator<Item = i32> {
         (1..=i32::from(self.inner)).flat_map(|cells| [cells, -cells])
@@ -69,7 +84,7 @@ impl Run {
         }
         let last = self.inner.checked_sub(1)?;
         let line = Point::new(self.from.x, self.from.y + 1 + slid(self.inner / 2, slide, 0..=last)?);
-        if self.inner < 2 || grid.get(line) != (Use::Line { horizontal: false }) {
+        if grid.get(line) != (Use::Line { horizontal: false }) {
             return None;
         }
         let centred = line.x.saturating_sub(width / 2);
@@ -139,14 +154,14 @@ mod tests {
     fn a_label_goes_across_a_long_enough_horizontal_run() {
         let (grid, route) = grid_with_run(Point::new(0, 5), Point::new(12, 5));
 
-        assert_eq!(spot(&grid, &route, 3), Some(Rect::new(5, 5, 3, 1)));
+        assert_eq!(spot(&grid, &route, 3, None), Some(Rect::new(5, 5, 3, 1)));
     }
 
     #[test]
     fn a_label_goes_across_a_vertical_run_in_its_lower_half() {
         let (grid, route) = grid_with_run(Point::new(10, 0), Point::new(10, 4));
 
-        assert_eq!(spot(&grid, &route, 3), Some(Rect::new(9, 2, 3, 1)));
+        assert_eq!(spot(&grid, &route, 3, None), Some(Rect::new(9, 2, 3, 1)));
     }
 
     #[test]
@@ -154,15 +169,15 @@ mod tests {
         let (mut grid, route) = grid_with_run(Point::new(10, 0), Point::new(10, 4));
         grid.set(Point::new(7, 2), Use::Blocked);
 
-        assert_eq!(spot(&grid, &route, 3), Some(Rect::new(9, 2, 3, 1)));
-        assert_eq!(spot(&grid, &route, 5), Some(Rect::new(9, 2, 5, 1)));
+        assert_eq!(spot(&grid, &route, 3, None), Some(Rect::new(9, 2, 3, 1)));
+        assert_eq!(spot(&grid, &route, 5, None), Some(Rect::new(9, 2, 5, 1)));
     }
 
     #[test]
     fn a_label_too_wide_for_a_horizontal_run_goes_above_it() {
         let (grid, route) = grid_with_run(Point::new(4, 5), Point::new(10, 5));
 
-        assert_eq!(spot(&grid, &route, 6), Some(Rect::new(4, 4, 6, 1)));
+        assert_eq!(spot(&grid, &route, 6, None), Some(Rect::new(4, 4, 6, 1)));
     }
 
     #[test]
@@ -175,7 +190,7 @@ mod tests {
             }
         }
 
-        assert_eq!(spot(&grid, &route, 3), Some(Rect::new(8, 5, 3, 1)));
+        assert_eq!(spot(&grid, &route, 3, None), Some(Rect::new(8, 5, 3, 1)));
     }
 
     #[test]
@@ -187,14 +202,39 @@ mod tests {
             }
         }
 
-        assert_eq!(spot(&grid, &route, 3), Some(Rect::new(9, 6, 3, 1)));
+        assert_eq!(spot(&grid, &route, 3, None), Some(Rect::new(9, 6, 3, 1)));
+    }
+
+    #[test]
+    fn a_label_goes_on_the_run_through_the_room_kept_for_it_before_a_longer_one() {
+        let (mut grid, down) = grid_with_run(Point::new(10, 5), Point::new(10, 8));
+        let (_, across) = grid_with_run(Point::new(10, 8), Point::new(25, 8));
+        for cell in &across.cells[1..] {
+            grid.set(*cell, Use::Line { horizontal: true });
+        }
+        let route = Route { cells: down.cells.iter().chain(&across.cells[1..]).copied().collect(), end: across.end };
+
+        assert_eq!(spot(&grid, &route, 3, None), Some(Rect::new(16, 8, 3, 1)));
+        assert_eq!(spot(&grid, &route, 3, Some(Rect::new(9, 7, 3, 1))), Some(Rect::new(9, 7, 3, 1)));
+    }
+
+    #[test]
+    fn room_kept_for_another_label_is_not_free_until_released() {
+        let (mut grid, route) = grid_with_run(Point::new(10, 0), Point::new(10, 4));
+        grid.set(Point::new(9, 2), Use::Kept { edge: 7, horizontal: false });
+
+        let mut released = grid.clone();
+        released.release(7);
+
+        assert_eq!(spot(&grid, &route, 3, None), Some(Rect::new(12, 2, 3, 1)));
+        assert_eq!(spot(&released, &route, 3, None), Some(Rect::new(9, 2, 3, 1)));
     }
 
     #[test]
     fn a_label_goes_beside_a_run_with_no_cell_between_its_ends() {
         let (grid, route) = grid_with_run(Point::new(4, 5), Point::new(5, 5));
 
-        assert_eq!(spot(&grid, &route, 2), Some(Rect::new(4, 4, 2, 1)));
+        assert_eq!(spot(&grid, &route, 2, None), Some(Rect::new(4, 4, 2, 1)));
     }
 
     #[test]
@@ -206,6 +246,6 @@ mod tests {
             }
         }
 
-        assert_eq!(spot(&grid, &route, 6), None);
+        assert_eq!(spot(&grid, &route, 6, None), None);
     }
 }
