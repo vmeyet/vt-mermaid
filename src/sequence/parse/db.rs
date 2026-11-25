@@ -175,6 +175,17 @@ impl Statement {
     pub(super) fn named(id: String) -> Self {
         Self::Participant { id, figure: None, description: None, config: None, created: false }
     }
+
+    /// The statement after `create`: mermaid makes any participant statement a creation, even `destroy`.
+    pub(super) fn created(self) -> Self {
+        match self {
+            Self::Participant { id, figure, description, config, .. } => {
+                Self::Participant { id, figure, description, config, created: true }
+            }
+            Self::Destroy { id } => Self::Participant { id, figure: None, description: None, config: None, created: true },
+            other => other,
+        }
+    }
 }
 
 /// Applies `statements` in order, as `apply` does once the whole source parsed.

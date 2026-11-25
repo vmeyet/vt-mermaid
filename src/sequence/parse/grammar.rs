@@ -87,10 +87,12 @@ impl Parser<'_> {
                 self.advance();
                 Ok(())
             }
-            Kind::Participant | Kind::ParticipantActor | Kind::Destroy => self.participant(false),
+            Kind::Participant | Kind::ParticipantActor | Kind::Destroy => {
+                self.participant().map(|statement| self.statements.push(statement))
+            }
             Kind::Create => {
                 self.advance();
-                self.participant(true)
+                self.participant().map(|statement| self.statements.push(statement.created()))
             }
             Kind::Box => self.group(),
             Kind::Link if matches!(self.peek_at(1), Kind::Actor | Kind::Link) => self.actor_link(),
@@ -110,15 +112,14 @@ impl Parser<'_> {
         self.expect(kind).map(|_| ())
     }
 
-    /// `participant`, `actor` or `destroy`, after `create` when `created`.
-    fn participant(&mut self, created: bool) -> Result<(), Invalid> {
+    /// `participant`, `actor` or `destroy`.
+    fn participant(&mut self) -> Result<Statement, Invalid> {
         let keyword = self.peek();
         self.advance();
         let id = self.expect(Kind::Actor)?.to_owned();
         if keyword == Kind::Destroy {
             self.expect(Kind::Newline)?;
-            self.statements.push(Statement::Destroy { id });
-            return Ok(());
+            return Ok(Statement::Destroy { id });
         }
         let config = if self.peek() == Kind::ConfigStart {
             self.advance();
@@ -136,8 +137,7 @@ impl Parser<'_> {
         };
         self.expect(Kind::Newline)?;
         let figure = Some(if keyword == Kind::ParticipantActor { "actor" } else { "participant" });
-        self.statements.push(Statement::Participant { id, figure, description, config, created });
-        Ok(())
+        Ok(Statement::Participant { id, figure, description, config, created: false })
     }
 
     /// `box restOfLine box_section end`, a box holding only participants.
@@ -150,7 +150,10 @@ impl Parser<'_> {
                 Kind::Newline => {
                     self.advance();
                 }
-                Kind::Participant | Kind::ParticipantActor | Kind::Destroy => self.participant(false)?,
+                Kind::Participant | Kind::ParticipantActor | Kind::Destroy => {
+                    let statement = self.participant()?;
+                    self.statements.push(statement);
+                }
                 Kind::End => break,
                 _ => return Err(self.unexpected()),
             }
@@ -349,6 +352,20 @@ mod tests {
         let read = statements("sequenceDiagram\nNote over A,B: both\n").unwrap();
 
         assert_eq!(read[2], Statement::Note { from: "A".to_owned(), to: "B".to_owned(), placement: Placement::Over, text: text("both") });
+    }
+
+    #[test]
+    fn create_marks_any_participant_statement_as_a_creation() {
+        let read = statements("sequenceDiagram\ncreate actor A\ncreate destroy B\n").unwrap();
+
+        let created: Vec<(&str, bool)> = read
+            .iter()
+            .filter_map(|statement| match statement {
+                Statement::Participant { id, created, .. } => Some((id.as_str(), *created)),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(created, [("A", true), ("B", true)]);
     }
 
     #[test]
