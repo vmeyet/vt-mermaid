@@ -65,6 +65,12 @@ pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
     }
 }
 
+/// Reads an ER diagram as `render` does, without laying it out, for the fuzzer: not part of the API, behind the
+/// `fuzz` feature.
+#[cfg(feature = "fuzz")]
+#[doc(hidden)]
+pub use er::{Counts as ErCounts, counts as read_er};
+
 /// Draws the diagram in `source` no wider than `max_width` columns.
 pub fn render(source: &str, max_width: u16) -> Result<Canvas, Error> {
     render_with(source, Settings::new(max_width))
