@@ -2,14 +2,19 @@
 //!
 //! Options: `--kind sequence`, `state`, `class` or `er` measures that kind instead of flowcharts, `--sample <n>` runs one input in n,
 //! `--tools <a,b>` runs only those tools and keeps the others' last results, `--gallery <file.html>` writes the gallery
-//! there instead of `target/scoreboard/gallery.html` (`gallery-sequence.html` for sequence diagrams).
+//! there instead of `target/scoreboard/gallery.html` (`gallery-sequence.html` for sequence diagrams),
+//! `--markdown <file.md>` measures every kind and writes the comparison page there.
 //! [`README.md`](README.md) defines the metrics; `install.sh` installs the competitors.
 
 mod expected;
 mod gallery;
 mod lines;
+mod machine;
 mod metrics;
+mod others;
+mod page;
 mod results;
+mod speed;
 mod tool;
 
 use std::collections::BTreeMap;
@@ -19,10 +24,12 @@ use std::io::{self, Read as _};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
+use std::time::Instant;
 
 use expected::{Expected, Kind};
 use metrics::{Exact, Metrics};
-use results::{Counts, InputResult, Times};
+use page::{Page, Sample};
+use results::{Board, Counts, InputResult, Times};
 use tool::{Run, Status, Tool};
 
 const WIDTHS: [u16; 2] = [80, 100];
@@ -33,6 +40,7 @@ struct Options {
     sample: Option<usize>,
     tools: Vec<Tool>,
     gallery: Option<PathBuf>,
+    markdown: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -61,13 +69,44 @@ fn main() -> Result<(), Box<dyn Error>> {
     match args.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
         ["--render", name, width] => tool::render_in_process(name, width.parse()?),
         ["--measure", width] => measure_in_process(width.parse()?),
-        _ => scoreboard(&Options::parse(&args)?),
+        _ => {
+            let options = Options::parse(&args)?;
+            match &options.markdown {
+                Some(page) => comparison(&options, page),
+                None => scoreboard(&options),
+            }
+        }
     }
 }
 
 fn scoreboard(options: &Options) -> Result<(), Box<dyn Error>> {
+    let gallery = options.gallery.clone().unwrap_or_else(|| default_gallery(options.kind));
+    let board = board(options.kind, options, &gallery)?;
+    println!("{}\ngallery: {}", board.summary, gallery.display());
+    Ok(())
+}
+
+/// Every kind on the board, then the kinds only other tools draw, vt-mermaid timed alone, and the page written from them.
+fn comparison(options: &Options, path: &Path) -> Result<(), Box<dyn Error>> {
+    let started = Instant::now();
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let kind = options.kind;
+    let boards = Kind::ALL.into_iter().map(|kind| board(kind, options, &default_gallery(kind))).collect::<Result<Vec<_>, _>>()?;
+    let installed = installed(&options.tools);
+    let others = others::drawn(&root.join("corpus"), &installed)?;
+    let speeds = speed::timed(root)?;
+    let samples = samples(root, &boards)?;
+    let weak_spots = page::WEAK_SPOTS.iter().map(|spot| Tool::VtMermaid.run(spot.source, WIDTHS[0])).collect::<io::Result<_>>()?;
+    let mermaid = speed::mermaid_version(root)?;
+    let minutes = started.elapsed().as_secs().div_ceil(60);
+    let page = Page { boards, installed, others, speeds, samples, weak_spots, machine: machine::describe(), mermaid, minutes };
+    fs::write(path, page::markdown(&page))?;
+    println!("wrote {}", path.display());
+    Ok(())
+}
+
+/// One kind measured: every tool on every input, the results and summary written, the gallery too.
+fn board(kind: Kind, options: &Options, gallery: &Path) -> Result<Board, Box<dyn Error>> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let inputs = inputs(&root.join("corpus").join(kind.name()), kind, options.sample)?;
     let expected = expected::read(&root.join(format!("oracle/results/{}.json", kind.name())), kind)?;
     let tools = installed(&options.tools);
@@ -86,17 +125,38 @@ fn scoreboard(options: &Options) -> Result<(), Box<dyn Error>> {
     for result in &results {
         result.write(&folder)?;
     }
-    let summary = results::summary(&results, &WIDTHS, &times(&done), kind, options.sample);
+    let times = times(&done);
+    let summary = results::summary(&results, &WIDTHS, &times, kind, options.sample);
     fs::write(results_folder.join("summary.md"), &summary)?;
-    let gallery = options.gallery.clone().unwrap_or_else(|| default_gallery(kind));
-    write_gallery(&gallery, &inputs, &results, &done)?;
-    println!("{summary}\ngallery: {}", gallery.display());
-    Ok(())
+    write_gallery(gallery, &inputs, &results, &done)?;
+    Ok(Board { kind, results, times, summary })
+}
+
+/// The opening example of a syntax page in mermaid's docs, drawn by vt-mermaid and by the best other tool on its kind.
+fn samples(root: &Path, boards: &[Board]) -> Result<Vec<Sample>, Box<dyn Error>> {
+    page::SAMPLES
+        .iter()
+        .map(|&(kind, input)| {
+            let source = fs::read_to_string(root.join("corpus").join(input))?;
+            let rival = boards.iter().find(|board| board.kind == kind).and_then(|board| board.best_rival(WIDTHS[0]));
+            let ours = drawn(Tool::VtMermaid, &source)?;
+            let rival = match rival {
+                Some(tool) => Some((tool, drawn(tool, &source)?)),
+                None => None,
+            };
+            Ok(Sample { input, source, ours, rival })
+        })
+        .collect()
+}
+
+/// A tool's drawing at the narrower width, none when the tool is not installed here.
+fn drawn(tool: Tool, source: &str) -> io::Result<Option<Run>> {
+    if tool.is_installed() { tool.run(source, WIDTHS[0]).map(Some) } else { Ok(None) }
 }
 
 impl Options {
     fn parse(args: &[String]) -> Result<Self, Box<dyn Error>> {
-        let mut options = Self { kind: Kind::Flowchart, sample: None, tools: Tool::ALL.to_vec(), gallery: None };
+        let mut options = Self { kind: Kind::Flowchart, sample: None, tools: Tool::ALL.to_vec(), gallery: None, markdown: None };
         let mut args = args.iter();
         while let Some(flag) = args.next() {
             let value = args.next().ok_or_else(|| format!("{flag} needs a value"))?;
@@ -110,8 +170,12 @@ impl Options {
                 }
                 "--gallery" => options.gallery = Some(PathBuf::from(value)),
                 "--kind" => options.kind = Kind::named(value).ok_or_else(|| format!("no diagram kind named {value}"))?,
+                "--markdown" => options.markdown = Some(PathBuf::from(value)),
                 _ => return Err(format!("unknown option {flag}").into()),
             }
+        }
+        if options.markdown.is_some() && (options.sample.is_some() || options.gallery.is_some() || options.kind != Kind::Flowchart) {
+            return Err("--markdown measures every input of every kind: drop --sample, --kind and --gallery".into());
         }
         Ok(options)
     }
@@ -148,17 +212,21 @@ fn installed(tools: &[Tool]) -> Vec<Tool> {
     present
 }
 
-/// Runs every job on all cores; each worker takes the next job until none is left.
 fn run_all(inputs: &[Input], tools: &[Tool], kind: Kind) -> io::Result<Vec<Done>> {
     let jobs: Vec<Job> = (0..inputs.len())
         .flat_map(|input| WIDTHS.into_iter().flat_map(move |width| tools.iter().map(move |&tool| Job { input, tool, width })))
         .collect();
+    parallel(&jobs, |&job| run(job, &inputs[job.input], kind))
+}
+
+/// Does every job on all cores; each worker takes the next job until none is left.
+fn parallel<J: Sync, D: Send>(jobs: &[J], work: impl Fn(&J) -> io::Result<D> + Sync) -> io::Result<Vec<D>> {
     let next = AtomicUsize::new(0);
     let workers = thread::available_parallelism().map_or(4, usize::from);
-    let worker = || -> io::Result<Vec<Done>> {
+    let worker = || -> io::Result<Vec<D>> {
         let mut done = Vec::new();
-        while let Some(&job) = jobs.get(next.fetch_add(1, Ordering::Relaxed)) {
-            done.push(run(job, &inputs[job.input], kind)?);
+        while let Some(job) = jobs.get(next.fetch_add(1, Ordering::Relaxed)) {
+            done.push(work(job)?);
             if done.len() % 200 == 0 {
                 eprintln!("{} of {} runs started", next.load(Ordering::Relaxed).min(jobs.len()), jobs.len());
             }

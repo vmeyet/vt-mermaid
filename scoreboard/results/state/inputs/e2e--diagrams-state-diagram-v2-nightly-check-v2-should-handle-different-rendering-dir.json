@@ -11,7 +11,7 @@
       "100": {"status":"refused","reason":"level=fatal msg=\"failed to parse graph diagram: unsupported graph type 'stateDiagram-v2'. Supported types: 'graph' or 'f","score":0}
     },
     "mermaid-text": {
-      "80": {"status":"rendered","drawn":{"width":22,"rows":23,"area":506,"fits":true,"node_labels":6,"edge_labels":0,"arrows":2,"crossings":0,"bends":1},"score":95},
+      "80": {"status":"rendered","drawn":{"width":22,"rows":22,"area":484,"fits":true,"node_labels":6,"edge_labels":0,"arrows":2,"crossings":0,"bends":1},"score":95},
       "100": {"status":"rendered","drawn":{"width":22,"rows":23,"area":506,"fits":true,"node_labels":6,"edge_labels":0,"arrows":2,"crossings":0,"bends":1},"score":95}
     },
     "vt-mermaid": {

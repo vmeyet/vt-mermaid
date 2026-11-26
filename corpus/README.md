@@ -4,17 +4,24 @@ Mermaid inputs harvested from [mermaid-js/mermaid](https://github.com/mermaid-js
 They are © Knut Sveidqvist and the mermaid contributors, under the MIT license copied in [`LICENSE-mermaid`](LICENSE-mermaid).
 The files are generated: regenerate them instead of editing them by hand.
 
+The corpus feeds the [oracle](../oracle/README.md), the parsers' agreement tests, the snapshot tests and the [scoreboard](../scoreboard/README.md).
+
 ## Layout
 
-- `<kind>/<origin>--<source>[--L<line>].mmd`: one unique input per file.
+Each file is `<kind>/<origin>--<source>[--L<line>].mmd`: one unique input.
+
 - `kind` is the diagram kind the pinned mermaid reports when it parses the input, or detects when it rejects it, under a short folder name (`classDiagram` is `class`, `flowchart-v2` is `flowchart`…).
   `zenuml` is told apart by its header, since mermaid does not load that package; `unknown/` holds the inputs mermaid finds no kind in.
 - `origin` is where it came from:
-  - `spec`: a string or template literal in a `*.spec.*` or `*.test.*` file under `packages/`, kept when mermaid detects a diagram kind in it; test titles and lone keywords are skipped.
-  - `e2e`: a `.mmd` file under `e2e/`, the Playwright suite that replaced `cypress/integration/rendering/`.
-  - `docs`: a `mermaid`, `mermaid-example` or `mermaid-nocode` fence in `packages/mermaid/src/docs/`.
+
+  | Origin | Source in the mermaid repo |
+  |---|---|
+  | `spec` | A string or template literal in a `*.spec.*` or `*.test.*` file under `packages/`, kept when mermaid detects a diagram kind in it; test titles and lone keywords are skipped |
+  | `e2e` | A `.mmd` file under `e2e/`, the Playwright suite that replaced `cypress/integration/rendering/` |
+  | `docs` | A `mermaid`, `mermaid-example` or `mermaid-nocode` fence in `packages/mermaid/src/docs/` |
+
 - [`sources.json`](sources.json) lists, for each file, every place in the mermaid repo the same input appears.
-- Inputs are dedented, stripped of leading blank lines and trailing spaces, and deduplicated on that text; 4777 found, 4588 unique.
+- Inputs are dedented, stripped of leading blank lines and trailing spaces, and deduplicated on that text: 4777 found, 4588 unique.
 - Template literals with `${…}` and strings built by concatenation are skipped; `e2e` sidecar configs are not used.
 
 ## Counts

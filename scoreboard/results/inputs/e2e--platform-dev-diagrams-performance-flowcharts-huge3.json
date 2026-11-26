@@ -11,7 +11,7 @@
       "100": {"status":"rendered","drawn":{"width":3427,"rows":47,"area":161069,"fits":false,"node_labels":94,"edge_labels":0,"arrows":11,"crossings":30,"bends":368},"score":59}
     },
     "mermaid-text": {
-      "80": {"status":"refused","reason":"rendered diagram is 1504 columns wide, exceeding the strict budget of 80","score":0},
+      "80": {"status":"refused","reason":"rendered diagram is 1502 columns wide, exceeding the strict budget of 80","score":0},
       "100": {"status":"refused","reason":"rendered diagram is 1504 columns wide, exceeding the strict budget of 100","score":0}
     },
     "vt-mermaid": {
