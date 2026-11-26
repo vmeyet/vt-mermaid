@@ -40,10 +40,33 @@ pub(in crate::flowchart) struct Text {
 }
 
 impl Text {
-    /// The label as mermaid shows it, entities decoded.
+    /// The label as mermaid shows it, entities decoded, Font Awesome icons left out with the spaces after them: mermaid
+    /// draws an icon there, which no cell can.
     pub(in crate::flowchart) fn shown(&self) -> String {
-        entity::decoded(&self.value)
+        entity::decoded(&without_icons(&self.value))
     }
+}
+
+/// `text` without the Font Awesome icons mermaid's `/(fa[bklrs]?):fa-([\w-]+)/g` finds, nor the spaces after each.
+fn without_icons(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(at) = rest.find("fa") {
+        out.push_str(&rest[..at]);
+        let after = &rest[at + 2..];
+        let after = after.strip_prefix(['b', 'k', 'l', 'r', 's']).unwrap_or(after);
+        let name = after
+            .strip_prefix(":fa-")
+            .map(|name| name.trim_start_matches(|char: char| char.is_ascii_alphanumeric() || matches!(char, '_' | '-')));
+        if let Some(name) = name.filter(|name| name.len() + 4 < after.len()) {
+            rest = name.trim_start_matches(is_space);
+        } else {
+            out.push_str("fa");
+            rest = &rest[at + 2..];
+        }
+    }
+    out.push_str(rest);
+    out
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -358,6 +381,17 @@ mod tests {
 
     fn text(value: &str) -> Text {
         Text { value: value.to_owned(), kind: TextKind::String }
+    }
+
+    #[test]
+    fn a_font_awesome_icon_is_left_out_with_the_spaces_after_it() {
+        assert_eq!(text("fa:fa-car Car").shown(), "Car");
+        assert_eq!(text("Go fab:fa-github  now fas:fa-x").shown(), "Go now ");
+    }
+
+    #[test]
+    fn text_like_an_icon_without_its_name_is_kept() {
+        assert_eq!(text("sofa: fa:fa- fax:fa-car").shown(), "sofa: fa:fa- fax:fa-car");
     }
 
     fn arrow() -> LinkData {

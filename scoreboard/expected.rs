@@ -342,11 +342,17 @@ fn sequence_arrowheads(kind: &str) -> Option<usize> {
 
 const BREAKS: [&str; 3] = ["<br>", "<br/>", "<br />"];
 
-/// The words a label shows once its markup is gone, the oracle's escaped characters read back.
+/// The words a label shows once its markup is gone, the oracle's escaped characters read back; a Font Awesome icon
+/// (`fa:fa-car`) is no word, as mermaid draws an icon there.
 fn words(label: &str) -> Vec<String> {
     let text = without_markup(label);
     let text = text.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'");
-    text.split_whitespace().map(str::to_owned).collect()
+    text.split_whitespace().filter(|word| !is_icon(word)).map(str::to_owned).collect()
+}
+
+fn is_icon(word: &str) -> bool {
+    let prefix = word.strip_prefix("fa").map(|rest| rest.strip_prefix(['b', 'k', 'l', 'r', 's']).unwrap_or(rest));
+    prefix.and_then(|rest| rest.strip_prefix(":fa-")).is_some_and(|name| !name.is_empty())
 }
 
 /// Text with its markup gone, the same for the oracle's labels and every tool's drawing: `<br>` in any spelling
@@ -387,6 +393,11 @@ mod tests {
     #[test]
     fn a_label_loses_its_markup_and_keeps_its_words() {
         assert_eq!(words("`The **cat**`<br>in &amp; <strong>out</strong>"), ["The", "cat", "in", "&", "out"]);
+    }
+
+    #[test]
+    fn a_font_awesome_icon_is_no_word() {
+        assert_eq!(words("fa:fa-car Car fab:fa-github"), ["Car"]);
     }
 
     #[test]

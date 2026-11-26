@@ -70,6 +70,7 @@ For an ER diagram ([`oracle/results/er.json`](../oracle/results/er.json), 312 of
 | Median ms, p95 ms | Wall time of the child process over every input, start-up included: Node and ELK add about half a second to beautiful-mermaid | Noisy: the runs share all cores |
 
 Markup removed means: `<br>`, `<br/>` and `<br />` are a space, a tag (`<` with a letter or `/`, up to `>`) goes as the oracle's sanitised labels drop it, and so do `*` and backticks.
+A Font Awesome icon (`fa:fa-car`) is no word of a label, as mermaid draws an icon there.
 The oracle's escaped characters (`&lt;`, `&amp;`…) are read back; a tool's are not, as a user would see them.
 
 ### Lines followed
