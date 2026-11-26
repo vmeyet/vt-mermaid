@@ -96,7 +96,6 @@ fn explicit_lines(text: &str) -> Vec<String> {
     if lines.is_empty() { vec![String::new()] } else { lines }
 }
 
-/// The pieces on lines of at most `max_width` columns, a space between two on a line; a piece wider has its own.
 /// Mermaid's `lineBreakRegex`, `<br\s*/?>` in any case, as a line end.
 fn with_breaks_as_line_ends(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
@@ -116,6 +115,7 @@ fn with_breaks_as_line_ends(text: &str) -> String {
     out
 }
 
+/// The pieces on lines of at most `max_width` columns, a space between two on a line; a piece wider has its own.
 fn filled(pieces: impl Iterator<Item = String>, max_width: usize) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
     for piece in pieces {

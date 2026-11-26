@@ -78,6 +78,11 @@ pub fn render_with(source: &str, settings: Settings) -> Result<Canvas<Role>, Err
     Kind::of(&prepared)?.render(&prepared, settings.clamped())
 }
 
+/// The README's examples, run as doc tests.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeExamples;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -89,6 +94,11 @@ mod tests {
     /// A chain of 60 nodes flowing sideways needs more than [`MAX_WIDTH`] columns as written.
     fn long_chain() -> String {
         format!("flowchart LR\n{}", (1..60).map(|index| format!("  n{} --> n{index}\n", index - 1)).collect::<String>())
+    }
+
+    #[test]
+    fn a_flowchart_with_nothing_after_its_header_is_an_empty_canvas() {
+        assert_eq!(lines(render("graph", 80)), Ok(Vec::new()));
     }
 
     #[test]

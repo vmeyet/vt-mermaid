@@ -9,7 +9,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 - Mermaid source to a text drawing, one diagram kind at a time; flowcharts, sequence, state, class and ER diagrams today.
 - Laying a graph (a flowchart, a state, class or ER diagram) out in layers on the grid, then routing its edges on the grid.
 - Laying a sequence diagram out: each participant's column, then each event on rows of its own.
-- Handing chart kinds (xychart, pie, sankey…) to vt-graph.
+- Chart kinds (xychart, pie, sankey…) are planned to go to vt-graph, a crate not written yet; today they are `Error::Unsupported`.
 
 ## Never
 
@@ -22,6 +22,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 - `render(source, max_width)` returns the drawing as a `Canvas`, at most `max_width` columns wide; a `max_width` over vt-canvas's 1000 columns (`MAX_WIDTH`) counts as 1000, in `Settings::new` and again in `render_with`, as the field is public.
   `render_with(source, settings)` does the same as `Settings` say: `max_width`, and `long_words`, `Break` unless set.
+  A flowchart with nothing after its header (`graph`) is an empty canvas, 0 by 0: mermaid accepts it and draws nothing.
   A flowchart or a state diagram too wide, or with an edge left without a path, is laid out again until it fits: tight; tight with node labels wrapped at 20 then 14 columns; with the ranks going down folded to 8, 7, 6, 5 and 4 eighths of the width; folded again to 8 down to 2 eighths with labels wrapped at 14; then packed to 8, 6 and 4 eighths without room for the links passing a rank; each as written, then turned top-down when it or one of its groups flows sideways.
   That is at most thirty-eight placements, each routed only when its blocks fit; one still too wide is `Error::TooWide`, so the caller can fall back.
   The ladder stops once the same edge found no path in two placements (`Error::Unroutable`), and once the path searches of every placement together took 6 million cells off their queues (`MAX_ROUTING_STEPS`, `Error::TooComplex`); the searches share their memory, a stamp per state telling one search's costs from the last.
@@ -226,10 +227,10 @@ An ER diagram counts its entities and subgraphs against `MAX_NODES`, its relatio
 ## Dependency direction
 
 ```
-vt-canvas ← vt-graph ← vt-mermaid
+vt-canvas ← vt-mermaid
 ```
 
-vt-mermaid depends on vt-canvas and vt-graph; the parser and the layout are its own, and `mermaid-rs-renderer` is a dev-dependency of `examples/agreement.rs` only.
+vt-mermaid depends on vt-canvas alone, from crates.io; vt-graph, planned for chart kinds, would sit between them; the parser and the layout are its own, and `mermaid-rs-renderer` is a dev-dependency of `examples/agreement.rs` only.
 
 ## Test corpus
 
