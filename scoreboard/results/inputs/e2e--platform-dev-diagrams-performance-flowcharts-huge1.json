@@ -3,8 +3,8 @@
   "expected": {"node_labels":554,"edge_labels":50,"arrows":50},
   "tools": {
     "beautiful-mermaid": {
-      "80": {"status":"rendered","drawn":{"width":28716,"rows":17,"area":488172,"fits":false,"node_labels":373,"edge_labels":50,"arrows":34,"crossings":1,"bends":50},"score":53},
-      "100": {"status":"rendered","drawn":{"width":28716,"rows":17,"area":488172,"fits":false,"node_labels":373,"edge_labels":50,"arrows":34,"crossings":1,"bends":50},"score":53}
+      "80": {"status":"timed_out","reason":"","score":0},
+      "100": {"status":"timed_out","reason":"","score":0}
     },
     "mermaid-ascii": {
       "80": {"status":"crashed","reason":"panic: runtime error: index out of range [1] with length 1","score":0},

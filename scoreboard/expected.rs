@@ -20,6 +20,8 @@ pub(crate) enum Kind {
 }
 
 impl Kind {
+    pub(crate) const ALL: [Self; 5] = [Self::Flowchart, Self::Sequence, Self::State, Self::Class, Self::Er];
+
     /// Its folder under `corpus/` and its oracle file's name.
     pub(crate) fn name(self) -> &'static str {
         match self {
@@ -43,7 +45,7 @@ impl Kind {
     }
 
     pub(crate) fn named(name: &str) -> Option<Self> {
-        [Self::Flowchart, Self::Sequence, Self::State, Self::Class, Self::Er].into_iter().find(|kind| kind.name() == name)
+        Self::ALL.into_iter().find(|kind| kind.name() == name)
     }
 
     /// Its folder under `scoreboard/results/`: flowcharts were there first, at the top.

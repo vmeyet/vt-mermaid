@@ -31,6 +31,28 @@ pub(crate) struct Counts {
 /// Wall times in milliseconds, by tool and width, for the tools run this time.
 pub(crate) type Times = BTreeMap<(Tool, u16), Vec<u64>>;
 
+/// One kind measured: every input's results, the wall times of the tools run this time and the summary page.
+#[derive(Debug)]
+pub(crate) struct Board {
+    pub(crate) kind: Kind,
+    pub(crate) results: Vec<InputResult>,
+    pub(crate) times: Times,
+    pub(crate) summary: String,
+}
+
+impl Board {
+    /// The other tool with the best mean score at `width`, none when no other tool drew any input.
+    pub(crate) fn best_rival(&self, width: u16) -> Option<Tool> {
+        Tool::ALL
+            .into_iter()
+            .filter(|&tool| tool != Tool::VtMermaid)
+            .filter_map(|tool| Some((tool, mean_score(&self.results, tool, width)?)))
+            .filter(|&(_, score)| score > 0.0)
+            .max_by(|(_, one), (_, other)| one.total_cmp(other))
+            .map(|(tool, _)| tool)
+    }
+}
+
 impl Counts {
     pub(crate) fn of(expected: &Expected) -> Self {
         Self { node_labels: expected.node_labels.len(), edge_labels: expected.edge_labels.len(), arrows: expected.arrows }
@@ -112,7 +134,7 @@ pub(crate) fn summary(results: &[InputResult], widths: &[u16], times: &Times, ki
     page
 }
 
-fn tools_table(results: &[InputResult], width: u16, times: &Times) -> String {
+pub(crate) fn tools_table(results: &[InputResult], width: u16, times: &Times) -> String {
     let mut table = String::from(
         "| Tool | Rendered | Refused | Crashed | Timed out | Fits | Node labels | Edge labels | Arrows right | Score | Median ms | p95 ms |\n|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n",
     );
@@ -131,8 +153,7 @@ fn tools_table(results: &[InputResult], width: u16, times: &Times) -> String {
             with_oracle.iter().filter(|(metrics, counts)| metrics.drawn.is_some_and(|drawn| drawn.arrows == counts.arrows)).count(),
             with_oracle.len(),
         );
-        let scores: Vec<usize> = with_oracle.iter().filter_map(|(metrics, _)| metrics.score).map(|score| score as usize).collect();
-        let score = mean(scores.iter().copied(), scores.len());
+        let score = mean_score(results, tool, width).map_or_else(|| "–".to_owned(), |score| format!("{score:.1}"));
         let (median, p95) =
             times.get(&(tool, width)).map_or_else(|| ("–".to_owned(), "–".to_owned()), |times| (quantile(times, 50), quantile(times, 95)));
         table.push_str(&format!(
@@ -204,6 +225,13 @@ fn exact_table(results: &[InputResult], widths: &[u16]) -> String {
         ));
     }
     table
+}
+
+/// The mean of a tool's scores at `width` over the inputs that have one, a refusal scoring 0; none when it has no result.
+pub(crate) fn mean_score(results: &[InputResult], tool: Tool, width: u16) -> Option<f64> {
+    let scores: Vec<u32> =
+        results.iter().filter(|result| result.expected.is_some()).filter_map(|result| result.metrics(tool, width)?.score).collect();
+    (!scores.is_empty()).then(|| f64::from(scores.iter().sum::<u32>()) / float(scores.len()))
 }
 
 /// The share of labels found, averaged over the inputs that have some, so a 50-node flowchart weighs as much as a 2-node one.

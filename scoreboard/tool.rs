@@ -63,6 +63,25 @@ impl Tool {
         }
     }
 
+    /// What the tool is written in and how the board runs it.
+    pub(crate) fn runs_as(self) -> &'static str {
+        match self {
+            Self::VtMermaid => "Rust, in-process in a child of the runner",
+            Self::MermaidText => "Rust, in-process in a child of the runner",
+            Self::MermaidAscii => "Go, its release binary with `--max-width`",
+            Self::BeautifulMermaid => "TypeScript, `renderMermaidASCII` in Node",
+        }
+    }
+
+    pub(crate) fn home(self) -> &'static str {
+        match self {
+            Self::VtMermaid => "https://github.com/vmeyet/vt-mermaid",
+            Self::MermaidText => "https://crates.io/crates/mermaid-text",
+            Self::MermaidAscii => "https://github.com/AlexanderGrooff/mermaid-ascii",
+            Self::BeautifulMermaid => "https://github.com/lukilabs/beautiful-mermaid",
+        }
+    }
+
     pub(crate) fn named(name: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tool| tool.name() == name)
     }
