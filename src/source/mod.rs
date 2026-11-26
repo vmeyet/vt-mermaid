@@ -22,8 +22,11 @@ pub(crate) enum Kind {
     Er,
 }
 
+/// Most characters of the header an [`Error::Unsupported`] quotes.
+const HEADER_CHARS: usize = 32;
+
 /// Headers of the diagram kinds mermaid knows but none drawn here, each a prefix of the word a source starts with.
-const OTHER_KINDS: [&str; 26] = [
+const OTHER_KINDS: [&str; 33] = [
     "journey",
     "gantt",
     "pie",
@@ -50,6 +53,13 @@ const OTHER_KINDS: [&str; 26] = [
     "swimlane",
     "venn",
     "ishikawa",
+    "cynefin",
+    "wardley",
+    "agentflow",
+    "eventmodeling",
+    "treeView",
+    "usecase",
+    "railroad",
 ];
 
 impl Kind {
@@ -71,7 +81,7 @@ impl Kind {
         } else if opens_with(&text, "erDiagram") {
             Ok(Self::Er)
         } else if OTHER_KINDS.iter().any(|kind| opens_with(&text, kind)) {
-            Err(Error::Unsupported)
+            Err(Error::Unsupported { kind: header(&text) })
         } else {
             Err(Error::Invalid { reason: "no diagram type matches the text".to_owned() })
         }
@@ -81,6 +91,18 @@ impl Kind {
 /// Whether prepared `text` opens with `header` as mermaid's detectors see it: comments left out, then spaces.
 pub(crate) fn opens_with(text: &str, header: &str) -> bool {
     without_any_comments(text).trim_start_matches(is_space).starts_with(header)
+}
+
+/// The word prepared `text` opens with, cut to [`HEADER_CHARS`] ASCII letters, digits and `-`, so an error may quote
+/// it.
+fn header(text: &str) -> String {
+    let uncommented = without_any_comments(text);
+    uncommented
+        .trim_start_matches(is_space)
+        .chars()
+        .take_while(|char| char.is_ascii_alphanumeric() || *char == '-')
+        .take(HEADER_CHARS)
+        .collect()
 }
 
 /// A character of a JavaScript regex `\s`, the space mermaid's patterns mean.
@@ -113,6 +135,11 @@ pub(crate) fn sanitized(text: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::path::Path;
+
+    use serde_json::Value;
+
     use super::*;
 
     #[test]
@@ -124,8 +151,41 @@ mod tests {
 
     #[test]
     fn a_diagram_of_another_kind_is_unsupported_and_text_without_a_header_invalid() {
-        assert_eq!(Kind::of("journey\n  title A day"), Err(Error::Unsupported));
+        assert_eq!(Kind::of("journey\n  title A day"), Err(Error::Unsupported { kind: "journey".to_owned() }));
         assert!(matches!(Kind::of("not a diagram"), Err(Error::Invalid { .. })));
+    }
+
+    #[test]
+    fn an_unsupported_kind_quotes_its_header_cut_to_letters_digits_and_dashes() {
+        let long = format!("xychart-beta{}\x1b[31m", "-".repeat(40));
+
+        assert_eq!(Kind::of("%% c\n  pie title Pets"), Err(Error::Unsupported { kind: "pie".to_owned() }));
+        assert_eq!(Kind::of(&long), Err(Error::Unsupported { kind: long[..HEADER_CHARS].to_owned() }));
+    }
+
+    /// Every kind mermaid accepts in the corpus but those drawn here is told apart from text that is no diagram; only a
+    /// radar chart whose front matter closes less indented than it opens, which mermaid's radar parser reads past and
+    /// the shared preparation does not, is left out.
+    #[test]
+    fn every_corpus_diagram_mermaid_accepts_of_a_kind_not_drawn_is_unsupported() {
+        let drawn = ["flowchart-v2", "flowchart-elk", "sequence", "stateDiagram", "classDiagram", "er"];
+        let unfenced = "radar/e2e--platform-dev-diagrams-knsv-knsv2-03-radar.mmd";
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let oracle: Value = serde_json::from_str(&fs::read_to_string(root.join("oracle/results/parse.json")).unwrap()).unwrap();
+
+        let mut found = Vec::new();
+        for (path, verdict) in oracle["cases"].as_object().unwrap() {
+            let kind = verdict["kind"].as_str().unwrap_or_default();
+            if verdict["accepted"] != true || drawn.contains(&kind) || path == unfenced {
+                continue;
+            }
+            let source = fs::read_to_string(root.join("corpus").join(path)).unwrap();
+            if !matches!(Kind::of(&source), Err(Error::Unsupported { .. })) {
+                found.push(path.clone());
+            }
+        }
+
+        assert_eq!(found, [""; 0]);
     }
 
     #[test]

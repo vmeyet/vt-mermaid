@@ -20,14 +20,14 @@ This page says how the code is laid out today; when a module or a boundary chang
 
 ## Contract
 
-- `render(source, max_width)` returns the drawing as a `Canvas`, at most `max_width` columns wide.
+- `render(source, max_width)` returns the drawing as a `Canvas`, at most `max_width` columns wide; a `max_width` over vt-canvas's 1000 columns (`MAX_WIDTH`) counts as 1000, in `Settings::new` and again in `render_with`, as the field is public.
   `render_with(source, settings)` does the same as `Settings` say: `max_width`, and `long_words`, `Break` unless set.
   A flowchart or a state diagram too wide, or with an edge left without a path, is laid out again until it fits: tight; tight with node labels wrapped at 20 then 14 columns; with the ranks going down folded to 8, 7, 6, 5 and 4 eighths of the width; folded again to 8 down to 2 eighths with labels wrapped at 14; then packed to 8, 6 and 4 eighths without room for the links passing a rank; each as written, then turned top-down when it or one of its groups flows sideways.
   That is at most thirty-eight placements, each routed only when its blocks fit; one still too wide is `Error::TooWide`, so the caller can fall back.
   A sequence diagram too wide is laid out again: its labels as written, then wrapped at spaces to 60, 48, 40, 32, 26, 20, 16, 12, 10, 8 and 6 columns, a word up to 30 columns kept whole; the same with heads 1 space apart instead of 3; then wrapped to 30 columns down to 6, one at a time, every word wider than the lines broken or cut as `long_words` says.
   That is at most forty-nine placements, each a few passes over the events; one still too wide is `Error::TooWide`.
-- Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`); a sequence diagram has at most 50 participants (`MAX_PARTICIPANTS`) and 1000 messages (`MAX_MESSAGES`), notes, activations and the starts, sections and ends of blocks included; a state diagram counts towards `MAX_NODES` the nodes mermaid's renderer gets, start and end dots, notes, their groups and concurrent regions included, and each composite state's opening while it is read, and towards `MAX_EDGES` its transitions and the links of its notes.
-  The parser counts nodes and edges as it reads them, an `&` group's edges before it makes them, and stops at the first over a limit.
+- Limits, each an `Error` the caller can match: 64 KiB of source (`MAX_SOURCE_BYTES`), 200 nodes and subgraphs together (`MAX_NODES`), 150 edges (`MAX_EDGES`), invisible links included, 250000 cells on the routing grid (`MAX_AREA`), a million on the canvas (`MAX_CELLS`), `TooLarge` naming the one it is over; a sequence diagram has at most 50 participants (`MAX_PARTICIPANTS`) and 1000 messages (`MAX_MESSAGES`), notes, activations and the starts, sections and ends of blocks included; a state diagram counts towards `MAX_NODES` the nodes mermaid's renderer gets, start and end dots, notes, their groups and concurrent regions included, and each composite state's opening while it is read, and towards `MAX_EDGES` its transitions and the links of its notes.
+  The parser counts nodes and edges as it reads them, an `&` group's edges before it makes them, and stops at the first over a limit: the count an error carries is where reading stopped, a lower bound of what the source holds.
 - Time, measured on an Apple M5 in a release build with `cargo bench --bench limits` and `cargo bench --bench corpus`, the fastest of a few runs on a shared machine:
   - The corpus's 946 flowcharts at 100 columns: median 15 µs, p95 0.6 ms, p99 1.4 ms, slowest 19 ms (`e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression`, packed after every other placement was too wide, and routed again with a stuck edge first).
   - The layout takes microseconds; the grid routing takes nearly all the time, more with every placement tried.
@@ -57,7 +57,7 @@ This page says how the code is laid out today; when a module or a boundary chang
 ## Every kind
 
 `source` holds what every diagram kind shares before its own parser: mermaid's preparation of the text, its entities, the YAML of `@{ … }` blocks, and the kind a source is, read from its first word once the front matter, directives and comment lines are left out.
-`render` checks the length, reads the kind and hands the source to that kind's module; a kind mermaid knows but not drawn here is `Error::Unsupported`.
+`render` checks the length, reads the kind and hands the source to that kind's module; a kind mermaid knows but not drawn here is `Error::Unsupported`, quoting the source's first word, at most 32 ASCII letters, digits and `-`.
 `role` holds `Role`, what each cell of a drawing is drawn for.
 
 ## Flowcharts

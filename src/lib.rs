@@ -19,7 +19,7 @@ mod settings;
 mod source;
 mod state;
 
-pub use error::{Error, MAX_AREA, MAX_EDGES, MAX_MESSAGES, MAX_NODES, MAX_PARTICIPANTS, MAX_SOURCE_BYTES};
+pub use error::{Error, MAX_AREA, MAX_CELLS, MAX_EDGES, MAX_MESSAGES, MAX_NODES, MAX_PARTICIPANTS, MAX_SOURCE_BYTES, MAX_WIDTH};
 pub use role::Role;
 pub use settings::{LongWords, Settings};
 pub use vt_canvas::{Canvas, GlyphSet, Run};
@@ -63,7 +63,7 @@ pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
         source::Kind::State => state::measure(source, max_width),
         source::Kind::Class => class::measure(source, max_width),
         source::Kind::Er => er::measure(source, max_width),
-        source::Kind::Sequence => Err(Error::Unsupported),
+        source::Kind::Sequence => Err(Error::Unsupported { kind: "sequenceDiagram".to_owned() }),
     }
 }
 
@@ -73,7 +73,7 @@ pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {
 #[doc(hidden)]
 pub use er::{Counts as ErCounts, counts as read_er};
 
-/// Draws the diagram in `source` no wider than `max_width` columns.
+/// Draws the diagram in `source` no wider than `max_width` columns, and never more than [`MAX_WIDTH`].
 pub fn render(source: &str, max_width: u16) -> Result<Canvas<Role>, Error> {
     render_with(source, Settings::new(max_width))
 }
@@ -89,11 +89,59 @@ pub fn render(source: &str, max_width: u16) -> Result<Canvas<Role>, Error> {
 /// # Ok::<(), vt_mermaid::Error>(())
 /// ```
 pub fn render_with(source: &str, settings: Settings) -> Result<Canvas<Role>, Error> {
+    let settings = settings.clamped();
     match source::Kind::of(source)? {
         source::Kind::Flowchart => flowchart::render_with(source, settings).map(|drawing| drawing.canvas),
         source::Kind::Sequence => sequence::render_with(source, settings),
         source::Kind::State => state::render_with(source, settings),
         source::Kind::Class => class::render_with(source, settings).map(|drawing| drawing.canvas),
         source::Kind::Er => er::render_with(source, settings).map(|drawing| drawing.canvas),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn lines(drawn: Result<Canvas<Role>, Error>) -> Result<Vec<String>, Error> {
+        drawn.map(|canvas| canvas.lines(GlyphSet::Unicode).collect())
+    }
+
+    /// A chain of 60 nodes flowing sideways needs more than [`MAX_WIDTH`] columns as written.
+    fn long_chain() -> String {
+        format!("flowchart LR\n{}", (1..60).map(|index| format!("  n{} --> n{index}\n", index - 1)).collect::<String>())
+    }
+
+    #[test]
+    fn a_width_over_the_canvas_limit_draws_as_the_limit_does() {
+        let at_the_limit = lines(render(&long_chain(), MAX_WIDTH));
+
+        assert!(at_the_limit.is_ok(), "{at_the_limit:?}");
+        assert_eq!(lines(render(&long_chain(), MAX_WIDTH + 1)), at_the_limit);
+        assert_eq!(lines(render(&long_chain(), u16::MAX)), at_the_limit);
+    }
+
+    #[test]
+    fn a_width_over_the_canvas_limit_set_on_the_settings_draws_as_the_limit_does() {
+        let mut settings = Settings::new(MAX_WIDTH);
+        settings.max_width = u16::MAX;
+
+        assert_eq!(lines(render_with(&long_chain(), settings)), lines(render(&long_chain(), MAX_WIDTH)));
+    }
+
+    #[test]
+    fn composite_states_nested_to_the_node_limit_are_too_large_to_route() {
+        let opened: String = (0..MAX_NODES - 1).map(|index| format!("  state c{index} {{\n")).collect();
+        let source = format!("stateDiagram-v2\n{opened}  deep\n{}", "  }\n".repeat(MAX_NODES - 1));
+
+        assert!(matches!(render(&source, MAX_WIDTH), Err(Error::TooLarge { max_cells: MAX_AREA, .. })));
+    }
+
+    #[test]
+    fn a_kind_mermaid_knows_but_not_drawn_is_unsupported_and_names_its_header() {
+        let refused = render("xychart-beta\n  bar [1, 2]", 80);
+
+        assert_eq!(refused, Err(Error::Unsupported { kind: "xychart-beta".to_owned() }));
+        assert_eq!(refused.unwrap_err().to_string(), "xychart-beta diagrams are not drawn as text yet");
     }
 }

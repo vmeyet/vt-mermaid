@@ -33,7 +33,7 @@ pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Canvas<Rol
             drawn => return drawn,
         }
     }
-    Err(Error::TooWide { width: narrowest, max_width })
+    Err(Error::TooWide { width: narrowest, max_width: usize::from(max_width) })
 }
 
 /// How much a sequence diagram holds once read.

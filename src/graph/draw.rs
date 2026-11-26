@@ -7,7 +7,7 @@ use super::layout::Divider;
 use super::route::{Route, opposite};
 use super::shape;
 use crate::Role;
-use crate::error::Error;
+use crate::error::{Error, MAX_CELLS};
 
 /// Where each part goes on the routing grid.
 #[derive(Debug, Clone)]
@@ -28,10 +28,10 @@ pub(super) fn draw(diagram: &Diagram, parts: Parts, max_width: u16) -> Result<Dr
     let bounds = bounds(&parts);
     let parts = moved(parts, bounds);
     if bounds.width > max_width {
-        return Err(Error::TooWide { width: usize::from(bounds.width), max_width });
+        return Err(Error::TooWide { width: usize::from(bounds.width), max_width: usize::from(max_width) });
     }
-    let mut canvas = Canvas::new(bounds.width, bounds.height)
-        .map_err(|_canvas_error| Error::TooLarge { width: usize::from(bounds.width), height: usize::from(bounds.height) })?;
+    let too_large = || Error::TooLarge { width: usize::from(bounds.width), height: usize::from(bounds.height), max_cells: MAX_CELLS };
+    let mut canvas = Canvas::new(bounds.width, bounds.height).map_err(|_canvas_error| too_large())?;
     for (_, rect) in diagram.groups.iter().zip(&parts.groups).filter(|(group, _)| group.kind == GroupKind::Framed) {
         canvas.frame(*rect, LineKind::Light, Corner::Rounded, Role::Group);
     }

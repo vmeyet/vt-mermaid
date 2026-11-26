@@ -8,66 +8,89 @@ pub const MAX_NODES: usize = 200;
 pub const MAX_EDGES: usize = 150;
 /// Most cells of the grid edges are routed on, margins included.
 pub const MAX_AREA: usize = 250_000;
+/// Most cells a drawing may cover, width times height: a narrow drawing can be tall.
+pub const MAX_CELLS: usize = vt_canvas::MAX_CELLS;
+/// Most columns a drawing may take: a wider `max_width` counts as this one.
+pub const MAX_WIDTH: u16 = vt_canvas::MAX_WIDTH;
 /// Most participants a sequence diagram may have.
 pub const MAX_PARTICIPANTS: usize = 50;
 /// Most messages a sequence diagram may have, notes, activations and the starts, sections and ends of blocks included.
 pub const MAX_MESSAGES: usize = 1_000;
 
 /// Why a diagram was not drawn.
+///
+/// The `String` fields quote the source, which is untrusted: sanitize them before they reach a terminal.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
     /// The source is longer than [`MAX_SOURCE_BYTES`].
+    #[non_exhaustive]
     TooLong {
         /// Its length in bytes.
         bytes: usize,
     },
     /// The source is not Mermaid the parser reads.
+    #[non_exhaustive]
     Invalid {
         /// The parser's reason, untrusted: it may quote the source.
         reason: String,
     },
     /// The source is a Mermaid diagram of a kind not drawn yet.
-    Unsupported,
+    #[non_exhaustive]
+    Unsupported {
+        /// The word the source opens with, such as `pie` or `xychart-beta`, untrusted: at most 32 ASCII letters,
+        /// digits and `-`.
+        kind: String,
+    },
     /// The flowchart, state, class or ER diagram has more than [`MAX_NODES`] nodes.
+    #[non_exhaustive]
     TooManyNodes {
-        /// How many it has.
+        /// Nodes read when reading stopped, at the first over the limit: a lower bound of what the source holds.
         nodes: usize,
     },
     /// The flowchart, state, class or ER diagram has more than [`MAX_EDGES`] edges.
+    #[non_exhaustive]
     TooManyEdges {
-        /// How many it has.
+        /// Edges read when reading stopped, at the first link over the limit: a lower bound of what the source holds.
         edges: usize,
     },
     /// The sequence diagram has more than [`MAX_PARTICIPANTS`] participants.
+    #[non_exhaustive]
     TooManyParticipants {
-        /// How many it has.
+        /// Participants read when reading stopped, at the first over the limit: a lower bound of what the source holds.
         participants: usize,
     },
     /// The sequence diagram has more than [`MAX_MESSAGES`] messages.
+    #[non_exhaustive]
     TooManyMessages {
-        /// How many it has.
+        /// Messages read when reading stopped, at the first over the limit: a lower bound of what the source holds.
         messages: usize,
     },
-    /// The drawing would cover more than [`MAX_AREA`] cells.
+    /// The drawing would cover more cells than a limit allows: [`MAX_AREA`] on a graph's routing grid, [`MAX_CELLS`]
+    /// on the canvas.
+    #[non_exhaustive]
     TooLarge {
         /// Its columns.
         width: usize,
         /// Its rows.
         height: usize,
+        /// The limit it is over.
+        max_cells: usize,
     },
     /// The drawing needs more columns than the caller allows.
+    #[non_exhaustive]
     TooWide {
         /// Columns the drawing needs.
         width: usize,
         /// Columns allowed.
-        max_width: u16,
+        max_width: usize,
     },
     /// No path on the grid joins two nodes without crossing a third.
+    #[non_exhaustive]
     Unroutable {
-        /// The id of the node the edge leaves.
+        /// The id of the node the edge leaves, untrusted: it quotes the source.
         from: String,
-        /// The id of the node it points to.
+        /// The id of the node it points to, untrusted: it quotes the source.
         to: String,
     },
 }
@@ -77,14 +100,16 @@ impl fmt::Display for Error {
         match self {
             Self::TooLong { bytes } => write!(f, "the diagram is {bytes} bytes, over the {MAX_SOURCE_BYTES} byte limit"),
             Self::Invalid { reason } => write!(f, "the diagram does not parse: {reason}"),
-            Self::Unsupported => write!(f, "this kind of diagram is not drawn as text yet"),
-            Self::TooManyNodes { nodes } => write!(f, "the diagram has {nodes} nodes, over the {MAX_NODES} limit"),
-            Self::TooManyEdges { edges } => write!(f, "the diagram has {edges} edges, over the {MAX_EDGES} limit"),
+            Self::Unsupported { kind } => write!(f, "{kind} diagrams are not drawn as text yet"),
+            Self::TooManyNodes { nodes } => write!(f, "the diagram has over {MAX_NODES} nodes: reading stopped at {nodes}"),
+            Self::TooManyEdges { edges } => write!(f, "the diagram has over {MAX_EDGES} edges: reading stopped at {edges}"),
             Self::TooManyParticipants { participants } => {
-                write!(f, "the sequence diagram has {participants} participants, over the {MAX_PARTICIPANTS} limit")
+                write!(f, "the sequence diagram has over {MAX_PARTICIPANTS} participants: reading stopped at {participants}")
             }
-            Self::TooManyMessages { messages } => write!(f, "the sequence diagram has {messages} messages, over the {MAX_MESSAGES} limit"),
-            Self::TooLarge { width, height } => write!(f, "a {width}x{height} drawing is over the {MAX_AREA} cell limit"),
+            Self::TooManyMessages { messages } => {
+                write!(f, "the sequence diagram has over {MAX_MESSAGES} messages: reading stopped at {messages}")
+            }
+            Self::TooLarge { width, height, max_cells } => write!(f, "a {width}x{height} drawing is over the {max_cells} cell limit"),
             Self::TooWide { width, max_width } => write!(f, "the drawing needs {width} columns, more than the {max_width} allowed"),
             Self::Unroutable { from, to } => write!(f, "no path joins {from} to {to}"),
         }

@@ -8,7 +8,7 @@ use super::diagram::Figure;
 use super::layout::{Area, Cell, Frame as Block, Head, Layout, Lifeline, Message};
 use super::parse::Tip;
 use crate::Role;
-use crate::error::Error;
+use crate::error::{Error, MAX_CELLS};
 use crate::label::Label;
 
 /// The stick figure of an `actor`, over its name.
@@ -19,10 +19,13 @@ pub(super) fn draw(layout: &Layout, max_width: u16) -> Result<Canvas<Role>, Erro
     let bounds = bounds(layout);
     let (width, height) = (bounds.right - bounds.left + 1, bounds.bottom - bounds.top + 1);
     if width > i32::from(max_width) {
-        return Err(Error::TooWide { width: usize::try_from(width).unwrap_or(usize::MAX), max_width });
+        return Err(Error::TooWide { width: usize::try_from(width).unwrap_or(usize::MAX), max_width: usize::from(max_width) });
     }
-    let too_large =
-        || Error::TooLarge { width: usize::try_from(width).unwrap_or(usize::MAX), height: usize::try_from(height).unwrap_or(usize::MAX) };
+    let too_large = || Error::TooLarge {
+        width: usize::try_from(width).unwrap_or(usize::MAX),
+        height: usize::try_from(height).unwrap_or(usize::MAX),
+        max_cells: MAX_CELLS,
+    };
     let size = |value: i32| u16::try_from(value).map_err(|_overflow| too_large());
     let canvas = Canvas::new(size(width)?, size(height)?).map_err(|_canvas_error| too_large())?;
     let mut pen = Pen { canvas, origin: (bounds.left, bounds.top) };

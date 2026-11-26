@@ -60,7 +60,7 @@ pub(crate) fn render(written: &Diagram, settings: Settings) -> Result<Drawing, E
         (wide.narrowed(NARROWEST), &folded_narrowest),
         (wide, &packed),
     ];
-    let mut drawing = Err(Error::TooWide { width: usize::MAX, max_width });
+    let mut drawing = Err(Error::TooWide { width: usize::MAX, max_width: usize::from(max_width) });
     for (wrap, fits) in ladder {
         if !may_fit_tighter(&drawing) {
             break;
@@ -103,11 +103,11 @@ fn drawn(diagram: &Diagram, placement: Placement, max_width: u16) -> Result<Draw
 /// Blocks wider than allowed are refused before their edges are routed: routes only add to the width.
 fn check_width(placement: &Placement, max_width: u16) -> Result<(), Error> {
     let width = placement.size.width.saturating_sub(2 * MARGIN);
-    if width > max_width { Err(Error::TooWide { width: usize::from(width), max_width }) } else { Ok(()) }
+    if width > max_width { Err(Error::TooWide { width: usize::from(width), max_width: usize::from(max_width) }) } else { Ok(()) }
 }
 
 fn check_area(width: usize, height: usize) -> Result<(), Error> {
-    if width * height > MAX_AREA { Err(Error::TooLarge { width, height }) } else { Ok(()) }
+    if width * height > MAX_AREA { Err(Error::TooLarge { width, height, max_cells: MAX_AREA }) } else { Ok(()) }
 }
 
 #[cfg(test)]
@@ -132,7 +132,10 @@ mod tests {
 
     #[test]
     fn a_drawing_over_the_area_limit_is_refused() {
-        assert_eq!(check_area(MAX_AREA / 100 + 1, 100), Err(Error::TooLarge { width: MAX_AREA / 100 + 1, height: 100 }));
+        assert_eq!(
+            check_area(MAX_AREA / 100 + 1, 100),
+            Err(Error::TooLarge { width: MAX_AREA / 100 + 1, height: 100, max_cells: MAX_AREA })
+        );
     }
 
     #[test]
@@ -230,7 +233,7 @@ mod tests {
 
         assert!(may_fit_tighter(&Err(Error::TooWide { width: 90, max_width: 80 })));
         assert!(may_fit_tighter(&Err(no_path)));
-        assert!(!may_fit_tighter(&Err(Error::TooLarge { width: 60, height: 5_000 })));
+        assert!(!may_fit_tighter(&Err(Error::TooLarge { width: 60, height: 5_000, max_cells: MAX_AREA })));
         assert!(!may_fit_tighter(&render("flowchart LR\n  A --> B", WIDTH)));
     }
 
