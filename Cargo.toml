@@ -25,7 +25,7 @@ name = "corpus"
 harness = false
 
 [dependencies]
-vt-canvas = { path = "../vt-canvas" }
+vt-canvas = "0.1.0"
 
 [features]
 # Exact measures of a drawing for scoreboard/, read from its geometry; not part of the API.

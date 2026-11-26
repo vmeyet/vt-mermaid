@@ -664,6 +664,8 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vt-canvas"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa153785588942d9d3aa4de90c880bfd1d64af652f5df0ff48f445e1119e6e97"
 dependencies = [
  "unicode-width",
 ]
