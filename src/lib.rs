@@ -19,7 +19,9 @@ mod settings;
 mod source;
 mod state;
 
-pub use error::{Error, MAX_AREA, MAX_CELLS, MAX_EDGES, MAX_MESSAGES, MAX_NODES, MAX_PARTICIPANTS, MAX_SOURCE_BYTES, MAX_WIDTH};
+pub use error::{
+    Error, MAX_AREA, MAX_CELLS, MAX_EDGES, MAX_MESSAGES, MAX_NODES, MAX_PARTICIPANTS, MAX_ROUTING_STEPS, MAX_SOURCE_BYTES, MAX_WIDTH,
+};
 pub use role::Role;
 pub use settings::{LongWords, Settings};
 pub use vt_canvas::{Canvas, GlyphSet, Run};
@@ -135,6 +137,15 @@ mod tests {
         let source = format!("stateDiagram-v2\n{opened}  deep\n{}", "  }\n".repeat(MAX_NODES - 1));
 
         assert!(matches!(render(&source, MAX_WIDTH), Err(Error::TooLarge { max_cells: MAX_AREA, .. })));
+    }
+
+    /// Found by fuzzing: subgraphs named alike around a relationship repeated between two entities leave it no path
+    /// whatever the placement, which the ladder stops trying once the same edge is stuck twice.
+    #[test]
+    fn an_edge_walled_in_whatever_the_placement_is_unroutable() {
+        let source = include_str!("../benches/inputs/fuzzed-er.mmd");
+
+        assert_eq!(render(source, 200), Err(Error::Unroutable { from: "I1".to_owned(), to: "F1".to_owned() }));
     }
 
     #[test]

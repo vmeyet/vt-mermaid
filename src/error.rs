@@ -12,6 +12,9 @@ pub const MAX_AREA: usize = 250_000;
 pub const MAX_CELLS: usize = vt_canvas::MAX_CELLS;
 /// Most columns a drawing may take: a wider `max_width` counts as this one.
 pub const MAX_WIDTH: u16 = vt_canvas::MAX_WIDTH;
+/// Most steps the edge routing of a flowchart, a state, a class or an ER diagram may take, over every layout tried:
+/// a step takes one cell, with the way it is entered from, off a path search's queue.
+pub const MAX_ROUTING_STEPS: usize = 6_000_000;
 /// Most participants a sequence diagram may have.
 pub const MAX_PARTICIPANTS: usize = 50;
 /// Most messages a sequence diagram may have, notes, activations and the starts, sections and ends of blocks included.
@@ -85,6 +88,8 @@ pub enum Error {
         /// Columns allowed.
         max_width: usize,
     },
+    /// Routing the edges took more than [`MAX_ROUTING_STEPS`] steps, over every layout tried.
+    TooComplex,
     /// No path on the grid joins two nodes without crossing a third.
     #[non_exhaustive]
     Unroutable {
@@ -111,6 +116,7 @@ impl fmt::Display for Error {
             }
             Self::TooLarge { width, height, max_cells } => write!(f, "a {width}x{height} drawing is over the {max_cells} cell limit"),
             Self::TooWide { width, max_width } => write!(f, "the drawing needs {width} columns, more than the {max_width} allowed"),
+            Self::TooComplex => write!(f, "routing the edges took over {MAX_ROUTING_STEPS} steps"),
             Self::Unroutable { from, to } => write!(f, "no path joins {from} to {to}"),
         }
     }

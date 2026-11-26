@@ -159,7 +159,7 @@ fn er_at_the_limits() -> Result<Canvas<Role>, Error> {
 }
 
 /// The slowest input fuzzing found among ER diagrams: subgraphs named alike around relationships repeated between
-/// two entities, refused as unroutable once every placement is tried.
+/// two entities, refused as unroutable once the same edge is stuck in two placements.
 #[divan::bench(sample_count = 1, sample_size = 1)]
 fn er_found_by_fuzzing() -> Result<Canvas<Role>, Error> {
     render(include_str!("inputs/fuzzed-er.mmd"))

@@ -1,5 +1,6 @@
 //! Graphs (flowcharts, state diagrams): laid out in layers on the grid, edges routed on it, then drawn.
 
+mod budget;
 pub(crate) mod diagram;
 mod draw;
 mod edge_label;
@@ -13,9 +14,10 @@ mod shape;
 use vt_canvas::{Canvas, Rect};
 
 use crate::Role;
-use crate::error::{Error, MAX_AREA};
+use crate::error::{Error, MAX_AREA, MAX_ROUTING_STEPS};
 use crate::label::Wrap;
 use crate::settings::Settings;
+use budget::Budget;
 use diagram::Diagram;
 use layout::{Fit, MARGIN, Placement};
 use route::Route;
@@ -40,11 +42,15 @@ const NARROWEST: usize = 14;
 const FOLDED: [i32; 5] = [8, 7, 6, 5, 4];
 const FOLDED_NARROWEST: [i32; 7] = [8, 7, 6, 5, 4, 3, 2];
 const PACKED: [i32; 3] = [8, 6, 4];
+/// Placements an edge may be left without a path in before the ladder stops: past that, the edge is walled in
+/// whatever the placement.
+const UNROUTABLE_TRIES: usize = 2;
 
 /// Draws `written` in the first form that fits the width and whose edges find a path: laid out loose, then tight,
 /// then tight with its labels wrapped narrower, then with its wide ranks folded narrower and narrower, the labels
 /// wide then at their narrowest, then packed without room for the links passing a rank; each time as written, then
-/// turned top-down when it flows sideways.
+/// turned top-down when it flows sideways; stopped once one edge found no path in [`UNROUTABLE_TRIES`] placements, or
+/// the searches spent [`MAX_ROUTING_STEPS`].
 pub(crate) fn render(written: &Diagram, settings: Settings) -> Result<Drawing, Error> {
     let max_width = settings.max_width;
     let wide = Wrap::wide(settings.long_words);
@@ -60,32 +66,42 @@ pub(crate) fn render(written: &Diagram, settings: Settings) -> Result<Drawing, E
         (wide.narrowed(NARROWEST), &folded_narrowest),
         (wide, &packed),
     ];
+    let mut budget = Budget::new(MAX_ROUTING_STEPS);
+    let mut unroutable = Vec::new();
     let mut drawing = Err(Error::TooWide { width: usize::MAX, max_width: usize::from(max_width) });
     for (wrap, fits) in ladder {
-        if !may_fit_tighter(&drawing) {
+        if !may_fit_tighter(&drawing, &unroutable) {
             break;
         }
         let wrapped = written.wrapped(wrap);
         let turned = wrapped.flows_sideways().then(|| wrapped.turned_top_down());
         for (diagram, fit) in fits.iter().flat_map(|fit| std::iter::once(&wrapped).chain(&turned).map(move |diagram| (diagram, *fit))) {
-            if !may_fit_tighter(&drawing) {
+            if !may_fit_tighter(&drawing, &unroutable) {
                 break;
             }
-            drawing = drawn(diagram, layout::place(diagram, fit), max_width);
+            drawing = drawn(diagram, layout::place(diagram, fit), max_width, &mut budget);
+            if let Err(error @ Error::Unroutable { .. }) = &drawing {
+                unroutable.push(error.clone());
+            }
         }
     }
     drawing
 }
 
-/// A drawing too wide, or one whose blocks leave an edge no path, may come out with the blocks placed another way.
-fn may_fit_tighter(drawing: &Result<Drawing, Error>) -> bool {
-    matches!(drawing, Err(Error::TooWide { .. } | Error::Unroutable { .. }))
+/// A drawing too wide may come out with the blocks placed another way, and so may one whose blocks leave an edge no
+/// path, unless that edge found none in [`UNROUTABLE_TRIES`] placements already.
+fn may_fit_tighter(drawing: &Result<Drawing, Error>, unroutable: &[Error]) -> bool {
+    match drawing {
+        Err(Error::TooWide { .. }) => true,
+        Err(error @ Error::Unroutable { .. }) => unroutable.iter().filter(|earlier| *earlier == error).count() < UNROUTABLE_TRIES,
+        _ => false,
+    }
 }
 
-fn drawn(diagram: &Diagram, placement: Placement, max_width: u16) -> Result<Drawing, Error> {
+fn drawn(diagram: &Diagram, placement: Placement, max_width: u16, budget: &mut Budget) -> Result<Drawing, Error> {
     check_width(&placement, max_width)?;
     check_area(usize::from(placement.size.width), usize::from(placement.size.height))?;
-    let routed = route::route(diagram, &placement)?;
+    let routed = route::route(diagram, &placement, budget)?;
     let labels = edge_label::place(diagram, &routed.routes, &routed.grid, &placement.labels);
     let end_labels = edge_label::place_ends(diagram, &routed.routes, &routed.grid, &labels);
     let parts = draw::Parts {
@@ -207,7 +223,7 @@ mod tests {
         let source = include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-project-sox2.mmd");
         let diagram = flowchart::read(source).unwrap();
 
-        let folded = drawn(&diagram, layout::place(&diagram, Fit::Folded { columns: 40 }), 80);
+        let folded = drawn(&diagram, layout::place(&diagram, Fit::Folded { columns: 40 }), 80, &mut Budget::new(MAX_ROUTING_STEPS));
         let packed = render(source, 80);
 
         assert!(matches!(folded, Err(Error::TooWide { .. })), "{:?}", folded.map(|drawing| rows(&drawing.canvas)));
@@ -219,7 +235,7 @@ mod tests {
         let source = include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-life-choices.mmd");
         let diagram = flowchart::read(source).unwrap();
 
-        let wide = drawn(&diagram, layout::place(&diagram, Fit::Tight), 100);
+        let wide = drawn(&diagram, layout::place(&diagram, Fit::Tight), 100, &mut Budget::new(MAX_ROUTING_STEPS));
         let narrowed = render(source, 100).unwrap();
 
         assert!(matches!(wide, Err(Error::TooWide { .. })));
@@ -231,10 +247,20 @@ mod tests {
     fn only_a_drawing_too_wide_or_with_an_edge_without_a_path_is_tried_tighter() {
         let no_path = Error::Unroutable { from: "A".to_owned(), to: "B".to_owned() };
 
-        assert!(may_fit_tighter(&Err(Error::TooWide { width: 90, max_width: 80 })));
-        assert!(may_fit_tighter(&Err(no_path)));
-        assert!(!may_fit_tighter(&Err(Error::TooLarge { width: 60, height: 5_000, max_cells: MAX_AREA })));
-        assert!(!may_fit_tighter(&render("flowchart LR\n  A --> B", WIDTH)));
+        assert!(may_fit_tighter(&Err(Error::TooWide { width: 90, max_width: 80 }), &[]));
+        assert!(may_fit_tighter(&Err(no_path.clone()), &[no_path]));
+        assert!(!may_fit_tighter(&Err(Error::TooLarge { width: 60, height: 5_000, max_cells: MAX_AREA }), &[]));
+        assert!(!may_fit_tighter(&Err(Error::TooComplex), &[]));
+        assert!(!may_fit_tighter(&render("flowchart LR\n  A --> B", WIDTH), &[]));
+    }
+
+    #[test]
+    fn an_edge_without_a_path_in_two_placements_stops_the_ladder() {
+        let no_path = Error::Unroutable { from: "A".to_owned(), to: "B".to_owned() };
+        let other = Error::Unroutable { from: "A".to_owned(), to: "C".to_owned() };
+
+        assert!(may_fit_tighter(&Err(no_path.clone()), &[no_path.clone(), other]));
+        assert!(!may_fit_tighter(&Err(no_path.clone()), &[no_path.clone(), no_path]));
     }
 
     #[test]

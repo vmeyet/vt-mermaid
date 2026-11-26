@@ -54,7 +54,7 @@ fn once(source: &str) -> (Duration, &'static str) {
     let outcome = match result {
         Ok(_) => "drawn",
         Err(vt_mermaid::Error::TooWide { .. }) => "too wide",
-        Err(vt_mermaid::Error::TooLong { .. } | vt_mermaid::Error::TooLarge { .. }) => "over a size limit",
+        Err(vt_mermaid::Error::TooLong { .. } | vt_mermaid::Error::TooLarge { .. } | vt_mermaid::Error::TooComplex) => "over a size limit",
         Err(
             vt_mermaid::Error::TooManyNodes { .. }
             | vt_mermaid::Error::TooManyEdges { .. }

@@ -1,11 +1,11 @@
 //! Edges as right-angled paths on the grid: a cheapest-path search that pays for each bend and crossing.
 
-use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::HashMap;
 use std::ops::Range;
 
 use vt_canvas::{Direction, Point, Rect};
 
+use super::budget::Budget;
 use super::diagram::{Diagram, End, Figure, GroupKind};
 use super::layout::{Divider, Placement};
 use super::port::{self, Join, Joins};
@@ -34,7 +34,6 @@ const HUG: u32 = 5 * STEP / 2;
 const RETRIES: usize = 3;
 /// Passing behind a frame's title, on top of crossing the frame.
 const BEHIND_A_TITLE: u32 = 4 * STEP;
-const UNREACHED: u32 = u32::MAX;
 const HEADINGS: [Direction; 4] = [Direction::Up, Direction::Right, Direction::Down, Direction::Left];
 
 /// An edge's cells, from the border cell it leaves its source through to the cell its arrow goes on.
@@ -325,8 +324,8 @@ pub(super) struct Routed {
 }
 
 /// Routes every edge, those between close blocks first, so the others go round what these already drew; an edge
-/// left without a path goes first on another try.
-pub(super) fn route(diagram: &Diagram, placement: &Placement) -> Result<Routed, Error> {
+/// left without a path goes first on another try; refused once the searches spend the budget.
+pub(super) fn route(diagram: &Diagram, placement: &Placement, budget: &mut Budget) -> Result<Routed, Error> {
     let joins = port::joins(diagram, placement);
     let titles = titles(diagram, placement, &joins);
     let empty = Grid::new(diagram, placement, &titles);
@@ -336,7 +335,7 @@ pub(super) fn route(diagram: &Diagram, placement: &Placement) -> Result<Routed, 
         if let Some(stuck) = stuck {
             order = std::iter::once(stuck).chain(order.into_iter().filter(|&index| index != stuck)).collect();
         }
-        match laid(diagram, placement, &joins, &empty, &order) {
+        match laid(diagram, placement, &joins, &empty, &order, budget)? {
             Ok((routes, grid)) => return Ok(Routed { routes, grid, titles }),
             Err(index) if stuck == Some(index) => break,
             Err(index) => stuck = Some(index),
@@ -359,8 +358,15 @@ fn nearest_first(diagram: &Diagram, placement: &Placement) -> Vec<usize> {
 }
 
 /// Every edge's route, searched in `order` on `empty`, and the grid they leave; else the first edge left without a
-/// path.
-fn laid(diagram: &Diagram, placement: &Placement, joins: &[Joins], empty: &Grid, order: &[usize]) -> Result<(Vec<Route>, Grid), usize> {
+/// path; refused once the searches spend the budget.
+fn laid(
+    diagram: &Diagram,
+    placement: &Placement,
+    joins: &[Joins],
+    empty: &Grid,
+    order: &[usize],
+    budget: &mut Budget,
+) -> Result<Result<(Vec<Route>, Grid), usize>, Error> {
     let rect = |end: End| match end {
         End::Node(index) => placement.nodes[index],
         End::Group(index) => placement.groups[index],
@@ -385,12 +391,18 @@ fn laid(diagram: &Diagram, placement: &Placement, joins: &[Joins], empty: &Grid,
             straight: Straight { from: edge.start.straight(), to: edge.end.straight() },
         };
         let shared = twin.and_then(|twin| routes[twin].clone()).map(|route| Found { route, own: 0..0, left: None, joined: None });
-        let found = shared.or_else(|| search.run()).ok_or(index)?;
+        let found = match shared {
+            Some(found) => found,
+            None => match search.run(budget)? {
+                Some(found) => found,
+                None => return Ok(Err(index)),
+            },
+        };
         grid.add(&found.route, &found.own, Straight { from: edge.start.straight(), to: edge.end.straight() });
         trunks.add(index, &found, joins[index]);
         routes[index] = Some(found.route);
     }
-    Ok((routes.into_iter().flatten().collect(), grid))
+    Ok(Ok((routes.into_iter().flatten().collect(), grid)))
 }
 
 /// Whether two edges join the same blocks and share a trunk at both ends: they are then one line all the way.
@@ -494,23 +506,20 @@ enum Turns {
 }
 
 impl Search<'_> {
-    fn run(&self) -> Option<Found> {
-        let states = self.grid.width * self.grid.height * 4;
-        let mut cost = vec![UNREACHED; states];
-        let mut previous = vec![usize::MAX; states];
-        let mut queue = BinaryHeap::new();
+    /// The cheapest route, none when no path joins the ends; refused once the searches spend the budget.
+    fn run(&self, budget: &mut Budget) -> Result<Option<Found>, Error> {
+        budget.start(self.grid.width * self.grid.height * 4);
         let mut best: Option<(u32, usize, Finish)> = None;
         let joining: HashMap<Point, Tap> = self.joining.iter().map(|tap| (tap.cell, *tap)).collect();
         let target = self.joining.iter().fold(self.to, |target, tap| around(target, tap.cell));
         let ports = self.ports_of(self.from).map(|(cell, outward)| (cell, outward, away(self.from, self.exit, cell, outward)));
         for (cell, heading, price) in ports.chain(self.leaving.iter().flat_map(|tap| self.ways_off(*tap))) {
             let state = self.state(cell, heading);
-            if price < cost[state] {
-                cost[state] = price;
-                queue.push(Reverse((price + STEP * estimate(target, cell), state)));
+            if price < budget.cost(state) {
+                budget.reach(state, price, None, STEP * estimate(target, cell));
             }
         }
-        while let Some(Reverse((estimate_through, state))) = queue.pop() {
+        while let Some((estimate_through, state)) = budget.next()? {
             if best.is_some_and(|(total, ..)| estimate_through >= total) {
                 break;
             }
@@ -522,7 +531,7 @@ impl Search<'_> {
                     None => self.arrival(cell, heading, next, direction).map(|price| (STEP + price, Finish::Border(next))),
                 };
                 if let Some((price, finish)) = finish {
-                    let total = cost[state] + price;
+                    let total = budget.cost(state) + price;
                     if best.is_none_or(|(known, ..)| total < known) {
                         best = Some((total, state, finish));
                     }
@@ -530,15 +539,13 @@ impl Search<'_> {
                 }
                 let Some(step) = self.step_cost(cell, heading, next, direction) else { continue };
                 let next_state = self.state(next, direction);
-                let next_cost = cost[state] + step;
-                if next_cost < cost[next_state] {
-                    cost[next_state] = next_cost;
-                    previous[next_state] = state;
-                    queue.push(Reverse((next_cost + STEP * estimate(target, next), next_state)));
+                let next_cost = budget.cost(state) + step;
+                if next_cost < budget.cost(next_state) {
+                    budget.reach(next_state, next_cost, Some(state), STEP * estimate(target, next));
                 }
             }
         }
-        best.map(|(_, state, finish)| self.found(self.path(&previous, state), finish))
+        Ok(best.map(|(_, state, finish)| self.found(self.path(budget, state), finish)))
     }
 
     /// The whole route: the trunk up to where the searched `path` leaves it, the path, then the trunk it joins.
@@ -678,10 +685,9 @@ impl Search<'_> {
         matches!(self.grid.get(cell), Use::Border | Use::Hub | Use::Line { .. } | Use::Trunk { .. } | Use::Title)
     }
 
-    fn path(&self, previous: &[usize], last: usize) -> Vec<Point> {
-        let mut cells: Vec<Point> = std::iter::successors(Some(last), |&state| Some(previous[state]).filter(|&state| state != usize::MAX))
-            .map(|state| self.cell_of(state).0)
-            .collect();
+    fn path(&self, budget: &Budget, last: usize) -> Vec<Point> {
+        let mut cells: Vec<Point> =
+            std::iter::successors(Some(last), |&state| budget.previous(state)).map(|state| self.cell_of(state).0).collect();
         cells.reverse();
         cells
     }
@@ -846,7 +852,8 @@ mod tests {
         let exit = Join { heading: Direction::Down, cell: Point::new(from.x + from.width / 2, from.y + from.height - 1), trunk: None };
         let entry = Join { heading: Direction::Down, cell: Point::new(to.x + to.width / 2, to.y), trunk: None };
         Search { grid, edge: 0, from, to, exit, entry, leaving: &[], joining: &[], routes: &[], turns: Turns::Early, straight }
-            .run()
+            .run(&mut Budget::new(usize::MAX))
+            .unwrap()
             .map(|found| found.route)
     }
 
@@ -918,7 +925,7 @@ mod tests {
     fn routed(source: &str) -> (Routed, Vec<String>) {
         let diagram = flowchart::read(source).unwrap();
         let placement = layout::place(&diagram, Fit::Loose);
-        let routed = route(&diagram, &placement).unwrap();
+        let routed = route(&diagram, &placement, &mut Budget::new(usize::MAX)).unwrap();
         let labels = vec![None; routed.routes.len()];
         let end_labels = vec![EndLabels::default(); routed.routes.len()];
         let parts = draw::Parts {
@@ -992,10 +999,18 @@ mod tests {
         let joins = port::joins(&diagram, &placement);
         let empty = Grid::new(&diagram, &placement, &titles(&diagram, &placement, &joins));
 
-        let nearest_first = laid(&diagram, &placement, &joins, &empty, &nearest_first(&diagram, &placement));
+        let nearest_first = laid(&diagram, &placement, &joins, &empty, &nearest_first(&diagram, &placement), &mut Budget::new(usize::MAX));
 
-        assert!(nearest_first.is_err());
-        assert!(route(&diagram, &placement).is_ok());
+        assert!(matches!(nearest_first, Ok(Err(_))));
+        assert!(route(&diagram, &placement, &mut Budget::new(usize::MAX)).is_ok());
+    }
+
+    #[test]
+    fn routing_past_the_budget_is_refused() {
+        let diagram = flowchart::read("flowchart TB\n  A --> B").unwrap();
+        let placement = layout::place(&diagram, Fit::Loose);
+
+        assert!(matches!(route(&diagram, &placement, &mut Budget::new(3)), Err(Error::TooComplex)));
     }
 
     #[test]
