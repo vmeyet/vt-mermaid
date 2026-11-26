@@ -404,7 +404,7 @@ mod tests {
     use crate::graph::diagram::Head;
 
     fn placed(source: &str, fit: Fit) -> (Diagram, Placement) {
-        let diagram = flowchart::read(source).unwrap();
+        let diagram = flowchart::read_source(source).unwrap();
         let placement = place(&diagram, fit);
         (diagram, placement)
     }

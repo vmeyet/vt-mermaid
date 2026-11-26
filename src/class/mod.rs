@@ -4,30 +4,15 @@ mod diagram;
 mod parse;
 
 use crate::error::Error;
-use crate::graph::{self, Drawing};
-use crate::settings::Settings;
-
-/// Draws `source` as a graph, in the first form that fits.
-pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Drawing, Error> {
-    graph::render(&diagram::read(source)?, settings)
-}
-
-/// Draws `source` as [`render`](crate::render) does, then measures the drawing.
-#[cfg(any(test, feature = "measure"))]
-pub(crate) fn measure(source: &str, max_width: u16) -> Result<graph::measure::Measures, Error> {
-    let written = diagram::read(source)?;
-    let drawing = graph::render(&written, Settings::new(max_width))?;
-    Ok(graph::measure::measures(&written.wrapped(drawing.wrap), &drawing))
-}
-
-/// How much a class diagram holds once read.
 #[cfg(feature = "fuzz")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Counts {
-    /// Classes, lollipops, notes and namespaces.
-    pub nodes: usize,
-    /// Relations.
-    pub edges: usize,
+use crate::graph::Counts;
+
+pub(crate) use diagram::read;
+
+/// Reads `source` as [`read`] does, for the tests that start from a source.
+#[cfg(test)]
+pub(crate) fn read_source(source: &str) -> Result<crate::graph::diagram::Diagram, Error> {
+    read(&crate::source::prepare(source))
 }
 
 /// Reads `source` within the limits `render` draws.
@@ -40,30 +25,16 @@ pub fn counts(source: &str) -> Result<Counts, Error> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-    use std::path::Path;
-
     use vt_canvas::GlyphSet;
 
     use super::*;
     use crate::graph::measure::{rows, violations};
+    use crate::graph::{self, Drawing};
+    use crate::settings::Settings;
+    use crate::source::listed as sources;
 
     fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
-        render_with(source, Settings::new(max_width))
-    }
-
-    /// Each file `list` names, or each file in the folder `list`, by its name.
-    fn sources(list: &str) -> Vec<(String, String)> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let paths: Vec<String> = if root.join(list).is_dir() {
-            fs::read_dir(root.join(list)).unwrap().map(|entry| format!("{list}/{}", entry.unwrap().file_name().to_string_lossy())).collect()
-        } else {
-            fs::read_to_string(root.join(list)).unwrap().lines().map(str::to_owned).collect()
-        };
-        let named = |path: String| {
-            (Path::new(&path).file_stem().unwrap().to_string_lossy().into_owned(), fs::read_to_string(root.join(&path)).unwrap())
-        };
-        paths.into_iter().map(named).collect()
+        graph::render(&read_source(source)?, Settings::new(max_width))
     }
 
     #[test]
@@ -87,7 +58,7 @@ mod tests {
             .into_iter()
             .flat_map(|(name, source)| {
                 let drawing = render(&source, 100).unwrap();
-                violations(&diagram::read(&source).unwrap().wrapped(drawing.wrap), &drawing)
+                violations(&read_source(&source).unwrap().wrapped(drawing.wrap), &drawing)
                     .into_iter()
                     .map(move |found| format!("{name}: {found}"))
             })
@@ -102,7 +73,7 @@ mod tests {
     fn corpus_diagrams_are_drawn_within_80_columns() {
         let mut found = Vec::new();
         for (name, source) in sources("corpus/class") {
-            let Ok(read) = diagram::read(&source) else { continue };
+            let Ok(read) = read_source(&source) else { continue };
             let drawing = render(&source, 80).unwrap_or_else(|error| panic!("{name}: {error}"));
             assert!(rows(&drawing.canvas).iter().all(|row| vt_canvas::text_width(row) <= 80), "{name}");
             found.extend(violations(&read.wrapped(drawing.wrap), &drawing).into_iter().map(|found| format!("{name}: {found}")));

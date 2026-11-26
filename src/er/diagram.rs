@@ -10,11 +10,12 @@ use crate::error::Error;
 use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Node, without_cycles};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
+use crate::source::Prepared;
 use crate::source::entity;
 
-/// Reads `source`, refusing anything but an ER diagram within the limits `render` draws.
-pub(super) fn read(source: &str) -> Result<Diagram, Error> {
-    Ok(graph(&parse::parse(source, Limits::DRAWN)?))
+/// Reads `prepared`, refusing anything but an ER diagram within the limits `render` draws.
+pub(crate) fn read(prepared: &Prepared) -> Result<Diagram, Error> {
+    Ok(graph(&parse::read(prepared, Limits::DRAWN)?))
 }
 
 /// An entity named like a subgraph is that subgraph, as mermaid draws it; a subgraph or an entity belongs to the
@@ -176,6 +177,7 @@ fn direction(direction: parse::Direction) -> Direction {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::er::read_source as read;
 
     fn node<'a>(diagram: &'a Diagram, id: &str) -> &'a Node {
         diagram.nodes.iter().find(|node| node.id == id).unwrap()

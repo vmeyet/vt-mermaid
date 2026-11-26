@@ -83,12 +83,17 @@ pub(super) fn parse(source: &str, limits: Limits) -> Result<Sequence, Error> {
     if source.len() > limits.bytes {
         return Err(Error::TooLong { bytes: source.len() });
     }
-    let text = source::prepare(source).text;
-    if !source::opens_with(&text, "sequenceDiagram") {
+    read(&source::prepare(source), limits)
+}
+
+/// The sequence diagram in `prepared`, refused as mermaid refuses it or once it holds more than `limits` allow.
+pub(super) fn read(prepared: &source::Prepared, limits: Limits) -> Result<Sequence, Error> {
+    let text = &prepared.text;
+    if !source::opens_with(text, "sequenceDiagram") {
         return Err(Invalid::NoDiagram.into());
     }
-    let tokens = lexer::tokens(&text)?;
-    let statements = grammar::parse(&text, &tokens)?;
+    let tokens = lexer::tokens(text)?;
+    let statements = grammar::parse(text, &tokens)?;
     db::apply(statements, limits)
 }
 

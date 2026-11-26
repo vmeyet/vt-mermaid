@@ -5,30 +5,27 @@ mod parse;
 mod shape;
 
 use crate::error::Error;
-use crate::graph::{self, Drawing};
-use crate::settings::Settings;
+#[cfg(feature = "fuzz")]
+use crate::graph::Counts;
 
 pub(crate) use diagram::read;
 
-/// Draws `source` as a graph, in the first form that fits.
-pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Drawing, Error> {
-    graph::render(&read(source)?, settings)
+/// Reads `source` as [`read`] does, for the tests that start from a source.
+#[cfg(test)]
+pub(crate) fn read_source(source: &str) -> Result<crate::graph::diagram::Diagram, Error> {
+    read(&crate::source::prepare(source))
 }
 
-/// Draws `source` as [`render_with`] does, long words broken.
-#[cfg(any(test, feature = "measure"))]
-pub(crate) fn render(source: &str, max_width: u16) -> Result<Drawing, Error> {
-    render_with(source, Settings::new(max_width))
+/// Draws `source` as [`render`](crate::render) does, long words broken.
+#[cfg(test)]
+pub(crate) fn render(source: &str, max_width: u16) -> Result<crate::graph::Drawing, Error> {
+    crate::graph::render(&read_source(source)?, crate::settings::Settings::new(max_width))
 }
 
-/// How much a flowchart holds once read.
-#[cfg(feature = "fuzz")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Counts {
-    /// Nodes and subgraphs.
-    pub nodes: usize,
-    /// Edges, invisible ones included.
-    pub edges: usize,
+/// Draws `source` as [`render`](crate::render) does, then measures the drawing.
+#[cfg(test)]
+pub(crate) fn measure(source: &str, max_width: u16) -> Result<crate::graph::measure::Measures, Error> {
+    crate::graph::measured(&read_source(source)?, max_width)
 }
 
 /// Reads `source` within the limits `render` draws.
@@ -38,34 +35,18 @@ pub fn counts(source: &str) -> Result<Counts, Error> {
     Ok(Counts { nodes: flowchart.nodes.len() + flowchart.subgraphs.len(), edges: flowchart.edges.len() })
 }
 
-/// Draws `source` as [`render`](crate::render) does, then measures the drawing.
-#[cfg(any(test, feature = "measure"))]
-pub(crate) fn measure(source: &str, max_width: u16) -> Result<graph::measure::Measures, Error> {
-    let drawing = render(source, max_width)?;
-    Ok(graph::measure::measures(&read(source)?.wrapped(drawing.wrap), &drawing))
-}
-
 #[cfg(test)]
 mod tests {
-    use std::fs;
-    use std::path::Path;
-
     use super::*;
     use crate::error::MAX_SOURCE_BYTES;
     use crate::graph::measure::{rows, violations};
+    use crate::source::listed;
 
     /// Wide enough for every spike flowchart: the comparison with mermaid-text judges the width.
     const WIDTH: u16 = 400;
 
     fn spike() -> Vec<(String, String)> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let list = fs::read_to_string(root.join("tests/spike/flowcharts.txt")).unwrap();
-        list.lines()
-            .map(|path| {
-                let name = Path::new(path).file_stem().unwrap().to_string_lossy().into_owned();
-                (name, fs::read_to_string(root.join(path)).unwrap())
-            })
-            .collect()
+        listed("tests/spike/flowcharts.txt")
     }
 
     #[test]
@@ -82,7 +63,9 @@ mod tests {
             .into_iter()
             .flat_map(|(name, source)| {
                 let drawing = render(&source, WIDTH).unwrap();
-                violations(&read(&source).unwrap().wrapped(drawing.wrap), &drawing).into_iter().map(move |found| format!("{name}: {found}"))
+                violations(&read_source(&source).unwrap().wrapped(drawing.wrap), &drawing)
+                    .into_iter()
+                    .map(move |found| format!("{name}: {found}"))
             })
             .collect();
 
@@ -95,14 +78,14 @@ mod tests {
         let source = format!("{diagram}%%{}", " ".repeat(MAX_SOURCE_BYTES - diagram.len() - 2));
 
         assert_eq!(source.len(), MAX_SOURCE_BYTES);
-        assert!(render(&source, WIDTH).is_ok());
+        assert!(crate::render(&source, WIDTH).is_ok());
     }
 
     #[test]
     fn a_source_over_the_length_limit_is_refused() {
         let source = format!("flowchart LR\n  A --> B\n%%{}", " ".repeat(MAX_SOURCE_BYTES));
 
-        assert!(matches!(render(&source, WIDTH), Err(Error::TooLong { bytes }) if bytes == source.len()));
+        assert!(matches!(crate::render(&source, WIDTH), Err(Error::TooLong { bytes }) if bytes == source.len()));
     }
 
     /// Found by fuzzing, written as mermaid reads them: each one failed an assertion mmdr's layout only checked in debug

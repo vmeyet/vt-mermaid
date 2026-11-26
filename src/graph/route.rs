@@ -923,7 +923,7 @@ mod tests {
     }
 
     fn routed(source: &str) -> (Routed, Vec<String>) {
-        let diagram = flowchart::read(source).unwrap();
+        let diagram = flowchart::read_source(source).unwrap();
         let placement = layout::place(&diagram, Fit::Loose);
         let routed = route(&diagram, &placement, &mut Budget::new(usize::MAX)).unwrap();
         let labels = vec![None; routed.routes.len()];
@@ -994,7 +994,7 @@ mod tests {
     fn an_edge_left_without_a_path_goes_first_on_another_try() {
         let source =
             include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression.mmd");
-        let diagram = flowchart::read(source).unwrap().turned_top_down();
+        let diagram = flowchart::read_source(source).unwrap().turned_top_down();
         let placement = layout::place(&diagram, Fit::Packed { columns: 50 });
         let joins = port::joins(&diagram, &placement);
         let empty = Grid::new(&diagram, &placement, &titles(&diagram, &placement, &joins));
@@ -1007,7 +1007,7 @@ mod tests {
 
     #[test]
     fn routing_past_the_budget_is_refused() {
-        let diagram = flowchart::read("flowchart TB\n  A --> B").unwrap();
+        let diagram = flowchart::read_source("flowchart TB\n  A --> B").unwrap();
         let placement = layout::place(&diagram, Fit::Loose);
 
         assert!(matches!(route(&diagram, &placement, &mut Budget::new(3)), Err(Error::TooComplex)));

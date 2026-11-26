@@ -277,7 +277,7 @@ mod tests {
     const BLOCK: Rect = Rect::new(10, 10, 9, 3);
 
     fn joins_of(source: &str, fit: Fit) -> Vec<Joins> {
-        let diagram = flowchart::read(source).unwrap();
+        let diagram = flowchart::read_source(source).unwrap();
         joins(&diagram, &layout::place(&diagram, fit))
     }
 
@@ -310,7 +310,7 @@ mod tests {
 
     #[test]
     fn edges_leaving_on_a_hollow_head_gather_into_one_trunk_on_a_side_with_room() {
-        let mut diagram = flowchart::read("flowchart TB\n  A[A parent wide enough] --> B & C & D").unwrap();
+        let mut diagram = flowchart::read_source("flowchart TB\n  A[A parent wide enough] --> B & C & D").unwrap();
         let apart = joins(&diagram, &layout::place(&diagram, Fit::Loose));
         for edge in &mut diagram.edges[..2] {
             edge.start = Head::Tips(&[Tip::Triangle]);
@@ -326,7 +326,7 @@ mod tests {
     #[test]
     fn labelled_edges_between_two_blocks_each_join_them_in_line_with_their_label() {
         let source = "flowchart TB\n  A[A first node wide enough for two labels] -->|the first label| B[Another node just as wide as the first]\n  A -->|the second label| B";
-        let diagram = flowchart::read(source).unwrap();
+        let diagram = flowchart::read_source(source).unwrap();
         let placement = layout::place(&diagram, Fit::Loose);
 
         let joins = joins(&diagram, &placement);

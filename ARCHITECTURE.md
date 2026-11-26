@@ -52,14 +52,16 @@ This page says how the code is laid out today; when a module or a boundary chang
   Ten minutes of the class parser alone, 14.8 million inputs, two runs of the ER parser, 7.5 million, and twenty minutes of `render` seeded with class diagrams, 0.24 million, found none either.
   Ten minutes of `render` seeded with ER diagrams, 0.29 million inputs, found subgraphs named alike holding each other, which overflowed a frame, mended, and a 2 KiB input, subgraphs named alike around a relationship repeated between two entities, refused as `Unroutable` once the same edge is stuck in two placements, after 0.07 s at 200 columns and 0.19 s at most (`benches/inputs/fuzzed-er.mmd`).
   Read by mermaid itself, the 2785 state diagrams the state parser's fuzzing kept are accepted and refused alike but where mermaid's YAML reader refuses a front matter, or over the node limit, and the 1130 both read hold as many nodes and edges.
-- The `measure` feature adds `measure(source, max_width)` for flowcharts and state diagrams: crossings, bends, edge cells, cells beside a node and level C violations, read from where each part went.
+- The `measure` feature adds `measure(source, max_width)` for flowcharts, state, class and ER diagrams: crossings, bends, edge cells, cells beside a node and level C violations, read from where each part went.
   It exists for the [scoreboard](scoreboard/README.md), is hidden from the docs and is not part of the API.
-- The `fuzz` feature adds `read_flowchart(source)`, `read_sequence(source)`, `read_class(source)`, `read_state(source)` and `read_er(source)`, each parser alone within the limits, for `fuzz/`; hidden and not part of the API either.
+- The `fuzz` feature adds `read_flowchart(source)`, `read_state(source)`, `read_class(source)` and `read_er(source)`, each parser alone within the limits, returning `GraphCounts`, and `read_sequence(source)`, returning `SequenceCounts`, for `fuzz/`; hidden and not part of the API either.
 
 ## Every kind
 
-`source` holds what every diagram kind shares before its own parser: mermaid's preparation of the text, its entities, the YAML of `@{ … }` blocks, and the kind a source is, read from its first word once the front matter, directives and comment lines are left out.
-`render` checks the length, reads the kind and hands the source to that kind's module; a kind mermaid knows but not drawn here is `Error::Unsupported`, quoting the source's first word, at most 32 ASCII letters, digits and `-`.
+`source` holds what every diagram kind shares before its own parser: mermaid's preparation of the text, its entities, the YAML of `@{ … }` blocks, and the word a source opens with once the front matter, directives and comment lines are left out.
+`kind` holds one table of every header mermaid knows, each a prefix of that word, with the kind it names: a graph kind gives the function reading the prepared text into the graph drawn, which `graph` lays out, routes and draws; a sequence diagram draws its own way; a kind mermaid knows but not drawn here has none.
+Every graph kind's parser reads within one `graph::Limits`, and `graph::measured` measures any of them.
+`render` checks the length, prepares the text once, looks the header up and hands the prepared text to that kind; a kind mermaid knows but not drawn here is `Error::Unsupported`, quoting the source's first word, at most 32 ASCII letters, digits and `-`.
 `role` holds `Role`, what each cell of a drawing is drawn for.
 
 ## Flowcharts

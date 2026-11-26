@@ -14,22 +14,10 @@ pub(super) use db::{Class, ClassDiagram, Relation};
 pub(super) use lexer::{Direction, End};
 pub(super) use member::Member;
 
-use crate::error::{Error, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
+use crate::error::Error;
 use crate::source;
 
-/// Longest source, most blocks (classes, lollipops, notes and namespaces) and most edges (relations and the links of
-/// notes) read before the diagram is refused.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct Limits {
-    pub(super) bytes: usize,
-    pub(super) nodes: usize,
-    pub(super) edges: usize,
-}
-
-impl Limits {
-    /// What `render` draws.
-    pub(super) const DRAWN: Self = Self { bytes: MAX_SOURCE_BYTES, nodes: MAX_NODES, edges: MAX_EDGES };
-}
+pub(super) use crate::graph::Limits;
 
 /// Why mermaid would refuse a class diagram; lines are counted as mermaid counts them, once the front matter,
 /// directives and comment lines are left out.
@@ -70,17 +58,23 @@ pub(super) fn parse(source: &str, limits: Limits) -> Result<ClassDiagram, Error>
     if source.len() > limits.bytes {
         return Err(Error::TooLong { bytes: source.len() });
     }
-    let text = source::prepare(source).text;
-    if !source::opens_with(&text, "classDiagram") {
+    read(&source::prepare(source), limits)
+}
+
+/// The diagram in `prepared`, refused as mermaid refuses it or once it holds more than `limits` allow.
+pub(super) fn read(prepared: &source::Prepared, limits: Limits) -> Result<ClassDiagram, Error> {
+    let text = &prepared.text;
+    if !source::opens_with(text, "classDiagram") {
         return Err(Invalid::NoDiagram.into());
     }
-    let tokens = lexer::tokens(&text)?;
-    grammar::parse(&text, &tokens, db::Db::new(limits)).map(db::Db::into_diagram)
+    let tokens = lexer::tokens(text)?;
+    grammar::parse(text, &tokens, db::Db::new(limits)).map(db::Db::into_diagram)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::{MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
 
     fn classes(count: usize) -> String {
         format!("classDiagram\n{}", (0..count).map(|index| format!("  class C{index}\n")).collect::<String>())

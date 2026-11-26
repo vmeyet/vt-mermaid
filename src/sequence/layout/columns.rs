@@ -147,7 +147,7 @@ mod tests {
     use crate::settings::LongWords;
 
     fn columns_of(body: &str) -> Vec<i32> {
-        let diagram = Diagram::read(&format!("sequenceDiagram\n{body}")).unwrap();
+        let diagram = Diagram::read_source(&format!("sequenceDiagram\n{body}")).unwrap();
         let wrap = Wrap::wide(LongWords::Break);
         let heads: Vec<Head> =
             diagram.participants.iter().map(|participant| head(participant.figure, Label::wrapped_as(&participant.label, wrap))).collect();

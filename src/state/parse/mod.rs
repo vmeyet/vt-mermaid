@@ -12,24 +12,10 @@ use std::fmt;
 pub(super) use db::{Diagram, Edge, Node, Shape};
 pub(super) use lexer::Direction;
 
-use crate::error::{Error, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
+use crate::error::Error;
 use crate::source;
 
-/// Longest source, most nodes and most edges read before the diagram is refused.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct Limits {
-    pub(super) bytes: usize,
-    /// Nodes mermaid's renderer is handed (states, start and end dots, notes and their groups, regions) and, while
-    /// the source is read, each composite state's opening.
-    pub(super) nodes: usize,
-    /// Transitions and links between a note and its state.
-    pub(super) edges: usize,
-}
-
-impl Limits {
-    /// What `render` draws.
-    pub(super) const DRAWN: Self = Self { bytes: MAX_SOURCE_BYTES, nodes: MAX_NODES, edges: MAX_EDGES };
-}
+pub(super) use crate::graph::Limits;
 
 /// Why mermaid would refuse a state diagram; lines are counted as mermaid counts them, once the front matter,
 /// directives and comment lines are left out.
@@ -70,18 +56,24 @@ pub(super) fn parse(source: &str, limits: Limits) -> Result<Diagram, Error> {
     if source.len() > limits.bytes {
         return Err(Error::TooLong { bytes: source.len() });
     }
-    let text = source::prepare(source).text;
-    if !source::opens_with(&text, "stateDiagram") {
+    read(&source::prepare(source), limits)
+}
+
+/// The diagram in `prepared`, refused as mermaid refuses it or once it holds more than `limits` allow.
+pub(super) fn read(prepared: &source::Prepared, limits: Limits) -> Result<Diagram, Error> {
+    let text = &prepared.text;
+    if !source::opens_with(text, "stateDiagram") {
         return Err(Invalid::NoDiagram.into());
     }
-    let tokens = lexer::tokens(&text)?;
-    let root = grammar::parse(&text, &tokens, limits.nodes)?;
+    let tokens = lexer::tokens(text)?;
+    let root = grammar::parse(text, &tokens, limits.nodes)?;
     db::apply(root, limits)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::{MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
 
     fn states(count: usize) -> String {
         format!("stateDiagram-v2\n{}", (0..count).map(|index| format!("  s{index}\n")).collect::<String>())

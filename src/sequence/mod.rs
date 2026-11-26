@@ -11,6 +11,7 @@ use crate::Role;
 use crate::error::Error;
 use crate::label::Wrap;
 use crate::settings::Settings;
+use crate::source::Prepared;
 use diagram::Diagram;
 use layout::{Fit, LOOSE, TIGHT};
 
@@ -21,8 +22,8 @@ const CUTS: std::ops::RangeInclusive<usize> = 6..=30;
 
 /// Draws `source` in the first form that fits: labels as written, then wrapped narrower and narrower at spaces, then
 /// the same with heads closer together, then with words wider than the lines broken or cut as `settings` say.
-pub(crate) fn render_with(source: &str, settings: Settings) -> Result<Canvas<Role>, Error> {
-    let diagram = Diagram::read(source)?;
+pub(crate) fn render_with(prepared: &Prepared, settings: Settings) -> Result<Canvas<Role>, Error> {
+    let diagram = Diagram::read(prepared)?;
     let max_width = settings.max_width;
     let wraps = |gap| WRAPS.map(move |columns| Fit { wrap: Wrap::to(columns, settings.long_words), gap });
     let tight = CUTS.rev().map(|columns| Fit { wrap: Wrap::to(columns, settings.long_words).tight(), gap: TIGHT });
@@ -48,7 +49,7 @@ pub struct Counts {
 
 /// Reads `source` within the limits `render` draws.
 #[cfg(feature = "fuzz")]
-pub fn read(source: &str) -> Result<Counts, Error> {
+pub fn counts(source: &str) -> Result<Counts, Error> {
     let sequence = parse::parse(source, parse::Limits::DRAWN)?;
     Ok(Counts { participants: sequence.participants.len(), messages: sequence.items.len() })
 }
@@ -62,29 +63,19 @@ mod tests {
 
     use super::*;
     use crate::settings::LongWords;
+    use crate::source::{self, listed};
 
     fn rows(canvas: &Canvas<Role>, glyphs: GlyphSet) -> Vec<String> {
         canvas.lines(glyphs).collect()
     }
 
     fn render(source: &str, max_width: u16) -> Result<Canvas<Role>, Error> {
-        render_with(source, Settings::new(max_width))
-    }
-
-    fn listed() -> Vec<(String, String)> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let list = fs::read_to_string(root.join("tests/sequence/diagrams.txt")).unwrap();
-        list.lines()
-            .map(|path| {
-                let name = Path::new(path).file_stem().unwrap().to_string_lossy().into_owned();
-                (name, fs::read_to_string(root.join(path)).unwrap())
-            })
-            .collect()
+        render_with(&source::prepare(source), Settings::new(max_width))
     }
 
     #[test]
     fn listed_diagrams_match_their_snapshots_at_100_columns() {
-        for (name, source) in listed() {
+        for (name, source) in listed("tests/sequence/diagrams.txt") {
             insta::assert_snapshot!(name, rows(&render(&source, 100).unwrap(), GlyphSet::Unicode).join("\n"));
         }
     }
@@ -137,7 +128,7 @@ mod tests {
         let source = "sequenceDiagram\n  A->>B: Supercalifragilisticexpialidocious";
 
         let broken = rows(&render(source, 20).unwrap(), GlyphSet::Unicode);
-        let cut = rows(&render_with(source, Settings::new(20).long_words(LongWords::Cut)).unwrap(), GlyphSet::Unicode);
+        let cut = rows(&render_with(&source::prepare(source), Settings::new(20).long_words(LongWords::Cut)).unwrap(), GlyphSet::Unicode);
 
         assert!(broken.iter().any(|row| row.contains("Supercal")) && broken.iter().any(|row| row.contains("docious")), "{broken:#?}");
         assert!(cut.iter().any(|row| row.contains('⋯')), "{cut:#?}");

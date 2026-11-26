@@ -491,7 +491,7 @@ mod tests {
     use crate::settings::LongWords;
 
     fn placed(body: &str) -> Layout {
-        place(&Diagram::read(&format!("sequenceDiagram\n{body}")).unwrap(), Fit { wrap: Wrap::wide(LongWords::Break), gap: LOOSE })
+        place(&Diagram::read_source(&format!("sequenceDiagram\n{body}")).unwrap(), Fit { wrap: Wrap::wide(LongWords::Break), gap: LOOSE })
     }
 
     #[test]

@@ -19,20 +19,9 @@ pub(super) use db::{Edge, Flowchart, Subgraph};
 pub(super) use lexer::Direction;
 pub(super) use link::{Arrow, Stroke};
 
-use crate::error::{Error, MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
+use crate::error::Error;
 
-/// Longest source, most nodes, subgraphs included, and most edges read before the flowchart is refused.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct Limits {
-    pub(super) bytes: usize,
-    pub(super) nodes: usize,
-    pub(super) edges: usize,
-}
-
-impl Limits {
-    /// What `render` draws.
-    pub(super) const DRAWN: Self = Self { bytes: MAX_SOURCE_BYTES, nodes: MAX_NODES, edges: MAX_EDGES };
-}
+pub(super) use crate::graph::Limits;
 
 /// Why mermaid would refuse a flowchart; lines are counted as mermaid counts them in its own errors, once the front
 /// matter, directives and comment lines are left out.
@@ -79,7 +68,12 @@ pub(super) fn parse(source: &str, limits: Limits) -> Result<Flowchart, Error> {
     if source.len() > limits.bytes {
         return Err(Error::TooLong { bytes: source.len() });
     }
-    let prepared = prepare::prepare(source);
+    read(&source::prepare(source), limits)
+}
+
+/// The flowchart in `prepared`, refused as mermaid refuses it or once it holds more than `limits` allow.
+pub(super) fn read(prepared: &source::Prepared, limits: Limits) -> Result<Flowchart, Error> {
+    let prepared = prepare::prepare(prepared);
     let text = prepared.text;
     if !source::opens_with(&text, "graph") && !source::opens_with(&text, "flowchart") {
         return Err(Invalid::NoDiagram.into());
@@ -91,6 +85,7 @@ pub(super) fn parse(source: &str, limits: Limits) -> Result<Flowchart, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::{MAX_EDGES, MAX_NODES, MAX_SOURCE_BYTES};
 
     fn nodes(count: usize) -> String {
         format!("flowchart LR\n{}", (0..count).map(|index| format!("  n{index}\n")).collect::<String>())

@@ -10,11 +10,12 @@ use crate::error::Error;
 use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Node};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
+use crate::source::Prepared;
 use crate::source::entity;
 
-/// Reads `source`, refusing anything but a class diagram within the limits `render` draws.
-pub(super) fn read(source: &str) -> Result<Diagram, Error> {
-    Ok(graph(&parse::parse(source, Limits::DRAWN)?))
+/// Reads `prepared`, refusing anything but a class diagram within the limits `render` draws.
+pub(crate) fn read(prepared: &Prepared) -> Result<Diagram, Error> {
+    Ok(graph(&parse::read(prepared, Limits::DRAWN)?))
 }
 
 /// Classes first, then lollipops, then notes, each in the order the source names them.
@@ -115,6 +116,7 @@ fn direction(direction: parse::Direction) -> Direction {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::class::read_source as read;
 
     fn node<'a>(diagram: &'a Diagram, id: &str) -> &'a Node {
         diagram.nodes.iter().find(|node| node.id == id).unwrap()

@@ -17,8 +17,7 @@ pub(super) struct Config {
 }
 
 /// The shared preparation, then the spaces after a closing brace cut to one line end.
-pub(super) fn prepare(source: &str) -> Prepared {
-    let prepared = source::prepare(source);
+pub(super) fn prepare(prepared: &source::Prepared) -> Prepared {
     Prepared { text: with_braces_ending_lines(&prepared.text), config: Config { inherits_direction: inherits_direction(&prepared.config) } }
 }
 
@@ -53,7 +52,7 @@ mod tests {
 
     #[test]
     fn inherit_dir_is_read_from_the_front_matter_or_a_directive() {
-        let inherits = |source: &str| prepare(source).config.inherits_direction;
+        let inherits = |source: &str| prepare(&source::prepare(source)).config.inherits_direction;
 
         assert!(inherits("---\nconfig:\n  flowchart:\n    inheritDir: true\n---\ngraph TD"));
         assert!(inherits("%%{init: {\"flowchart\": { \"inheritDir\": true }}}%%\ngraph TD"));

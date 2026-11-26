@@ -10,10 +10,11 @@ use crate::error::Error;
 use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Invisible, Node, without_cycles};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
+use crate::source::Prepared;
 
-/// Reads `source`, refusing anything but a flowchart within the limits `render` draws.
-pub(crate) fn read(source: &str) -> Result<Diagram, Error> {
-    Ok(diagram(&parse::parse(source, Limits::DRAWN)?))
+/// Reads `prepared`, refusing anything but a flowchart within the limits `render` draws.
+pub(crate) fn read(prepared: &Prepared) -> Result<Diagram, Error> {
+    Ok(diagram(&parse::read(prepared, Limits::DRAWN)?))
 }
 
 /// A node named like a subgraph is that subgraph, as mermaid merges them.
@@ -127,6 +128,7 @@ mod tests {
     use vt_canvas::Shape;
 
     use super::*;
+    use crate::flowchart::read_source as read;
 
     fn node<'a>(diagram: &'a Diagram, id: &str) -> &'a Node {
         diagram.nodes.iter().find(|node| node.id == id).unwrap()

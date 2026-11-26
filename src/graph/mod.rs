@@ -1,4 +1,4 @@
-//! Graphs (flowcharts, state diagrams): laid out in layers on the grid, edges routed on it, then drawn.
+//! Graphs (flowcharts, state, class and ER diagrams): laid out in layers on the grid, edges routed on it, then drawn.
 
 mod budget;
 pub(crate) mod diagram;
@@ -14,7 +14,7 @@ mod shape;
 use vt_canvas::{Canvas, Rect};
 
 use crate::Role;
-use crate::error::{Error, MAX_AREA, MAX_ROUTING_STEPS};
+use crate::error::{Error, MAX_AREA, MAX_EDGES, MAX_NODES, MAX_ROUTING_STEPS, MAX_SOURCE_BYTES};
 use crate::label::Wrap;
 use crate::settings::Settings;
 use budget::Budget;
@@ -33,6 +33,30 @@ pub(crate) struct Drawing {
     labels: Vec<Option<Rect>>,
     /// How the nodes' text was cut into lines to fit.
     pub(crate) wrap: Wrap,
+}
+
+/// Longest source, most nodes and most edges a graph's parser reads before it refuses the diagram; what each kind
+/// counts as a node and an edge is its own.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Limits {
+    pub(crate) bytes: usize,
+    pub(crate) nodes: usize,
+    pub(crate) edges: usize,
+}
+
+impl Limits {
+    /// What `render` draws.
+    pub(crate) const DRAWN: Self = Self { bytes: MAX_SOURCE_BYTES, nodes: MAX_NODES, edges: MAX_EDGES };
+}
+
+/// How much a flowchart, a state, a class or an ER diagram holds once read, counted as its limits count.
+#[cfg(feature = "fuzz")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Counts {
+    /// What counts towards [`MAX_NODES`].
+    pub nodes: usize,
+    /// What counts towards [`MAX_EDGES`].
+    pub edges: usize,
 }
 
 /// Columns a node's label is wrapped at when the flowchart is too wide as written, before any rank is folded.
@@ -98,6 +122,13 @@ fn may_fit_tighter(drawing: &Result<Drawing, Error>, unroutable: &[Error]) -> bo
     }
 }
 
+/// Draws `written` as [`render`] does, then measures the drawing.
+#[cfg(any(test, feature = "measure"))]
+pub(crate) fn measured(written: &Diagram, max_width: u16) -> Result<measure::Measures, Error> {
+    let drawing = render(written, Settings::new(max_width))?;
+    Ok(measure::measures(&written.wrapped(drawing.wrap), &drawing))
+}
+
 fn drawn(diagram: &Diagram, placement: Placement, max_width: u16, budget: &mut Budget) -> Result<Drawing, Error> {
     check_width(&placement, max_width)?;
     check_area(usize::from(placement.size.width), usize::from(placement.size.height))?;
@@ -138,7 +169,7 @@ mod tests {
     const WIDTH: u16 = 400;
 
     fn render_with(source: &str, settings: Settings) -> Result<Drawing, Error> {
-        super::render(&flowchart::read(source)?, settings)
+        super::render(&flowchart::read_source(source)?, settings)
     }
 
     #[test]
@@ -221,7 +252,7 @@ mod tests {
     #[test]
     fn a_flowchart_too_dense_to_fold_is_packed_without_room_for_its_links() {
         let source = include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-project-sox2.mmd");
-        let diagram = flowchart::read(source).unwrap();
+        let diagram = flowchart::read_source(source).unwrap();
 
         let folded = drawn(&diagram, layout::place(&diagram, Fit::Folded { columns: 40 }), 80, &mut Budget::new(MAX_ROUTING_STEPS));
         let packed = render(source, 80);
@@ -233,7 +264,7 @@ mod tests {
     #[test]
     fn a_flowchart_too_wide_wraps_its_labels_narrower_before_it_folds() {
         let source = include_str!("../../corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-life-choices.mmd");
-        let diagram = flowchart::read(source).unwrap();
+        let diagram = flowchart::read_source(source).unwrap();
 
         let wide = drawn(&diagram, layout::place(&diagram, Fit::Tight), 100, &mut Budget::new(MAX_ROUTING_STEPS));
         let narrowed = render(source, 100).unwrap();
@@ -286,7 +317,7 @@ mod tests {
 
     #[test]
     fn the_texts_at_an_edge_s_ends_stand_beside_it_next_to_each_node() {
-        let mut diagram = flowchart::read("flowchart TB\n  A[Customer] --> B[Ticket]").unwrap();
+        let mut diagram = flowchart::read_source("flowchart TB\n  A[Customer] --> B[Ticket]").unwrap();
         diagram.edges[0].start_label = Some(Label::single_line("1"));
         diagram.edges[0].end_label = Some(Label::single_line("0..*"));
 

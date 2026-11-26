@@ -11,14 +11,15 @@ use crate::error::Error;
 use crate::graph::diagram::{Diagram, Edge, End, Figure, Group, GroupKind, Head, Invisible, Node, without_cycles};
 use crate::label::{Label, Wrap};
 use crate::settings::LongWords;
+use crate::source::Prepared;
 use crate::source::entity;
 
 /// Cells of a fork or a join's bar at the least: room for a junction each side of the middle.
 const SHORTEST_BAR: u16 = 5;
 
-/// Reads `source`, refusing anything but a state diagram within the limits `render` draws.
-pub(super) fn read(source: &str) -> Result<Diagram, Error> {
-    Ok(graph(&parse::parse(source, Limits::DRAWN)?))
+/// Reads `prepared`, refusing anything but a state diagram within the limits `render` draws.
+pub(crate) fn read(prepared: &Prepared) -> Result<Diagram, Error> {
+    Ok(graph(&parse::read(prepared, Limits::DRAWN)?))
 }
 
 /// What each db node becomes in the graph.
@@ -180,7 +181,7 @@ mod tests {
     use super::*;
 
     fn read(source: &str) -> Diagram {
-        super::read(source).unwrap()
+        crate::state::read_source(source).unwrap()
     }
 
     fn figures(diagram: &Diagram) -> Vec<(&str, Figure)> {

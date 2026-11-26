@@ -2,7 +2,7 @@
 
 use super::parse::{self, Arrow, Block, Item, Limits, Placement, Sequence};
 use crate::error::Error;
-use crate::source::entity;
+use crate::source::{Prepared, entity};
 
 /// A sequence diagram as it is drawn: texts shown as a browser shows them, participants by their place.
 #[derive(Debug, Clone, PartialEq)]
@@ -70,9 +70,15 @@ pub(super) enum Event {
 }
 
 impl Diagram {
-    /// The diagram in `source`, read within the limits `render` draws.
-    pub(super) fn read(source: &str) -> Result<Self, Error> {
-        parse::parse(source, Limits::DRAWN).map(|sequence| Self::from(&sequence))
+    /// The diagram in `prepared`, read within the limits `render` draws.
+    pub(super) fn read(prepared: &Prepared) -> Result<Self, Error> {
+        parse::read(prepared, Limits::DRAWN).map(|sequence| Self::from(&sequence))
+    }
+
+    /// The diagram in `source`, as [`Diagram::read`] reads it, for the tests that start from a source.
+    #[cfg(test)]
+    pub(super) fn read_source(source: &str) -> Result<Self, Error> {
+        Self::read(&crate::source::prepare(source))
     }
 }
 
@@ -223,21 +229,21 @@ mod tests {
     #[test]
     fn numbers_count_every_message_and_show_after_autonumber() {
         let diagram =
-            Diagram::read("sequenceDiagram\nA->>B: one\nautonumber\nA->>B: two\nautonumber 10 5\nA->>B: three\nB->>A: \n").unwrap();
+            Diagram::read_source("sequenceDiagram\nA->>B: one\nautonumber\nA->>B: two\nautonumber 10 5\nA->>B: three\nB->>A: \n").unwrap();
 
         assert_eq!(texts(&diagram), ["one", "2. two", "10. three", "15"]);
     }
 
     #[test]
     fn numbers_keep_two_decimals_at_most() {
-        let diagram = Diagram::read("sequenceDiagram\nautonumber 1 0.1\nA->>B: a\nA->>B: b\nA->>B: c\nA->>B: d\n").unwrap();
+        let diagram = Diagram::read_source("sequenceDiagram\nautonumber 1 0.1\nA->>B: a\nA->>B: b\nA->>B: c\nA->>B: d\n").unwrap();
 
         assert_eq!(texts(&diagram), ["1. a", "1.1. b", "1.2. c", "1.3. d"]);
     }
 
     #[test]
     fn a_block_title_holds_its_keyword_and_its_condition() {
-        let diagram = Diagram::read("sequenceDiagram\nloop Every minute\nA->>B: ping\nend\nrect rgb(0, 0, 0)\nend\n").unwrap();
+        let diagram = Diagram::read_source("sequenceDiagram\nloop Every minute\nA->>B: ping\nend\nrect rgb(0, 0, 0)\nend\n").unwrap();
 
         assert_eq!(diagram.events[0], Event::Open { block: Block::Loop, title: "loop [Every minute]".to_owned() });
         assert_eq!(diagram.events[3], Event::Open { block: Block::Rect, title: String::new() });
@@ -245,14 +251,14 @@ mod tests {
 
     #[test]
     fn a_created_participant_is_drawn_at_the_first_message_involving_it() {
-        let diagram = Diagram::read("sequenceDiagram\nA->>B: hi\ncreate participant C\nNote over A: wait\nB->>C: new\n").unwrap();
+        let diagram = Diagram::read_source("sequenceDiagram\nA->>B: hi\ncreate participant C\nNote over A: wait\nB->>C: new\n").unwrap();
 
         assert_eq!(diagram.participants[2].created, Some(2));
     }
 
     #[test]
     fn a_box_without_participants_is_left_out_and_the_others_keep_theirs() {
-        let diagram = Diagram::read("sequenceDiagram\nbox Empty\nend\nbox Team\nparticipant X\nend\nX->>Y: hi\n").unwrap();
+        let diagram = Diagram::read_source("sequenceDiagram\nbox Empty\nend\nbox Team\nparticipant X\nend\nX->>Y: hi\n").unwrap();
 
         assert_eq!(diagram.groups, [Group { name: Some("Team".to_owned()) }]);
         assert_eq!(diagram.participants[0].group, Some(0));
@@ -260,16 +266,17 @@ mod tests {
 
     #[test]
     fn a_participant_created_by_a_message_to_itself_has_its_head_at_the_next_from_another() {
-        let diagram = Diagram::read("sequenceDiagram\nA->>B: hi\ncreate participant C\nC->>C: self\nB->>C: new\n").unwrap();
+        let diagram = Diagram::read_source("sequenceDiagram\nA->>B: hi\ncreate participant C\nC->>C: self\nB->>C: new\n").unwrap();
 
         assert_eq!(diagram.participants[2].created, Some(2));
     }
 
     #[test]
     fn figures_follow_the_participant_type() {
-        let diagram =
-            Diagram::read("sequenceDiagram\nactor A\nparticipant D@{ \"type\": \"database\" }\nparticipant Q@{ \"type\": \"queue\" }\n")
-                .unwrap();
+        let diagram = Diagram::read_source(
+            "sequenceDiagram\nactor A\nparticipant D@{ \"type\": \"database\" }\nparticipant Q@{ \"type\": \"queue\" }\n",
+        )
+        .unwrap();
 
         let figures: Vec<Figure> = diagram.participants.iter().map(|participant| participant.figure).collect();
         assert_eq!(figures, [Figure::Person, Figure::Database, Figure::Box]);
@@ -277,7 +284,7 @@ mod tests {
 
     #[test]
     fn an_activation_of_a_participant_not_there_draws_nothing() {
-        let diagram = Diagram::read("sequenceDiagram\nactivate X\nA->>B: hi\n").unwrap();
+        let diagram = Diagram::read_source("sequenceDiagram\nactivate X\nA->>B: hi\n").unwrap();
 
         assert_eq!(diagram.events.len(), 1);
     }
