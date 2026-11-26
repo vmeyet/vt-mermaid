@@ -19,8 +19,19 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
       - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --lib -- -D warnings
+      - run: cargo clippy --lib -- --cfg fuzzing -D warnings
       - run: cargo test --all-targets
       - run: cargo test --doc
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo package
+      - run: cargo test --manifest-path "target/package/vt-mermaid-$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)/Cargo.toml" --lib --locked -- --skip corpus --skip listed --skip spike
 
   msrv:
     runs-on: ubuntu-latest

@@ -41,7 +41,7 @@ pub(super) fn joins(diagram: &Diagram, placement: &Placement) -> Vec<Joins> {
         End::Group(index) => placement.groups[index],
     };
     let mut joins: Vec<Joins> = Vec::with_capacity(diagram.edges.len());
-    let mut sides: BTreeMap<(usize, usize, u8), Vec<Waiting>> = BTreeMap::new();
+    let mut sides: BTreeMap<(usize, usize, usize), Vec<Waiting>> = BTreeMap::new();
     for (index, edge) in diagram.edges.iter().enumerate() {
         let (from, to) = (rect(edge.from), rect(edge.to));
         let flow = diagram.flow_between(edge.from, edge.to);
@@ -61,7 +61,7 @@ pub(super) fn joins(diagram: &Diagram, placement: &Placement) -> Vec<Joins> {
     }
     let mut trunks = 0;
     for ((.., side), waiting) in sides {
-        let side = SIDES[usize::from(side)];
+        let side = SIDES[side];
         let mut waiting = waiting;
         waiting.sort_by_key(|end| (end.towards, end.edge));
         let block = |end: &Waiting| if end.leaves { rect(diagram.edges[end.edge].from) } else { rect(diagram.edges[end.edge].to) };
@@ -174,8 +174,8 @@ fn units(diagram: &Diagram, waiting: &[Waiting], side: Side, shares_ways: bool) 
 
 const SIDES: [Direction; 4] = [Direction::Up, Direction::Right, Direction::Down, Direction::Left];
 
-fn key(end: End, side: Direction) -> (usize, usize, u8) {
-    let side = SIDES.iter().position(|&known| known == side).unwrap_or(0) as u8;
+fn key(end: End, side: Direction) -> (usize, usize, usize) {
+    let side = SIDES.iter().position(|&known| known == side).unwrap_or(0);
     match end {
         End::Node(index) => (0, index, side),
         End::Group(index) => (1, index, side),
@@ -228,9 +228,9 @@ fn cells(side: Side, towards: &[u16]) -> Vec<Point> {
         .into_iter()
         .map(|place| {
             if matches!(side.side, Direction::Up | Direction::Down) {
-                Point::new(place as u16, middle.y)
+                Point::new(cell(place), middle.y)
             } else {
-                Point::new(middle.x, place as u16)
+                Point::new(middle.x, cell(place))
             }
         })
         .collect()
@@ -257,13 +257,21 @@ fn spread(side: Side, towards: &[u16]) -> Option<Vec<i32>> {
 }
 
 fn spread_from(middle: i32, towards: &[u16], spread: Spread) -> Vec<i32> {
-    let count = towards.len() as i32;
-    let straight = towards.iter().position(|&towards| spread.straight && i32::from(towards) == middle).map(|index| index as i32);
+    let count = i32::try_from(towards.len()).unwrap_or(i32::MAX);
+    let straight = towards
+        .iter()
+        .position(|&towards| spread.straight && i32::from(towards) == middle)
+        .map(|index| i32::try_from(index).unwrap_or(i32::MAX));
     let offset = |index: i32| match straight {
         Some(straight) => (index - straight) * spread.step,
         None => ((2 * index - (count - 1)) * spread.step).div_euclid(2),
     };
     (0..count).map(|index| middle + offset(index)).collect()
+}
+
+/// A place on a block's side, which lies on the grid.
+fn cell(place: i32) -> u16 {
+    u16::try_from(place).unwrap_or(0)
 }
 
 #[cfg(test)]

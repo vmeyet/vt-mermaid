@@ -52,6 +52,7 @@ impl From<Invalid> for Error {
 }
 
 /// The state diagram in `source`, refused as mermaid refuses it or once it holds more than `limits` allow.
+#[cfg(any(test, fuzzing))]
 pub(super) fn parse(source: &str, limits: Limits) -> Result<Diagram, Error> {
     if source.len() > limits.bytes {
         return Err(Error::TooLong { bytes: source.len() });

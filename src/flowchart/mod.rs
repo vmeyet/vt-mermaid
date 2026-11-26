@@ -4,8 +4,9 @@ mod diagram;
 mod parse;
 mod shape;
 
+#[cfg(any(test, fuzzing))]
 use crate::error::Error;
-#[cfg(feature = "fuzz")]
+#[cfg(fuzzing)]
 use crate::graph::Counts;
 
 pub(crate) use diagram::read;
@@ -29,7 +30,7 @@ pub(crate) fn measure(source: &str, max_width: u16) -> Result<crate::graph::meas
 }
 
 /// Reads `source` within the limits `render` draws.
-#[cfg(feature = "fuzz")]
+#[cfg(fuzzing)]
 pub fn counts(source: &str) -> Result<Counts, Error> {
     let flowchart = parse::parse(source, parse::Limits::DRAWN)?;
     Ok(Counts { nodes: flowchart.nodes.len() + flowchart.subgraphs.len(), edges: flowchart.edges.len() })

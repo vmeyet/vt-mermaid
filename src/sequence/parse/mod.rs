@@ -79,6 +79,7 @@ impl From<Invalid> for Error {
 }
 
 /// The sequence diagram in `source`, refused as mermaid refuses it or once it holds more than `limits` allow.
+#[cfg(any(test, fuzzing))]
 pub(super) fn parse(source: &str, limits: Limits) -> Result<Sequence, Error> {
     if source.len() > limits.bytes {
         return Err(Error::TooLong { bytes: source.len() });

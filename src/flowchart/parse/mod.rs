@@ -64,6 +64,7 @@ impl From<Invalid> for Error {
 }
 
 /// The flowchart in `source`, refused as mermaid refuses it or once it holds more than `limits` allow.
+#[cfg(any(test, fuzzing))]
 pub(super) fn parse(source: &str, limits: Limits) -> Result<Flowchart, Error> {
     if source.len() > limits.bytes {
         return Err(Error::TooLong { bytes: source.len() });

@@ -3,12 +3,20 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 cargo fmt --all --check
 cargo clippy --all-targets -- -D warnings
+cargo clippy --lib -- -D warnings
+cargo clippy --lib -- --cfg fuzzing -D warnings
 cargo test --all-targets
 cargo test --doc
 cargo deny check --hide-inclusion-graph
 cargo machete
 
-msrv=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].rust_version')
+metadata=$(cargo metadata --no-deps --format-version 1)
+package="$(jq -r '.target_directory' <<<"$metadata")/package/vt-mermaid-$(jq -r '.packages[0].version' <<<"$metadata")"
+cargo package --allow-dirty
+# The tests reading the corpus, the oracle or the listed diagrams stay in the repository.
+cargo test --manifest-path "$package/Cargo.toml" --lib --locked -- --skip corpus --skip listed --skip spike
+
+msrv=$(jq -r '.packages[0].rust_version' <<<"$metadata")
 if rustup toolchain list | grep -q "^$msrv-"; then
   cargo "+$msrv" check --all-targets --locked
 else

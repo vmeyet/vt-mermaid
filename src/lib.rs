@@ -28,14 +28,14 @@ pub use role::Role;
 pub use settings::{LongWords, Settings};
 pub use vt_canvas::{Canvas, GlyphSet, Run};
 
-/// Exact measures of a drawing, for the scoreboard: not part of the API, behind the `measure` feature.
+/// Exact measures of a drawing, for the scoreboard: unstable and not part of the API, behind the `measure` feature.
 #[cfg(feature = "measure")]
 #[doc(hidden)]
 pub use graph::measure::Measures;
 
-/// Reads a diagram as `render` does, without laying it out, for the fuzzer: not part of the API, behind the `fuzz`
-/// feature.
-#[cfg(feature = "fuzz")]
+/// Reads a diagram as `render` does, without laying it out, for the fuzzer: built only with `--cfg fuzzing`, as
+/// cargo-fuzz builds.
+#[cfg(fuzzing)]
 #[doc(hidden)]
 pub use {
     class::counts as read_class,
@@ -46,8 +46,8 @@ pub use {
     state::counts as read_state,
 };
 
-/// Draws a flowchart, a state, a class or an ER diagram as [`render`] does, then measures the drawing: not part of the
-/// API, behind the `measure` feature.
+/// Draws a flowchart, a state, a class or an ER diagram as [`render`] does, then measures the drawing: unstable and
+/// not part of the API, behind the `measure` feature.
 #[cfg(feature = "measure")]
 #[doc(hidden)]
 pub fn measure(source: &str, max_width: u16) -> Result<Measures, Error> {

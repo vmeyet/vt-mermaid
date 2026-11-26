@@ -92,7 +92,9 @@ impl Drawn {
         let arrows = 1.0 - ratio(self.arrows.abs_diff(expected.arrows).min(expected.arrows.max(1)), expected.arrows.max(1));
         let crossings = 1.0 / (1.0 + ratio(self.crossings, 1));
         let fits = if self.fits { 1.0 } else { 0.0 };
-        (50.0 * labels + 20.0 * fits + 15.0 * arrows + 15.0 * crossings).round() as u32
+        #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "each share lies in 0..=1, so the score in 0..=100")]
+        let score = (50.0 * labels + 20.0 * fits + 15.0 * arrows + 15.0 * crossings).round() as u32;
+        score
     }
 }
 

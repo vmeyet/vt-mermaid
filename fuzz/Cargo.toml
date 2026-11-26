@@ -15,7 +15,7 @@ members = ["."]
 libfuzzer-sys = "0.4.10"
 # Measures each drawn character independently of vt-canvas, so the width check does not trust the code it checks.
 unicode-width = "0.2.3"
-vt-mermaid = { path = "..", features = ["fuzz"] }
+vt-mermaid = { path = ".." }
 
 [[bin]]
 name = "render"

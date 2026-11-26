@@ -192,25 +192,18 @@ pub(crate) fn violations(diagram: &Diagram, drawing: &Drawing) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-    use std::path::Path;
-
-    use super::*;
     use crate::flowchart::measure;
-
-    fn measured(path: &str) -> Measures {
-        let source = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();
-        measure(&source, 400).unwrap()
-    }
 
     #[test]
     fn edges_crossing_each_other_are_counted_once_each() {
-        assert_eq!(measured("tests/spike/cached.mmd").crossings, 1);
+        assert_eq!(measure(include_str!("../../tests/spike/cached.mmd"), 400).unwrap().crossings, 1);
     }
 
     #[test]
     fn an_edge_crossing_a_frame_is_not_a_crossing() {
-        assert_eq!(measured("corpus/flowchart/docs--config-theming--L155.mmd").crossings, 0);
+        let source = include_str!("../../corpus/flowchart/docs--config-theming--L155.mmd");
+
+        assert_eq!(measure(source, 400).unwrap().crossings, 0);
     }
 
     #[test]

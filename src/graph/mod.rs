@@ -50,7 +50,7 @@ impl Limits {
 }
 
 /// How much a flowchart, a state, a class or an ER diagram holds once read, counted as its limits count.
-#[cfg(feature = "fuzz")]
+#[cfg(fuzzing)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Counts {
     /// What counts towards [`MAX_NODES`].

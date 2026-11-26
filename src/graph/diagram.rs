@@ -108,9 +108,9 @@ pub(crate) enum Head {
 impl Head {
     /// Cells next to the node the edge runs straight through, so its tips stand on a straight line: none for an
     /// arrow, which may stand where the line turns.
-    pub(crate) const fn straight(self) -> u16 {
+    pub(crate) fn straight(self) -> u16 {
         match self {
-            Self::Tips(tips) => tips.len() as u16,
+            Self::Tips(tips) => u16::try_from(tips.len()).unwrap_or(u16::MAX),
             Self::None | Self::Arrow => 0,
         }
     }

@@ -85,7 +85,7 @@ fn staying(ranks: &[usize], links: &[Forward], row: Row<'_>, rank: usize) -> Opt
     if blocks.is_empty() {
         return None;
     }
-    let passing = links.iter().filter(|link| ranks[link.from] < rank && rank < ranks[link.to]).count() as i32;
+    let passing = count(links.iter().filter(|link| ranks[link.from] < rank && rank < ranks[link.to]).count());
     let sources = |blocks: &[usize]| -> usize {
         let arriving = links.iter().filter(|link| blocks.contains(&link.to) && ranks[link.from] < rank).map(|link| link.from);
         arriving.collect::<BTreeSet<usize>>().len()
@@ -93,7 +93,7 @@ fn staying(ranks: &[usize], links: &[Forward], row: Row<'_>, rank: usize) -> Opt
     let mut used = passing * row.link;
     let mut kept = 0;
     for (index, &block) in blocks.iter().enumerate() {
-        let after = sources(&blocks[index + 1..]) as i32 * row.link;
+        let after = count(sources(&blocks[index + 1..])) * row.link;
         if index > 0 && used + row.breadths[block] + after > row.columns {
             break;
         }
@@ -150,6 +150,11 @@ fn pulled(ranks: &[usize], neighbours: &Neighbours, order: &[usize]) -> Vec<usiz
         }
     }
     ranks
+}
+
+/// A count of blocks or links in columns' arithmetic: the limits keep it far below `i32::MAX`.
+fn count(blocks: usize) -> i32 {
+    i32::try_from(blocks).unwrap_or(i32::MAX)
 }
 
 #[cfg(test)]

@@ -38,7 +38,7 @@ pub(crate) fn render_with(prepared: &Prepared, settings: Settings) -> Result<Can
 }
 
 /// How much a sequence diagram holds once read.
-#[cfg(feature = "fuzz")]
+#[cfg(fuzzing)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Counts {
     /// Participants.
@@ -48,7 +48,7 @@ pub struct Counts {
 }
 
 /// Reads `source` within the limits `render` draws.
-#[cfg(feature = "fuzz")]
+#[cfg(fuzzing)]
 pub fn counts(source: &str) -> Result<Counts, Error> {
     let sequence = parse::parse(source, parse::Limits::DRAWN)?;
     Ok(Counts { participants: sequence.participants.len(), messages: sequence.items.len() })

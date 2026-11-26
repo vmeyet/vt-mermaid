@@ -6,7 +6,26 @@ rust-version = "1.92"
 description = "Mermaid diagrams drawn as text on a vt-canvas grid."
 license = "MIT"
 readme = "README.md"
-publish = false
+repository = "https://github.com/vmeyet/vt-mermaid"
+keywords = ["mermaid", "diagram", "terminal", "flowchart", "ascii"]
+categories = ["command-line-interface", "visualization", "text-processing"]
+# The library and the inputs and snapshots its own tests read; the corpus, the oracle and the tests reading them stay
+# in the repository.
+include = [
+  "/src/**/*.rs",
+  "/src/**/snapshots/*a_diagram_draws_in_ascii_too.snap",
+  "/src/graph/snapshots/*.snap",
+  "/README.md",
+  "/LICENSE",
+  "/ARCHITECTURE.md",
+  "/benches/inputs/fuzzed-er.mmd",
+  "/tests/spike/cached.mmd",
+  "/corpus/LICENSE-mermaid",
+  "/corpus/flowchart/docs--config-theming--L155.mmd",
+  "/corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-life-choices.mmd",
+  "/corpus/flowchart/e2e--platform-dev-diagrams-layout-tests-project-sox2.mmd",
+  "/corpus/flowchart/e2e--platform-dev-diagrams-tmp-v12-0-0-faulty-diags-elk-legacy-preset-regression.mmd",
+]
 
 [lib]
 name = "vt_mermaid"
@@ -28,10 +47,8 @@ harness = false
 vt-canvas = "0.1.0"
 
 [features]
-# Exact measures of a drawing for scoreboard/, read from its geometry; not part of the API.
+# Exact measures of a drawing for scoreboard/, read from its geometry; unstable, not part of the API.
 measure = []
-# The parser alone, for fuzz/; not part of the API.
-fuzz = []
 
 # serde_json reads the oracle's results for examples/agreement.rs and scoreboard/, serde reads them into structs and writes the scoreboard's;
 # mermaid-text is what examples/compare.rs and scoreboard/ measure against, pinned so the scoreboard compares one version; divan runs benches/limits.rs;
@@ -43,8 +60,8 @@ mermaid-rs-renderer = { version = "0.3.1", default-features = false }
 mermaid-text = "=0.58.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
-# Turns the `measure` and `fuzz` features on for the scoreboard example and fuzz/, so `cargo clippy --all-targets` checks them.
-vt-mermaid = { path = ".", features = ["measure", "fuzz"] }
+# Turns the `measure` feature on for the scoreboard example, so `cargo clippy --all-targets` checks it.
+vt-mermaid = { path = ".", features = ["measure"] }
 
 [lints.rust]
 unsafe_code = "forbid"
@@ -61,6 +78,8 @@ unused_import_braces = "warn"
 unused_lifetimes = "warn"
 unused_macro_rules = "warn"
 unused_qualifications = "warn"
+# cargo-fuzz builds with `--cfg fuzzing`, which adds each parser alone for fuzz/.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }
@@ -110,9 +129,6 @@ unneeded_field_pattern = "warn"
 unused_result_ok = "warn"
 verbose_file_reads = "warn"
 # Pedantic lints this code opts out of.
-cast_possible_truncation = "allow"
-cast_possible_wrap = "allow"
-cast_sign_loss = "allow"
 doc_markdown = "allow"
 format_collect = "allow"
 format_push_string = "allow"

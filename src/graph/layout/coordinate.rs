@@ -211,7 +211,7 @@ fn closest_in_order(asked: &[Asked]) -> Vec<i32> {
         .iter()
         .flat_map(|pool| {
             let start = (2 * pool.sum + pool.weight).div_euclid(2 * pool.weight);
-            std::iter::repeat_n(start as i32, pool.count)
+            std::iter::repeat_n(i32::try_from(start).unwrap_or(i32::MAX), pool.count)
         })
         .collect()
 }
